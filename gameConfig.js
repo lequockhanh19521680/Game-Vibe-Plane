@@ -91,17 +91,17 @@ const GAME_CONFIG = {
     warningDelay: 2500, // Delay sau cảnh báo
 
     radius: 5, // Kích thước
-    baseSpeed: 0.025, // Tốc độ cơ bản - giảm từ 0.03 để dễ hơn
-    speedIncreasePerLevel: 0.02, // Tăng tốc độ mỗi level - giảm từ 0.035 để không quá khó
+    baseSpeed: 0.045, // Tốc độ cơ bản - nhanh hơn xíu
+    speedIncreasePerLevel: 0.03, // Tăng tốc độ mỗi level
 
-    baseTurnSpeed: 0.015, // Tốc độ rẽ cơ bản - giảm mạnh để có thể né
-    turnSpeedIncreasePerLevel: 0.005, // Tăng tốc độ rẽ mỗi level - giảm mạnh
+    baseTurnSpeed: 0.025, // Tốc độ rẽ cơ bản - nhanh hơn
+    turnSpeedIncreasePerLevel: 0.01, // Tăng tốc độ rẽ mỗi level
 
-    speedUpTime: 300, // Thời gian để tăng tốc - tăng để có nhiều thời gian né hơn
-    speedUpMultiplier: 1.5, // Hệ số tăng tốc - giảm để dễ né hơn
-    turnSpeedUpMultiplier: 1.2, // Hệ số tăng tốc độ rẽ - giảm mạnh
+    speedUpTime: 250, // Thời gian để tăng tốc
+    speedUpMultiplier: 1.8, // Hệ số tăng tốc - nhanh hơn
+    turnSpeedUpMultiplier: 1.5, // Hệ số tăng tốc độ rẽ
 
-    lifetime: 600, // Tuổi thọ - tăng gấp đôi để tồn tại lâu hơn
+    lifetime: 900, // Tuổi thọ - tồn tại nhỏ hơn 1 giây (900 frames = 15 giây @ 60fps)
     fragmentCount: 8, // Số mảnh vỡ khi nổ - giảm từ 10
     fragmentCountOnImpact: 5, // Số mảnh vỡ khi va chạm - giảm từ 6
 
@@ -180,7 +180,6 @@ const GAME_CONFIG = {
       "cross", // Hình thập
       "diagonal", // Chéo
       "star", // Ngôi sao 8 hướng
-      "random", // Ngẫu nhiên
     ],
 
     beamWidth: 10, // Độ rộng beam
@@ -210,22 +209,86 @@ const GAME_CONFIG = {
     interval: 1200, // Khoảng cách sự kiện - tăng từ 1000 để ít sự kiện hơn
     duration: 5000, // Thời gian hiển thị message (ms)
 
-    // Event types
+    // Event types - MASSIVELY EXPANDED
     types: [
       "asteroid_shower",
+      "asteroid_circle",
       "blackhole_storm",
       "laser_barrage",
       "missile_crisis",
       "mine_field",
+      "meteor_shower",
+      "wormhole_portal",
+      "space_storm",
+      "solar_flare",
+      "gravity_wave",
+      "time_dilation",
+      "quantum_shift",
+      "plasma_rain",
+      "ion_storm",
+      "nebula_cloud",
+      "comet_tail",
+      "pulsar_burst",
+      "dark_matter_wave",
+      "supernova_shockwave",
+      "electromagnetic_pulse",
+      "asteroid_belt_collision",
+      "galactic_winds",
+      "temporal_anomaly",
+      "dimensional_rift",
+      "starquake",
+      "cosmic_radiation",
+      "void_breach",
+      "energy_cascade",
+      "super_nova",
+      "plasma_storm",
+      "crystal_rain",
+      "quantum_tunnels",
+      "gravity_wells",
+      "energy_barriers",
+      "meteor_bombardment",
+      "void_rifts",
     ],
 
-    // Event messages
+    // Event messages - MASSIVELY EXPANDED
     messages: {
       asteroid_shower: "🌠 ASTEROID SHOWER INCOMING!",
+      asteroid_circle: "⭕ ASTEROID CIRCLE FORMATION!",
       blackhole_storm: "🕳️ BLACK HOLE STORM!",
       laser_barrage: "⚡ LASER BARRAGE!",
       missile_crisis: "🚀 MISSILE CRISIS!",
       mine_field: "💥 MINE FIELD ACTIVATED!",
+      meteor_shower: "☄️ METEOR SHOWER ALERT!",
+      wormhole_portal: "🌀 WORMHOLE PORTAL OPENED!",
+      space_storm: "⛈️ SPACE STORM BREWING!",
+      solar_flare: "☀️ SOLAR FLARE DETECTED!",
+      gravity_wave: "🌊 GRAVITY WAVE INCOMING!",
+      time_dilation: "⏰ TIME DILATION FIELD!",
+      quantum_shift: "🔮 QUANTUM SHIFT ANOMALY!",
+      plasma_rain: "🔥 PLASMA RAIN INCOMING!",
+      ion_storm: "⚡ ION STORM DETECTED!",
+      nebula_cloud: "☁️ NEBULA CLOUD APPROACHING!",
+      comet_tail: "☄️ COMET TAIL DEBRIS!",
+      pulsar_burst: "📡 PULSAR BURST RADIATION!",
+      dark_matter_wave: "🌑 DARK MATTER WAVE!",
+      supernova_shockwave: "💥 SUPERNOVA SHOCKWAVE!",
+      electromagnetic_pulse: "⚡ EMP SURGE DETECTED!",
+      asteroid_belt_collision: "🪨 ASTEROID BELT CHAOS!",
+      galactic_winds: "🌪️ GALACTIC WINDS RISING!",
+      temporal_anomaly: "⏳ TEMPORAL ANOMALY!",
+      dimensional_rift: "🌌 DIMENSIONAL RIFT!",
+      starquake: "⭐ STARQUAKE TREMORS!",
+      cosmic_radiation: "☢️ COSMIC RADIATION SPIKE!",
+      void_breach: "🕳️ VOID BREACH DETECTED!",
+      energy_cascade: "⚡ ENERGY CASCADE EVENT!",
+      super_nova: "💥 SUPERNOVA SHOCKWAVE!",
+      plasma_storm: "🌊 PLASMA STORM SURGE!",
+      crystal_rain: "💎 CRYSTAL RAIN SHOWER!",
+      quantum_tunnels: "🌀 QUANTUM TUNNEL NETWORK!",
+      gravity_wells: "🕳️ GRAVITY WELL FIELD!",
+      energy_barriers: "⚡ ENERGY BARRIER GRID!",
+      meteor_bombardment: "☄️ METEOR BOMBARDMENT!",
+      void_rifts: "🌌 VOID RIFTS OPENING!",
     },
 
     // Điều kiện mở khóa sự kiện - giảm mạnh để đa dạng ngay từ đầu
@@ -278,6 +341,15 @@ const GAME_CONFIG = {
       speedVariation: 3.5, // Biến thiên tốc độ - tăng từ 2.5
     },
 
+    asteroidCircle: {
+      count: 12, // Số thiên thạch trong vòng tròn
+      radius: 180, // Bán kính vòng tròn
+      warningTime: 180, // Thời gian warning (3 giây)
+      asteroidRadius: 15, // Kích thước thiên thạch
+      speed: 1.5, // Tốc độ di chuyển vào trong
+      centerVariation: 50, // Độ lệch trung tâm
+    },
+
     missileBarrage: {
       count: 5, // Số tên lửa - tăng từ 3 để level rất cao ngạt thở
       delay: 500, // Delay giữa các tên lửa - giảm từ 700 để nhanh hơn
@@ -295,9 +367,10 @@ const GAME_CONFIG = {
 
     // Events mới
     wormholePortal: {
-      count: 2, // Số cặp wormhole
-      lifetime: 400, // Tuổi thọ wormhole (frames)
-      teleportForce: 0.8, // Lực hút vào wormhole
+      count: 3, // Số wormhole
+      lifetime: 600, // Tuổi thọ wormhole (10 giây)
+      shootInterval: 120, // Khoảng cách bắn (2 giây)
+      asteroidSpeed: 4, // Tốc độ thiên thạch từ wormhole
     },
 
     shieldGenerator: {
@@ -315,9 +388,12 @@ const GAME_CONFIG = {
     },
 
     magneticStorm: {
-      intensity: 0.1, // Cường độ từ trường
-      pulseFrequency: 30, // Tần suất pulse (frames)
-      effectRadius: 200, // Bán kính ảnh hưởng
+      lifetime: 480, // 8 giây
+      maxIntensity: 1.2, // Cường độ tối đa
+      fieldCount: 4, // Số từ trường
+      fieldRadius: 120, // Bán kính từ trường
+      playerAffectMultiplier: 0.3, // Ảnh hưởng lên player
+      objectAffectMultiplier: 0.5, // Ảnh hưởng lên objects
     },
 
     asteroidBelt: {
@@ -333,6 +409,54 @@ const GAME_CONFIG = {
       fireInterval: 90, // Khoảng cách bắn (frames)
       laserSpeed: 8, // Tốc độ laser
       lifetime: 300, // Tuổi thọ turret
+    },
+
+    // Events mới
+    plasmaStorm: {
+      count: 8, // Số plasma field
+      duration: 400, // Thời gian tồn tại
+      intensity: 0.8, // Cường độ plasma
+    },
+
+    crystalRain: {
+      count: 32, // Số crystal shard (tăng để có nhiều cluster)
+      delay: 80, // Delay giữa các crystal (chậm hơn để tạo formation)
+      clusterSize: 8, // Số crystal mỗi cluster
+      driftSpeed: 1.2, // Tốc độ trôi dạt
+    },
+
+    quantumTunnels: {
+      count: 3, // Số cặp tunnel
+      lifetime: 350, // Tuổi thọ tunnel
+      teleportForce: 0.9, // Lực hút vào tunnel
+    },
+
+    gravityWells: {
+      count: 5, // Số gravity well
+      radius: 80, // Bán kính hấp dẫn
+      strength: 0.08, // Sức hấp dẫn
+      lifetime: 300, // Tuổi thọ
+    },
+
+    meteorBombardment: {
+      count: 15, // Số meteor
+      delay: 80, // Delay giữa các meteor
+      speed: 4, // Tốc độ meteor
+      explosionRadius: 40, // Bán kính nổ
+    },
+
+    voidRifts: {
+      count: 4, // Số void rift
+      radius: 60, // Bán kính rift
+      pullStrength: 0.12, // Sức hút
+      lifetime: 280, // Tuổi thọ
+    },
+
+    superNova: {
+      maxRadius: 300, // Bán kính tối đa shockwave
+      expansionSpeed: 8, // Tốc độ mở rộng
+      lifetime: 120, // Thời gian tồn tại (2 giây)
+      clearBonus: 10, // Điểm thưởng khi clear object
     },
   },
 
