@@ -28,7 +28,7 @@ const GAME_CONFIG = {
     speedIncreaseStep: 0.06, // Tăng tốc độ mỗi level - tăng từ 0.04 để level cao khó hơn
     microSpeedIncrease: 0.01, // Tăng tốc độ nhỏ liên tục - giảm từ 0.015
 
-    levelUpInterval: 1800, // Điểm để lên level - tăng từ 1200 để dãn ra nhiều hơn
+    levelUpInterval: 30, // Giây để lên level - mỗi 30 giây lên 1 level
     microProgressInterval: 900, // Frame để tăng khó nhỏ - tăng từ 800
   },
 
@@ -38,7 +38,7 @@ const GAME_CONFIG = {
   asteroids: {
     minRadius: 10, // Kích thước tối thiểu - giảm từ 12 để đầu dễ hơn
     maxRadius: 45, // Kích thước tối đa - tăng từ 35 để level cao khó hơn
-    baseSpeed: 0.5, // Tốc độ cơ bản - giảm từ 0.7 để đầu dễ hơn
+    baseSpeed: 1.5, // Tốc độ cơ bản - giảm từ 0.7 để đầu dễ hơn
     speedVariation: 1.2, // Biến thiên tốc độ - giảm từ 1.5
     speedIncreasePerLevel: 0.35, // Tăng tốc độ mỗi level - tăng từ 0.2 để level cao ngạt thở
     fragmentSpeed: 0.99, // Tốc độ giảm của mảnh vỡ
@@ -91,13 +91,13 @@ const GAME_CONFIG = {
     warningDelay: 2500, // Delay sau cảnh báo
 
     radius: 5, // Kích thước
-    baseSpeed: 0.045, // Tốc độ cơ bản - nhanh hơn xíu
+    baseSpeed: 0.195, // Tốc độ cơ bản - nhanh hơn xíu
     speedIncreasePerLevel: 0.03, // Tăng tốc độ mỗi level
 
     baseTurnSpeed: 0.025, // Tốc độ rẽ cơ bản - nhanh hơn
-    turnSpeedIncreasePerLevel: 0.01, // Tăng tốc độ rẽ mỗi level
+    turnSpeedIncreasePerLevel: 0.015, // Tăng tốc độ rẽ mỗi level
 
-    speedUpTime: 250, // Thời gian để tăng tốc
+    speedUpTime: 350, // Thời gian để tăng tốc
     speedUpMultiplier: 1.8, // Hệ số tăng tốc - nhanh hơn
     turnSpeedUpMultiplier: 1.5, // Hệ số tăng tốc độ rẽ
 
@@ -293,19 +293,19 @@ const GAME_CONFIG = {
 
     // Điều kiện mở khóa sự kiện - giảm mạnh để đa dạng ngay từ đầu
     unlockThresholds: {
-      laserSwarm: 2000, // level sớm
-      gravitationalAnomaly: 2500,
-      laserGrid: 3000, // level sớm
-      blackHoleChain: 3500,
-      missileBarrage: 4000, // level trung bình
-      timeWarp: 4500,
+      laserSwarm: 500, // level sớm
+      gravitationalAnomaly: 1000,
+      laserGrid: 1500, // level sớm
+      blackHoleChain: 2000,
+      missileBarrage: 2500, // level trung bình
+      timeWarp: 3000,
       // Events mới - xuất hiện rất sớm
-      wormholePortal: 1000, // level rất sớm
-      shieldGenerator: 2800, // level sớm
-      freezeZone: 1800, // level rất sớm
-      magneticStorm: 3800, // level trung bình
-      asteroidBelt: 2200, // level sớm
-      laserTurrets: 4200, // level trung bình
+      wormholePortal: 500, // level rất sớm
+      shieldGenerator: 1000, // level sớm
+      freezeZone: 1500, // level rất sớm
+      magneticStorm: 2000, // level trung bình
+      asteroidBelt: 2500, // level sớm
+      laserTurrets: 3000, // level trung bình
     },
 
     // Cài đặt từng sự kiện
@@ -614,7 +614,7 @@ const GAME_CONFIG = {
   // SCORING SYSTEM - Hệ thống điểm số (chỉ tăng điểm khi di chuyển)
   // =============================================================================
   scoring: {
-    movementMultiplier: 0.2, // Điểm từ di chuyển - tăng từ 0.12 để bù trừ việc bỏ survival bonus
+    movementMultiplier: 0.4, // Điểm từ di chuyển - tăng từ 0.12 để bù trừ việc bỏ survival bonus
     asteroidDestroy: 25, // Điểm phá hủy thiên thạch - khuyến khích phá hủy
     survivalBonus: 0, // Điểm sống sót - bỏ hoàn toàn, chỉ tăng điểm khi di chuyển
 

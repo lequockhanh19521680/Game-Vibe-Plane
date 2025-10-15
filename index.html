@@ -13,230 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <style>
-      :root {
-        --primary-color: #00ffff;
-        --danger-color: #ff4444;
-        --energy-color: #aa66cc;
-        --highlight-color: #ffbb33;
-        --missile-color: #f48fb1;
-        --crystal-color: #40c4ff;
-      }
-
-      body,
-      html {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background-color: #000;
-        font-family: "Exo 2", sans-serif;
-        color: #fff;
-        user-select: none;
-        -webkit-user-select: none;
-        touch-action: none;
-      }
-
-      #game-canvas {
-        display: block;
-        background-color: #050510; /* Darker base */
-        cursor: none;
-        transition: transform 0.1s ease-out;
-      }
-
-      #game-canvas.shake {
-        animation: screenShake 0.3s ease-in-out;
-      }
-
-      #ui-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        pointer-events: none;
-      }
-
-      .ui-element {
-        pointer-events: auto;
-        background: rgba(15, 15, 30, 0.6);
-        padding: 2rem 3rem;
-        border-radius: 20px;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(0, 255, 255, 0.25);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        animation: fadeIn 1s ease-out;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-
-      h1,
-      h2 {
-        margin: 0;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 4px;
-        color: var(--primary-color);
-        text-shadow: 0 0 5px var(--primary-color), 0 0 15px var(--primary-color),
-          0 0 30px var(--primary-color);
-        line-height: 1.1;
-      }
-
-      h1 {
-        font-size: 3.5rem;
-        margin-bottom: 0rem;
-      }
-      h2 {
-        font-size: 2.8rem;
-        margin-bottom: 0.5rem;
-      }
-
-      p {
-        margin: 0.5rem 0 1.5rem 0;
-        color: #ddd;
-        font-size: 1.1rem;
-        max-width: 450px;
-        line-height: 1.6;
-      }
-
-      button {
-        font-family: "Exo 2", sans-serif;
-        background: transparent;
-        border: 2px solid var(--primary-color);
-        color: var(--primary-color);
-        padding: 1rem 2.5rem;
-        font-size: 1.2rem;
-        border-radius: 12px;
-        cursor: pointer;
-        text-transform: uppercase;
-        transition: all 0.3s ease;
-        box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.3),
-          0 0 10px rgba(0, 255, 255, 0.3);
-        animation: pulse 2.5s infinite;
-      }
-
-      button:hover {
-        background: var(--primary-color);
-        color: #0a0a1a;
-        box-shadow: 0 0 25px var(--primary-color), 0 0 50px var(--primary-color);
-        transform: scale(1.05);
-        animation: none;
-      }
-
-      #score-container {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        text-align: left;
-        opacity: 0;
-        transition: opacity 0.5s;
-      }
-
-      #score-display,
-      #highscore-display,
-      #survival-display {
-        font-size: 1.8rem;
-        font-weight: 700;
-        text-shadow: 0 0 8px var(--primary-color);
-        color: var(--primary-color);
-      }
-      #highscore-display {
-        font-size: 1rem;
-        color: var(--highlight-color);
-        text-shadow: 0 0 8px var(--highlight-color);
-      }
-      #survival-display {
-        font-size: 1.2rem;
-        color: var(--energy-color);
-        text-shadow: 0 0 8px var(--energy-color);
-      }
-
-      #game-over-screen {
-        display: none;
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      #final-score {
-        font-size: 1.8rem;
-        color: var(--highlight-color);
-        text-shadow: 0 0 8px var(--highlight-color);
-        margin-bottom: 0;
-      }
-      #final-time {
-        font-size: 1.4rem;
-        color: var(--energy-color);
-        text-shadow: 0 0 8px var(--energy-color);
-        margin-bottom: 0.5rem;
-      }
-      #new-highscore-msg {
-        font-size: 1.2rem;
-        color: var(--primary-color);
-        text-shadow: 0 0 8px var(--primary-color);
-        display: none; /* Hidden by default */
-      }
-
-      #event-text {
-        position: absolute;
-        top: 25%;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 2.5rem;
-        color: var(--highlight-color);
-        text-shadow: 0 0 15px var(--highlight-color);
-        opacity: 0;
-        transition: opacity 0.5s ease-in-out;
-        text-transform: uppercase;
-        font-weight: 700;
-        pointer-events: none;
-      }
-
-      /* Keyframes */
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: scale(0.9);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
-      @keyframes pulse {
-        0% {
-          transform: scale(1);
-        }
-        50% {
-          transform: scale(1.03);
-        }
-        100% {
-          transform: scale(1);
-        }
-      }
-      @keyframes screenShake {
-        0%,
-        100% {
-          transform: translate(0, 0);
-        }
-        25% {
-          transform: translate(5px, 5px);
-        }
-        50% {
-          transform: translate(-5px, -5px);
-        }
-        75% {
-          transform: translate(5px, -5px);
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
     <canvas id="game-canvas"></canvas>
@@ -244,6 +21,8 @@
     <div id="ui-container">
       <div id="score-container">
         <div id="score-display">Score: 0</div>
+        <div id="level-display">Level: 1</div>
+        <div id="time-display">Time: 0s</div>
         <div id="highscore-display">High Score: 0</div>
         <div id="survival-display">Time: 0:00</div>
       </div>
@@ -577,6 +356,8 @@
         gameOverScreen: document.getElementById("game-over-screen"),
         scoreContainer: document.getElementById("score-container"),
         scoreDisplay: document.getElementById("score-display"),
+        levelDisplay: document.getElementById("level-display"),
+        timeDisplay: document.getElementById("time-display"),
         highscoreDisplay: document.getElementById("highscore-display"),
         survivalDisplay: document.getElementById("survival-display"),
         finalScoreEl: document.getElementById("final-score"),
@@ -605,6 +386,7 @@
         highScore = 0;
       let gameStartTime = 0,
         survivalTime = 0;
+      let lastDifficultyLevel = 0;
       let animationFrameId;
       let timers = {
         asteroid: 0,
@@ -634,6 +416,12 @@
           this.shieldActive = false;
           this.shieldTimer = 0;
           this.shieldDuration = 600; // 10 seconds at 60fps
+          this.thunderShieldActive = false;
+          this.thunderShieldTimer = 0;
+          this.thunderShieldDuration = 600; // 10 seconds at 60fps
+          this.thunderShieldRadius = this.radius * 3.5; // Range of the thunder shield
+          this.thunderBolts = [];
+          this.thunderTimer = 0;
         }
         draw() {
           this.trail.forEach((part) => {
@@ -658,7 +446,7 @@
           ctx.lineWidth = 2;
           ctx.stroke();
 
-          // Draw shield if active
+          // Draw regular shield if active
           if (this.shieldActive) {
             let shieldAlpha = Math.min(1, this.shieldTimer / 60);
 
@@ -693,6 +481,82 @@
             ctx.arc(0, 0, this.radius * 1.8, 0, Math.PI * 2);
             ctx.strokeStyle = "#00ffff";
             ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.globalAlpha = 1;
+          }
+
+          // Draw thunder shield if active
+          if (this.thunderShieldActive) {
+            let thunderAlpha = Math.min(1, this.thunderShieldTimer / 60);
+
+            // Flashing effect in last 5 seconds (300 frames)
+            if (this.thunderShieldTimer <= 300) {
+              const flashSpeed = this.thunderShieldTimer <= 120 ? 0.3 : 0.15; // Faster flash when almost expired
+              thunderAlpha *= Math.sin(Date.now() * flashSpeed) * 0.5 + 0.5;
+            }
+
+            ctx.globalAlpha = thunderAlpha * 0.6;
+
+            // Thunder shield outer ring
+            ctx.beginPath();
+            ctx.arc(0, 0, this.thunderShieldRadius, 0, Math.PI * 2);
+            const thunderGradient = ctx.createRadialGradient(
+              0,
+              0,
+              this.radius,
+              0,
+              0,
+              this.thunderShieldRadius
+            );
+            thunderGradient.addColorStop(0, "rgba(255, 255, 0, 0)");
+            thunderGradient.addColorStop(0.6, "rgba(255, 255, 0, 0.2)");
+            thunderGradient.addColorStop(1, "rgba(255, 200, 0, 0.4)");
+            ctx.strokeStyle = thunderGradient;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Electric arcs
+            const arcCount = 8;
+            for (let i = 0; i < arcCount; i++) {
+              if (Math.random() < 0.3) {
+                // Random flickering effect
+                const angle =
+                  (i / arcCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.2;
+                const length = this.thunderShieldRadius * 0.8;
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+
+                // Create jagged lightning
+                let x = 0,
+                  y = 0;
+                const segments = 4;
+                for (let j = 1; j <= segments; j++) {
+                  const segLength = (j / segments) * length;
+                  const jitter = length * 0.15 * (j < segments ? 1 : 0);
+                  x =
+                    Math.cos(angle) * segLength +
+                    (Math.random() - 0.5) * jitter;
+                  y =
+                    Math.sin(angle) * segLength +
+                    (Math.random() - 0.5) * jitter;
+                  ctx.lineTo(x, y);
+                }
+
+                ctx.strokeStyle = "#ffff00";
+                ctx.lineWidth = 1 + Math.random();
+                ctx.shadowColor = "#ffff00";
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+              }
+            }
+
+            // Inner thunder glow
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius * 2, 0, Math.PI * 2);
+            ctx.strokeStyle = "#ffff00";
+            ctx.lineWidth = 2;
             ctx.stroke();
 
             ctx.globalAlpha = 1;
@@ -737,11 +601,27 @@
             if (this.trail[i].alpha <= 0) this.trail.splice(i, 1);
           }
 
-          // Update shield
+          // Update regular shield
           if (this.shieldActive) {
             this.shieldTimer--;
             if (this.shieldTimer <= 0) {
               this.shieldActive = false;
+            }
+          }
+
+          // Update thunder shield
+          if (this.thunderShieldActive) {
+            this.thunderShieldTimer--;
+            this.thunderTimer++;
+
+            // Check for nearby objects every 10 frames to avoid excessive calculations
+            if (this.thunderTimer % 10 === 0) {
+              this.checkThunderShieldCollisions();
+            }
+
+            if (this.thunderShieldTimer <= 0) {
+              this.thunderShieldActive = false;
+              showEventText("⚡ Thunder Shield Deactivated ⚡");
             }
           }
 
@@ -752,6 +632,127 @@
           this.shieldActive = true;
           this.shieldTimer = this.shieldDuration;
           playSound("shield");
+        }
+
+        activateThunderShield() {
+          this.thunderShieldActive = true;
+          this.thunderShieldTimer = this.thunderShieldDuration;
+          this.thunderTimer = 0;
+
+          // Increase player speed slightly while thunder shield is active
+          globalSpeedMultiplier *= 0.8;
+
+          // Visual effect
+          for (let i = 0; i < 24; i++) {
+            const angle = (i / 24) * Math.PI * 2;
+            particles.push(
+              new Particle(
+                this.x + Math.cos(angle) * this.radius * 2,
+                this.y + Math.sin(angle) * this.radius * 2,
+                3,
+                "#ffff00",
+                {
+                  x: Math.cos(angle) * 5,
+                  y: Math.sin(angle) * 5,
+                }
+              )
+            );
+          }
+
+          showEventText("⚡ THUNDER SHIELD ACTIVATED! ⚡");
+          playSound("powerup");
+        }
+
+        checkThunderShieldCollisions() {
+          if (!this.thunderShieldActive) return;
+
+          // Check asteroids
+          for (let i = asteroids.length - 1; i >= 0; i--) {
+            const ast = asteroids[i];
+            const dist = Math.hypot(ast.x - this.x, ast.y - this.y);
+
+            if (dist < this.thunderShieldRadius + ast.radius) {
+              // Create lightning effect to the asteroid
+              this.createLightningStrike(ast.x, ast.y);
+
+              // Create explosion particles
+              for (let j = 0; j < 8; j++) {
+                const angle = Math.random() * Math.PI * 2;
+                particles.push(
+                  new Particle(
+                    ast.x + Math.cos(angle) * 5,
+                    ast.y + Math.sin(angle) * 5,
+                    Math.cos(angle) * 6,
+                    Math.sin(angle) * 6,
+                    "#ffff00"
+                  )
+                );
+              }
+
+              // Remove asteroid and add score
+              asteroids.splice(i, 1);
+              score += 15;
+              playSound("explosion", 0.4);
+            }
+          }
+
+          // Check missiles
+          for (let i = missiles.length - 1; i >= 0; i--) {
+            const missile = missiles[i];
+            const dist = Math.hypot(missile.x - this.x, missile.y - this.y);
+
+            if (dist < this.thunderShieldRadius + missile.radius) {
+              // Create lightning effect to the missile
+              this.createLightningStrike(missile.x, missile.y);
+
+              // Make the missile explode
+              missile.explode(true);
+              score += 25;
+            }
+          }
+        }
+
+        createLightningStrike(targetX, targetY) {
+          // Calculate vector from player to target
+          const dx = targetX - this.x;
+          const dy = targetY - this.y;
+          const angle = Math.atan2(dy, dx);
+          const distance = Math.hypot(dx, dy);
+
+          // Create lightning segments
+          const segments = [];
+          const segmentCount = 6;
+          const segmentLength = distance / segmentCount;
+
+          for (let i = 1; i <= segmentCount; i++) {
+            const baseX = this.x + Math.cos(angle) * segmentLength * i;
+            const baseY = this.y + Math.sin(angle) * segmentLength * i;
+
+            // Add jitter to all except the last segment
+            const jitter = i < segmentCount ? 10 : 0;
+            const offsetX = (Math.random() - 0.5) * jitter;
+            const offsetY = (Math.random() - 0.5) * jitter;
+
+            segments.push({
+              x: baseX + offsetX,
+              y: baseY + offsetY,
+            });
+          }
+
+          // Draw lightning effect
+          ctx.save();
+          ctx.strokeStyle = "#ffff00";
+          ctx.lineWidth = 2;
+          ctx.shadowColor = "#ffff00";
+          ctx.shadowBlur = 15;
+
+          ctx.beginPath();
+          ctx.moveTo(this.x, this.y);
+          segments.forEach((segment) => {
+            ctx.lineTo(segment.x, segment.y);
+          });
+          ctx.stroke();
+          ctx.restore();
         }
       }
 
@@ -898,18 +899,43 @@
 
           ctx.beginPath();
           ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
-          ctx.strokeStyle = this.type === "blackhole" ? "#aa66cc" : "#f48fb1";
+
+          // Different colors for different warning types
+          let warningColor, warningSymbol;
+          switch (this.type) {
+            case "blackhole":
+              warningColor = "#aa66cc"; // Purple for blackholes
+              warningSymbol = "!";
+              break;
+            case "voidrift":
+              warningColor = "#3d2963"; // Dark purple for void rifts
+              warningSymbol = "⚠";
+              break;
+            case "supernova":
+              warningColor = "#ff3333"; // Red for supernova
+              warningSymbol = "💥";
+              break;
+            case "plasma":
+              warningColor = "#ff6600"; // Orange for plasma
+              warningSymbol = "🔥";
+              break;
+            default:
+              warningColor = "#f48fb1"; // Pink for missiles and others
+              warningSymbol = "!";
+          }
+
+          ctx.strokeStyle = warningColor;
           ctx.lineWidth = 3;
           ctx.setLineDash([5, 5]);
           ctx.stroke();
           ctx.setLineDash([]);
 
           // Warning symbol
-          ctx.fillStyle = this.type === "blackhole" ? "#aa66cc" : "#f48fb1";
+          ctx.fillStyle = warningColor;
           ctx.font = "bold 20px Arial";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText("!", 0, 0);
+          ctx.fillText(warningSymbol, 0, 0);
 
           ctx.restore();
         }
@@ -1069,6 +1095,8 @@
           ctx.save();
           ctx.translate(this.x, this.y);
           ctx.rotate(this.rotation);
+
+          // Draw the asteroid shape
           ctx.beginPath();
           ctx.moveTo(this.shapePoints[0].x, this.shapePoints[0].y);
           for (let i = 1; i < this.shapePoints.length; i++) {
@@ -1080,6 +1108,36 @@
           ctx.strokeStyle = this.color;
           ctx.lineWidth = 3;
           ctx.stroke();
+
+          // Draw charged effect if asteroid is charged
+          if (this.charged) {
+            // Electric glow around the asteroid
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius * 1.3, 0, Math.PI * 2);
+            ctx.strokeStyle = this.chargeColor;
+            ctx.lineWidth = 2;
+            ctx.shadowColor = this.chargeColor;
+            ctx.shadowBlur = 15;
+            ctx.stroke();
+
+            // Electric sparks
+            for (let i = 0; i < 5; i++) {
+              const angle = Math.random() * Math.PI * 2;
+              const length = this.radius * 1.1;
+              const sparkLength = this.radius * 0.4;
+
+              ctx.beginPath();
+              ctx.moveTo(Math.cos(angle) * length, Math.sin(angle) * length);
+              ctx.lineTo(
+                Math.cos(angle) * (length + sparkLength),
+                Math.sin(angle) * (length + sparkLength)
+              );
+              ctx.strokeStyle = this.chargeColor;
+              ctx.lineWidth = 2;
+              ctx.stroke();
+            }
+          }
+
           ctx.restore();
         }
         update() {
@@ -2419,8 +2477,8 @@
             this.speedBoostTimer--;
             if (this.speedBoostTimer <= 0) {
               this.speedBoostActive = false;
-              globalSpeedMultiplier /= 0.3; // Remove slow effect
-              showEventText("⚡ Lightning Boost Ended");
+              globalSpeedMultiplier /= 0.8; // Remove speed effect
+              // Thunder shield expiration is handled by the player class
             }
           }
 
@@ -2519,27 +2577,12 @@
 
           this.speedBoostActive = true;
           this.speedBoostTimer = 600; // 10 seconds
-          globalSpeedMultiplier *= 0.3; // Slow down everything else
 
-          showEventText("⚡ LIGHTNING BOOST ACTIVATED! ⚡");
-          playSound("powerup");
+          // Activate thunder shield instead of just speed boost
+          player.activateThunderShield();
 
-          // Visual effect
-          for (let i = 0; i < 30; i++) {
-            const angle = (i / 30) * Math.PI * 2;
-            particles.push(
-              new Particle(
-                player.x + Math.cos(angle) * 20,
-                player.y + Math.sin(angle) * 20,
-                3,
-                "#ffff00",
-                {
-                  x: Math.cos(angle) * 6,
-                  y: Math.sin(angle) * 6,
-                }
-              )
-            );
-          }
+          // We still slow down everything else slightly
+          globalSpeedMultiplier *= 0.8;
         }
       }
 
@@ -2552,6 +2595,8 @@
           this.pulseTimer = 0;
           this.magneticFields = [];
           this.electricArcs = [];
+          this.chargedAsteroids = new Set(); // Track charged asteroids
+          this.lightningTimer = 0;
 
           // Create magnetic field centers
           for (let i = 0; i < 4; i++) {
@@ -2620,27 +2665,46 @@
             ctx.beginPath();
             ctx.moveTo(arc.startX, arc.startY);
 
-            // Jagged lightning path
-            let currentX = arc.startX;
-            let currentY = arc.startY;
-            const segments = 8;
-            const deltaX = (arc.endX - arc.startX) / segments;
-            const deltaY = (arc.endY - arc.startY) / segments;
+            // Draw lightning using segments if they exist
+            if (arc.segments) {
+              // Draw each segment of the lightning
+              for (const segment of arc.segments) {
+                ctx.lineTo(segment.x, segment.y);
+              }
+              // Connect to the end point
+              ctx.lineTo(arc.endX, arc.endY);
+            } else {
+              // Legacy code for old arcs without segments
+              let currentX = arc.startX;
+              let currentY = arc.startY;
+              const segments = 8;
+              const deltaX = (arc.endX - arc.startX) / segments;
+              const deltaY = (arc.endY - arc.startY) / segments;
 
-            for (let i = 1; i <= segments; i++) {
-              const nextX =
-                arc.startX + deltaX * i + (Math.random() - 0.5) * 30;
-              const nextY =
-                arc.startY + deltaY * i + (Math.random() - 0.5) * 30;
-              ctx.lineTo(nextX, nextY);
-              currentX = nextX;
-              currentY = nextY;
+              for (let i = 1; i <= segments; i++) {
+                const nextX =
+                  arc.startX + deltaX * i + (Math.random() - 0.5) * 30;
+                const nextY =
+                  arc.startY + deltaY * i + (Math.random() - 0.5) * 30;
+                ctx.lineTo(nextX, nextY);
+                currentX = nextX;
+                currentY = nextY;
+              }
             }
 
-            ctx.strokeStyle = "#88ddff";
-            ctx.lineWidth = 3;
-            ctx.shadowColor = "#88ddff";
-            ctx.shadowBlur = 10;
+            // Lethal lightning is brighter and more intense
+            if (arc.lethal) {
+              ctx.strokeStyle = "#ffff00"; // Bright yellow for lethal lightning
+              ctx.lineWidth = 5;
+              ctx.shadowColor = "#ffff00";
+              ctx.shadowBlur = 15;
+            } else {
+              ctx.strokeStyle = "#88ddff"; // Normal blue for regular arcs
+              ctx.lineWidth = 3;
+              ctx.shadowColor = "#88ddff";
+              ctx.shadowBlur = 10;
+            }
+
             ctx.stroke();
           });
 
@@ -2650,6 +2714,7 @@
         update() {
           this.age++;
           this.pulseTimer += 0.1;
+          this.lightningTimer++;
 
           // Intensity ramps up and down
           if (this.age < 60) {
@@ -2667,7 +2732,7 @@
             field.rotation += 0.02;
           });
 
-          // Generate electric arcs randomly
+          // Generate electric arcs randomly between magnetic fields
           if (Math.random() < 0.1) {
             const field1 =
               this.magneticFields[
@@ -2686,13 +2751,73 @@
                 endY: field2.y,
                 alpha: 1,
                 lifetime: 10,
+                segments: this.createLightningSegments(
+                  field1.x,
+                  field1.y,
+                  field2.x,
+                  field2.y
+                ),
               });
+            }
+          }
+
+          // Generate lethal lightning between charged asteroids and player
+          if (this.lightningTimer >= 30 && this.chargedAsteroids.size > 0) {
+            // Every half second
+            this.lightningTimer = 0;
+
+            // Find the closest charged asteroid to the player
+            let closestAsteroid = null;
+            let closestDistance = Infinity;
+
+            this.chargedAsteroids.forEach((asteroidId) => {
+              const asteroid = asteroids.find((a) => a.id === asteroidId);
+              if (asteroid) {
+                const dist = Math.hypot(
+                  player.x - asteroid.x,
+                  player.y - asteroid.y
+                );
+                if (dist < closestDistance && dist < 300) {
+                  // Only target within range
+                  closestDistance = dist;
+                  closestAsteroid = asteroid;
+                }
+              }
+            });
+
+            // Create lightning bolt to player if asteroid is found and close enough
+            if (closestAsteroid && closestDistance < 300) {
+              this.electricArcs.push({
+                startX: closestAsteroid.x,
+                startY: closestAsteroid.y,
+                endX: player.x,
+                endY: player.y,
+                alpha: 1,
+                lifetime: 10,
+                lethal: true, // This lightning can kill the player
+                segments: this.createLightningSegments(
+                  closestAsteroid.x,
+                  closestAsteroid.y,
+                  player.x,
+                  player.y
+                ),
+              });
+
+              // Play lightning sound
+              playSound("laser", 0.5);
             }
           }
 
           // Update electric arcs
           this.electricArcs = this.electricArcs.filter((arc) => {
             arc.alpha -= 0.1;
+
+            // Check if lethal lightning is hitting player
+            if (arc.lethal && arc.alpha > 0.7) {
+              // Only fresh bolts can kill
+              this.checkPlayerLightningCollision(arc);
+            }
+
             return arc.alpha > 0;
           });
 
@@ -2701,6 +2826,99 @@
 
           this.draw();
           return this.age < this.lifetime;
+        }
+
+        createLightningSegments(startX, startY, endX, endY) {
+          const segments = [];
+          const segmentCount = 8;
+          const deltaX = (endX - startX) / segmentCount;
+          const deltaY = (endY - startY) / segmentCount;
+
+          for (let i = 1; i <= segmentCount; i++) {
+            const baseX = startX + deltaX * i;
+            const baseY = startY + deltaY * i;
+            const offsetX = (Math.random() - 0.5) * 40;
+            const offsetY = (Math.random() - 0.5) * 40;
+
+            segments.push({
+              x: baseX + offsetX,
+              y: baseY + offsetY,
+            });
+          }
+
+          return segments;
+        }
+
+        checkPlayerLightningCollision(bolt) {
+          if (!player.shieldActive) {
+            // Lightning can be blocked by shield
+            // Calculate distance from player to each segment
+            let playerHit = false;
+
+            // Check if player is near the lightning path
+            const start = { x: bolt.startX, y: bolt.startY };
+
+            // Check each segment
+            for (let i = 0; i < bolt.segments.length; i++) {
+              const seg1 = i === 0 ? start : bolt.segments[i - 1];
+              const seg2 = bolt.segments[i];
+
+              const dist = this.distanceToLineSegment(
+                player.x,
+                player.y,
+                seg1.x,
+                seg1.y,
+                seg2.x,
+                seg2.y
+              );
+
+              if (dist < player.radius + 10) {
+                // 10px buffer for lightning thickness
+                playerHit = true;
+                break;
+              }
+            }
+
+            // Check last segment to end point
+            if (!playerHit) {
+              const lastSeg = bolt.segments[bolt.segments.length - 1];
+              const dist = this.distanceToLineSegment(
+                player.x,
+                player.y,
+                lastSeg.x,
+                lastSeg.y,
+                bolt.endX,
+                bolt.endY
+              );
+
+              if (dist < player.radius + 10) {
+                playerHit = true;
+              }
+            }
+
+            if (playerHit) {
+              endGame("lightning strike");
+            }
+          }
+        }
+
+        distanceToLineSegment(px, py, x1, y1, x2, y2) {
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const length = Math.hypot(dx, dy);
+
+          if (length === 0) return Math.hypot(px - x1, py - y1);
+
+          const t = Math.max(
+            0,
+            Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (length * length))
+          );
+          const projection = {
+            x: x1 + t * dx,
+            y: y1 + t * dy,
+          };
+
+          return Math.hypot(px - projection.x, py - projection.y);
         }
 
         applyMagneticForces() {
@@ -2716,12 +2934,16 @@
             )
               return;
 
+            // Check if object is in a magnetic field
+            let isInMagneticField = false;
+
             this.magneticFields.forEach((field) => {
               const dx = obj.x - field.x;
               const dy = obj.y - field.y;
               const distance = Math.hypot(dx, dy);
 
               if (distance < field.radius && distance > 0) {
+                isInMagneticField = true;
                 const force =
                   (field.strength *
                     this.intensity *
@@ -2748,6 +2970,23 @@
                 }
               }
             });
+
+            // Charge asteroids when they are in a magnetic field
+            if (obj.constructor.name === "Asteroid" && isInMagneticField) {
+              // Ensure asteroid has an ID
+              if (!obj.id) {
+                obj.id = Math.random().toString(36).substr(2, 9);
+              }
+
+              // Add to charged asteroids set
+              this.chargedAsteroids.add(obj.id);
+
+              // Add visual indicator that asteroid is charged
+              if (!obj.charged) {
+                obj.charged = true;
+                obj.chargeColor = "#88ddff"; // Electric blue color
+              }
+            }
           });
         }
       }
@@ -2916,7 +3155,7 @@
           this.age = 0;
           this.lifetime = 120; // 2 seconds
           this.intensity = 1;
-          this.hasCleared = false;
+          this.lastClearRadius = 0; // Keep track of last cleared radius
           this.createFragmentsOnClear = false;
         }
 
@@ -2977,14 +3216,41 @@
         update() {
           this.age++;
 
+          // Expand the supernova
           if (this.radius < this.maxRadius) {
             this.radius += this.expansionSpeed;
+
+            // Clear objects continuously as the shockwave expands
+            this.clearObjects();
+
+            // Add explosive particles for visual effect
+            if (this.age % 2 === 0) {
+              const particleCount = 4 + Math.floor(this.radius / 30); // Thêm nhiều hạt hơn khi supernova mở rộng
+              for (let i = 0; i < particleCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                // Tạo hạt ở vòng sóng mở rộng
+                const dist = this.radius - 20 + Math.random() * 40;
+                const colors = ["#ffeb3b", "#ff9800", "#ff5722", "#ffffff"]; // Nhiều màu sắc hơn
+                particles.push(
+                  new Particle(
+                    this.x + Math.cos(angle) * dist,
+                    this.y + Math.sin(angle) * dist,
+                    Math.random() * 3 + 1,
+                    colors[Math.floor(Math.random() * colors.length)],
+                    {
+                      x: Math.cos(angle) * (3 + Math.random() * 2),
+                      y: Math.sin(angle) * (3 + Math.random() * 2),
+                    }
+                  )
+                );
+              }
+            }
           }
 
-          // Clear all objects when shockwave reaches them (except black holes)
-          if (!this.hasCleared && this.radius > 50) {
-            this.clearObjects();
-            this.hasCleared = true;
+          // Add screen shake effect while expanding - tăng cường độ khi mở rộng
+          if (this.age % 10 === 0 && this.radius < this.maxRadius) {
+            const intensity = 0.3 + (this.radius / this.maxRadius) * 0.5;
+            triggerScreenShake(intensity);
           }
 
           this.draw();
@@ -2992,13 +3258,30 @@
         }
 
         clearObjects() {
-          const clearRadius = this.radius;
+          // Only clear objects in the expanding ring (between lastClearRadius and current radius)
+          const innerRadius = this.lastClearRadius;
+          const outerRadius = this.radius;
+
+          // Check if player is caught in the supernova's expanding shockwave
+          const playerDist = Math.hypot(player.x - this.x, player.y - this.y);
+          if (
+            playerDist < outerRadius &&
+            playerDist >= innerRadius &&
+            !player.shieldActive
+          ) {
+            // Player is caught in the supernova explosion
+            endGame("supernova explosion");
+            return; // Stop processing if game over
+          }
+
+          // Update last clear radius for next frame
+          this.lastClearRadius = this.radius;
 
           // Clear asteroids
           for (let i = asteroids.length - 1; i >= 0; i--) {
             const asteroid = asteroids[i];
             const dist = Math.hypot(asteroid.x - this.x, asteroid.y - this.y);
-            if (dist < clearRadius) {
+            if (dist < outerRadius && dist >= innerRadius) {
               // Create explosion particles
               for (let j = 0; j < 8; j++) {
                 const angle = Math.random() * Math.PI * 2;
@@ -3039,7 +3322,7 @@
           for (let i = missiles.length - 1; i >= 0; i--) {
             const missile = missiles[i];
             const dist = Math.hypot(missile.x - this.x, missile.y - this.y);
-            if (dist < clearRadius) {
+            if (dist < outerRadius && dist >= innerRadius) {
               missiles[i].explode();
               missiles.splice(i, 1);
             }
@@ -3049,7 +3332,7 @@
           for (let i = fragments.length - 1; i >= 0; i--) {
             const fragment = fragments[i];
             const dist = Math.hypot(fragment.x - this.x, fragment.y - this.y);
-            if (dist < clearRadius) {
+            if (dist < outerRadius && dist >= innerRadius) {
               fragments.splice(i, 1);
             }
           }
@@ -3060,7 +3343,7 @@
             const laserMidX = (laser.startX + laser.endX) / 2;
             const laserMidY = (laser.startY + laser.endY) / 2;
             const dist = Math.hypot(laserMidX - this.x, laserMidY - this.y);
-            if (dist < clearRadius) {
+            if (dist < outerRadius && dist >= innerRadius) {
               lasers.splice(i, 1);
             }
           }
@@ -3069,7 +3352,7 @@
           for (let i = laserMines.length - 1; i >= 0; i--) {
             const mine = laserMines[i];
             const dist = Math.hypot(mine.x - this.x, mine.y - this.y);
-            if (dist < clearRadius) {
+            if (dist < outerRadius && dist >= innerRadius) {
               laserMines.splice(i, 1);
             }
           }
@@ -3078,7 +3361,7 @@
           for (let i = energyOrbs.length - 1; i >= 0; i--) {
             const orb = energyOrbs[i];
             const dist = Math.hypot(orb.x - this.x, orb.y - this.y);
-            if (dist < clearRadius) {
+            if (dist < outerRadius && dist >= innerRadius) {
               energyOrbs.splice(i, 1);
             }
           }
@@ -3086,7 +3369,7 @@
           for (let i = plasmaFields.length - 1; i >= 0; i--) {
             const plasma = plasmaFields[i];
             const dist = Math.hypot(plasma.x - this.x, plasma.y - this.y);
-            if (dist < clearRadius) {
+            if (dist < outerRadius && dist >= innerRadius) {
               plasmaFields.splice(i, 1);
             }
           }
@@ -3094,7 +3377,7 @@
           for (let i = crystalShards.length - 1; i >= 0; i--) {
             const crystal = crystalShards[i];
             const dist = Math.hypot(crystal.x - this.x, crystal.y - this.y);
-            if (dist < clearRadius) {
+            if (dist < outerRadius && dist >= innerRadius) {
               crystalShards.splice(i, 1);
             }
           }
@@ -3102,14 +3385,37 @@
           for (let i = quantumPortals.length - 1; i >= 0; i--) {
             const portal = quantumPortals[i];
             const dist = Math.hypot(portal.x - this.x, portal.y - this.y);
-            if (dist < clearRadius) {
+            if (dist < outerRadius && dist >= innerRadius) {
               quantumPortals.splice(i, 1);
             }
           }
 
           // Black holes are NOT cleared by supernova
-          playSound("explosion");
-          triggerScreenShake(0.8);
+          if (outerRadius > innerRadius) {
+            // Chỉ phát ra âm thanh và hiệu ứng khi thực sự có vật thể bị xóa
+            playSound("explosion");
+            triggerScreenShake(0.4);
+
+            // Thêm hiệu ứng hạt khi vòng sóng mở rộng
+            const particleCount = 5;
+            for (let i = 0; i < particleCount; i++) {
+              const angle = Math.random() * Math.PI * 2;
+              const dist =
+                innerRadius + (outerRadius - innerRadius) * Math.random();
+              particles.push(
+                new Particle(
+                  this.x + Math.cos(angle) * dist,
+                  this.y + Math.sin(angle) * dist,
+                  Math.random() * 3 + 1,
+                  "#ffbb33",
+                  {
+                    x: Math.cos(angle) * 3,
+                    y: Math.sin(angle) * 3,
+                  }
+                )
+              );
+            }
+          }
         }
       }
 
@@ -3224,9 +3530,7 @@
           this.x = x;
           this.y = y;
           this.radius = GAME_CONFIG.blackHoles.baseRadius;
-          const difficultyLevel = Math.floor(
-            score / GAME_CONFIG.difficulty.levelUpInterval
-          );
+          const difficultyLevel = Math.floor(score / 3000);
 
           // Random variations for unpredictability
           const sizeVariation = 0.7 + Math.random() * 0.6; // 70%-130%
@@ -3322,9 +3626,16 @@
           });
 
           [player, ...asteroids, ...missiles, ...fragments].forEach((obj) => {
-            if (!obj) return;
+            if (
+              !obj ||
+              !obj.velocity ||
+              typeof obj.velocity !== "object" ||
+              typeof obj.velocity.x !== "number" ||
+              typeof obj.velocity.y !== "number"
+            )
+              return;
             const dist = Math.hypot(obj.x - this.x, obj.y - this.y);
-            if (dist < this.gravityRadius) {
+            if (dist < this.gravityRadius && dist > 0) {
               const angle = Math.atan2(this.y - obj.y, this.x - obj.x);
               const falloff = 1 - dist / this.gravityRadius;
 
@@ -3404,9 +3715,7 @@
             this.fromLeft = this.x < width / 2;
           }
           this.radius = GAME_CONFIG.missiles.radius;
-          const difficultyLevel = Math.floor(
-            score / GAME_CONFIG.difficulty.levelUpInterval
-          );
+          const difficultyLevel = Math.floor(score / 3000);
           this.speed =
             (GAME_CONFIG.missiles.baseSpeed +
               difficultyLevel * GAME_CONFIG.missiles.speedIncreasePerLevel) *
@@ -3536,8 +3845,29 @@
               x: Math.cos(angle) * fragmentSpeed,
               y: Math.sin(angle) * fragmentSpeed,
             };
-            fragments.push(new Fragment(this.x, this.y, vel));
+
+            // Create missile fragments (now non-lethal, just visual effect)
+            const missileFragment = new MissileFragment(this.x, this.y, vel);
+            // Still mark as lethal for visual effects, but they won't kill player
+            missileFragment.lethal = true;
+            fragments.push(missileFragment);
+
+            // Create visual effect particles
+            for (let j = 0; j < 3; j++) {
+              particles.push(
+                new Particle(
+                  this.x + Math.cos(angle) * 5,
+                  this.y + Math.sin(angle) * 5,
+                  Math.cos(angle) * 6,
+                  Math.sin(angle) * 6,
+                  "#ff6b9d"
+                )
+              );
+            }
           }
+
+          // Play explosion sound
+          playSound("explosion");
         }
       }
       class LaserMine {
@@ -3801,6 +4131,7 @@
         score = 0;
         gameStartTime = Date.now();
         survivalTime = 0;
+        lastDifficultyLevel = 0;
         spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval;
         globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed;
         nextEventScore = GAME_CONFIG.events.interval;
@@ -3836,7 +4167,7 @@
         quantumPortals = [];
         shieldGenerators = [];
         freezeZones = [];
-        laserTurrets = [];
+        // laserTurrets removed
         superNovas = [];
         wormholes = [];
         magneticStorms = [];
@@ -3892,9 +4223,8 @@
           mouse.x - prevMouse.x,
           mouse.y - prevMouse.y
         );
-        // Dynamic movement threshold - giảm dần theo level
-        const currentLevel =
-          Math.floor(score / GAME_CONFIG.difficulty.levelUpInterval) + 1;
+        // Dynamic movement threshold - giảm dần theo level (dựa trên điểm số)
+        const currentLevel = Math.floor(score / 3000) + 1; // Level tăng mỗi 3000 điểm
         const dynamicThreshold = Math.max(
           GAME_CONFIG.scoring.minMovementThreshold,
           GAME_CONFIG.scoring.baseMovementThreshold *
@@ -3907,6 +4237,8 @@
         }
         prevMouse = { ...mouse };
         uiElements.scoreDisplay.innerText = `Score: ${~~score}`;
+        uiElements.levelDisplay.innerText = `Level: ${currentLevel}`;
+        uiElements.timeDisplay.innerText = `Time: ${~~survivalTime}s`;
 
         [
           particles,
@@ -3924,7 +4256,7 @@
           quantumPortals,
           shieldGenerators,
           freezeZones,
-          laserTurrets,
+          // laserTurrets removed
           superNovas,
           wormholes,
           magneticStorms,
@@ -3949,7 +4281,6 @@
         quantumPortals = quantumPortals.filter((q) => q.update() !== false);
         shieldGenerators = shieldGenerators.filter((s) => s.update() !== false);
         freezeZones = freezeZones.filter((f) => f.update() !== false);
-        laserTurrets = laserTurrets.filter((l) => l.update() !== false);
         superNovas = superNovas.filter((s) => s.update() !== false);
         wormholes = wormholes.filter((w) => w.update() !== false);
         magneticStorms = magneticStorms.filter((m) => m.update() !== false);
@@ -3978,9 +4309,7 @@
         // --- Spawning Logic ---
         timers.asteroid++;
         if (timers.asteroid % currentSpawnInterval === 0) {
-          const difficultyLevel = Math.floor(
-            score / GAME_CONFIG.difficulty.levelUpInterval
-          );
+          const difficultyLevel = Math.floor(score / 3000); // Every 3000 points
           const radius =
             eventActive.type === "denseField"
               ? GAME_CONFIG.asteroids.minRadius +
@@ -4084,9 +4413,7 @@
         }
         if (score > GAME_CONFIG.lasers.spawnScore) {
           timers.laser++;
-          const difficultyLevel = Math.floor(
-            score / GAME_CONFIG.difficulty.levelUpInterval
-          );
+          const difficultyLevel = Math.floor(score / 3000);
           const laserInterval = Math.max(
             GAME_CONFIG.lasers.minInterval,
             GAME_CONFIG.lasers.baseInterval -
@@ -4253,7 +4580,7 @@
           }
         }
 
-        // Fragment vs Player collisions (lethal missile fragments)
+        // Fragment vs Player collisions (now just visual effects, not lethal)
         for (let i = fragments.length - 1; i >= 0; i--) {
           const fragment = fragments[i];
           if (
@@ -4261,8 +4588,32 @@
             Math.hypot(player.x - fragment.x, player.y - fragment.y) <
               player.radius + fragment.radius
           ) {
-            endGame("missile fragment collision");
-            return;
+            // Create spark visual effect instead of ending game
+            for (let j = 0; j < 8; j++) {
+              const angle = Math.random() * Math.PI * 2;
+              const speed = 2 + Math.random() * 3;
+              particles.push(
+                new Particle(
+                  player.x + Math.cos(angle) * player.radius,
+                  player.y + Math.sin(angle) * player.radius,
+                  Math.random() * 2 + 1,
+                  "#ff6b9d",
+                  {
+                    x: Math.cos(angle) * speed,
+                    y: Math.sin(angle) * speed,
+                  }
+                )
+              );
+            }
+
+            // Add small visual screen shake
+            triggerScreenShake(0.3);
+
+            // Play impact sound
+            playSound("collision", 0.5);
+
+            // Remove the fragment
+            fragments.splice(i, 1);
           }
         }
 
@@ -4489,8 +4840,6 @@
           }
         }
 
-        // LaserTurrets collision already handled in class
-
         // --- INTER-OBJECT COLLISIONS ---
 
         // EnergyOrbs vs Asteroids - Destroy asteroids
@@ -4576,27 +4925,23 @@
           }
         }
 
-        // Enhanced Difficulty Progression
-        const difficultyLevel = Math.floor(
-          score / GAME_CONFIG.difficulty.levelUpInterval
-        );
-        const timeDifficultyLevel = Math.floor(survivalTime / 30); // Every 30 seconds
-        const previousDifficultyLevel = Math.floor(
-          (score - distMoved * GAME_CONFIG.scoring.movementMultiplier) /
-            GAME_CONFIG.difficulty.levelUpInterval
-        );
+        // Enhanced Difficulty Progression - Score-based levels
+        const difficultyLevel = Math.floor(score / 3000); // Every 3000 points
 
-        if (difficultyLevel > previousDifficultyLevel && difficultyLevel > 0) {
+        if (difficultyLevel > lastDifficultyLevel && difficultyLevel > 0) {
+          // Update last difficulty level to prevent infinite spawning
+          lastDifficultyLevel = difficultyLevel;
+
           // Show difficulty increase message
           showEventText(`🌀 CHAOS LEVEL ${difficultyLevel} 🌀`);
           playSound("powerup");
 
-          // Trigger chaos-specific event
-          setTimeout(() => {
-            if (typeof triggerChaosEvent === "function") {
-              triggerChaosEvent(difficultyLevel);
-            }
-          }, 2000);
+          // Chaos Manifest event removed as requested
+          // setTimeout(() => {
+          //   if (typeof triggerChaosEvent === "function") {
+          //     triggerChaosEvent(difficultyLevel);
+          //   }
+          // }, 2000);
 
           // Progressive difficulty scaling
           globalSpeedMultiplier +=
@@ -4645,20 +4990,10 @@
             spawnInterval -= 1;
           globalSpeedMultiplier +=
             GAME_CONFIG.difficulty.microSpeedIncrease *
-            (1 + timeDifficultyLevel * 0.02);
+            (1 + Math.floor(score / 3000) * 0.02); // Using score-based levels
         }
 
-        // Survival milestone rewards
-        if (survivalTime > 0 && survivalTime % 60 === 0) {
-          // Every minute
-          showEventText(
-            `${Math.floor(survivalTime / 60)} Minute${
-              survivalTime >= 120 ? "s" : ""
-            } Survived!`
-          );
-          score += 100 * Math.floor(survivalTime / 60); // Bonus points
-          playSound("powerup");
-        }
+        // Survival milestone rewards removed as requested
       }
 
       function showEventText(text) {
@@ -4670,144 +5005,10 @@
         }, GAME_CONFIG.ui.eventText.duration);
       }
 
+      // Chaos Manifest event removed as requested
       function triggerChaosEvent(level) {
-        showEventText(`💀 CHAOS MANIFESTATION 💀`);
-
-        // Chaos effects based on level
-        if (level <= 3) {
-          // Low chaos: Visual effects + delayed event
-          triggerScreenShake(0.3);
-
-          // Chaos energy particles
-          for (let i = 0; i < 25; i++) {
-            particles.push(
-              new Particle(
-                Math.random() * canvas.width,
-                Math.random() * canvas.height,
-                Math.random() * 3 + 1,
-                "#ff4444",
-                {
-                  x: (Math.random() - 0.5) * 6,
-                  y: (Math.random() - 0.5) * 6,
-                }
-              )
-            );
-          }
-
-          // Spawn asteroids in chaotic pattern
-          for (let i = 0; i < 5; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = 2 + Math.random() * 3;
-            asteroids.push(
-              new Asteroid(
-                Math.random() * canvas.width,
-                -20,
-                Math.random() * 25 + 15,
-                "#ff4444",
-                {
-                  x: Math.cos(angle) * speed,
-                  y: Math.abs(Math.sin(angle)) * speed + 1,
-                }
-              )
-            );
-          }
-
-          setTimeout(() => triggerRandomEvent(), 2000);
-        } else if (level <= 6) {
-          // Medium chaos: Two spaced events + chaos spiral
-          setTimeout(() => triggerRandomEvent(), 1000);
-          setTimeout(() => triggerRandomEvent(), 3000);
-
-          triggerScreenShake(0.6);
-
-          // Chaos particles in spiral pattern
-          for (let i = 0; i < 50; i++) {
-            const angle = (i / 50) * Math.PI * 4; // Spiral pattern
-            const radius = i * 3;
-            particles.push(
-              new Particle(
-                canvas.width / 2 + Math.cos(angle) * radius,
-                canvas.height / 2 + Math.sin(angle) * radius,
-                Math.random() * 5 + 2,
-                "#8b0000",
-                {
-                  x: Math.cos(angle + Math.PI / 2) * 2,
-                  y: Math.sin(angle + Math.PI / 2) * 2,
-                }
-              )
-            );
-          }
-
-          // Spawn chaotic missiles
-          for (let i = 0; i < 3; i++) {
-            setTimeout(() => {
-              missiles.push(
-                new Missile(
-                  Math.random() * canvas.width,
-                  -10,
-                  player.x + (Math.random() - 0.5) * 100,
-                  player.y + (Math.random() - 0.5) * 100
-                )
-              );
-            }, i * 800);
-          }
-        } else {
-          // High chaos: Ultimate chaos mode
-          showEventText(`💀 REALITY BREAKDOWN 💀`);
-
-          // Spawn controlled chaos - only 2 events with longer delays
-          setTimeout(() => triggerRandomEvent(), 1500);
-          setTimeout(() => triggerRandomEvent(), 4000);
-
-          // Massive screen shake
-          triggerScreenShake(1.2);
-
-          // Create temporary black hole at random location
-          const chaosBlackHole = new BlackHole(
-            Math.random() * canvas.width,
-            Math.random() * canvas.height
-          );
-          chaosBlackHole.lifetime = 180; // 3 seconds
-          blackHoles.push(chaosBlackHole);
-
-          // Chaos vortex particles
-          for (let i = 0; i < 100; i++) {
-            const angle = (i / 100) * Math.PI * 2;
-            const radius = Math.random() * 200 + 50;
-            particles.push(
-              new Particle(
-                canvas.width / 2 + Math.cos(angle) * radius,
-                canvas.height / 2 + Math.sin(angle) * radius,
-                Math.random() * 6 + 3,
-                "#660066",
-                {
-                  x: Math.cos(angle + Math.PI / 2) * 4,
-                  y: Math.sin(angle + Math.PI / 2) * 4,
-                }
-              )
-            );
-          }
-
-          // Chaos asteroid rain
-          for (let i = 0; i < 8; i++) {
-            setTimeout(() => {
-              asteroids.push(
-                new Asteroid(
-                  Math.random() * canvas.width,
-                  -30,
-                  Math.random() * 30 + 20,
-                  "#660066",
-                  {
-                    x: (Math.random() - 0.5) * 4,
-                    y: Math.random() * 3 + 2,
-                  }
-                )
-              );
-            }, i * 200);
-          }
-        }
-
-        playSound("explosion");
+        // Function disabled - Chaos Manifest event removed as requested
+        return;
       }
 
       function triggerRandomEvent() {
@@ -4827,7 +5028,6 @@
           "freezeZone",
           "magneticStorm",
           "asteroidBelt",
-          "laserTurrets",
           "plasmaStorm",
           "crystalRain",
           "quantumTunnels",
@@ -4882,9 +5082,160 @@
             break;
           case "instantMissiles":
             if (score > 3000) {
-              missiles.push(new Missile());
-              missiles.push(new Missile());
-              showEventText("Surprise Missiles!");
+              eventActive.type = "instantMissiles";
+              showEventText("⚠️ MISSILES INCOMING ⚠️");
+
+              // Create missile warning indicators
+              class MissileWarning {
+                constructor(duration = 120) {
+                  this.missileData = [];
+                  this.timer = 0;
+                  this.duration = duration;
+
+                  // Pre-calculate 2 missile paths
+                  for (let i = 0; i < 2; i++) {
+                    // Create missile data similar to Missile class
+                    const spawnPattern = Math.random();
+                    let x,
+                      y,
+                      angle,
+                      fromLeft = false;
+
+                    if (spawnPattern < 0.4) {
+                      // Side spawn (40%)
+                      fromLeft = Math.random() > 0.5;
+                      x = fromLeft ? -20 : width + 20;
+                      y = Math.random() * height;
+                      angle = fromLeft ? 0 : Math.PI;
+                    } else if (spawnPattern < 0.7) {
+                      // Top/Bottom spawn (30%)
+                      const fromTop = Math.random() > 0.5;
+                      x = Math.random() * width;
+                      y = fromTop ? -20 : height + 20;
+                      angle = fromTop ? Math.PI / 2 : -Math.PI / 2;
+                    } else if (spawnPattern < 0.85) {
+                      // Corner spawn (15%)
+                      x = Math.random() < 0.5 ? -20 : width + 20;
+                      y = Math.random() < 0.5 ? -20 : height + 20;
+                      angle = Math.atan2(height / 2 - y, width / 2 - x);
+                      fromLeft = x < 0;
+                    } else {
+                      // Random edge spawn (15%)
+                      const edge = Math.floor(Math.random() * 4);
+                      switch (edge) {
+                        case 0: // Top
+                          x = Math.random() * width;
+                          y = -20;
+                          angle = Math.PI / 2;
+                          break;
+                        case 1: // Right
+                          x = width + 20;
+                          y = Math.random() * height;
+                          angle = Math.PI;
+                          break;
+                        case 2: // Bottom
+                          x = Math.random() * width;
+                          y = height + 20;
+                          angle = -Math.PI / 2;
+                          break;
+                        case 3: // Left
+                          x = -20;
+                          y = Math.random() * height;
+                          angle = 0;
+                          break;
+                      }
+                      fromLeft = x < width / 2;
+                    }
+
+                    this.missileData.push({
+                      x,
+                      y,
+                      angle,
+                      startX: x,
+                      startY: y,
+                    });
+                  }
+                }
+
+                draw() {
+                  ctx.save();
+
+                  // Calculate alpha based on time
+                  let alpha = 1;
+                  if (this.timer < 30) {
+                    alpha = this.timer / 30; // Fade in
+                  } else if (this.timer > this.duration - 30) {
+                    alpha = (this.duration - this.timer) / 30; // Fade out
+                  }
+
+                  ctx.globalAlpha = alpha;
+
+                  // Pulse effect for warning
+                  const pulse = Math.sin(this.timer * 0.2) * 0.5 + 0.5;
+
+                  for (const missile of this.missileData) {
+                    // Calculate projected path
+                    const pathLength = 200;
+                    const endX =
+                      missile.x + Math.cos(missile.angle) * pathLength;
+                    const endY =
+                      missile.y + Math.sin(missile.angle) * pathLength;
+
+                    // Draw trajectory line
+                    ctx.beginPath();
+                    ctx.moveTo(missile.startX, missile.startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.strokeStyle = `rgba(255, 0, 0, ${0.5 + pulse * 0.5})`;
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 8]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Draw warning icon at missile position
+                    ctx.fillStyle = "#ff0000";
+                    ctx.font = "bold 16px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("🚀", missile.startX, missile.startY);
+
+                    // Draw danger zone
+                    ctx.beginPath();
+                    ctx.arc(endX, endY, 30 + pulse * 10, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 0, 0, ${0.2 * alpha})`;
+                    ctx.fill();
+                    ctx.strokeStyle = `rgba(255, 0, 0, ${0.7 * alpha})`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Draw warning symbol in danger zone
+                    ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`;
+                    ctx.font = "bold 18px Arial";
+                    ctx.fillText("⚠️", endX, endY);
+                  }
+
+                  ctx.restore();
+                }
+
+                update() {
+                  this.timer++;
+                  this.draw();
+                  return this.timer < this.duration;
+                }
+              }
+
+              // Add missile warning
+              warnings.push(new MissileWarning(120)); // 2 second warning
+
+              playSound("warning");
+
+              // Launch missiles after warning
+              setTimeout(() => {
+                if (isGameRunning) {
+                  missiles.push(new Missile());
+                  missiles.push(new Missile());
+                  showEventText("🚀 MISSILES LAUNCHED! 🚀");
+                }
+              }, 120 * (1000 / 60)); // 2 seconds
             } else {
               eventActive.type = "denseField";
               showEventText("Asteroid Storm!");
@@ -4904,19 +5255,49 @@
             showEventText("Laser Swarm!");
             break;
           case "gravitationalAnomaly":
+            eventActive.type = "gravitationalAnomaly";
+            showEventText("⚠️ GRAVITATIONAL ANOMALY DETECTED ⚠️");
+
+            // Create warning indicators first
             for (
               let i = 0;
               i < GAME_CONFIG.events.gravitationalAnomaly.blackHoleCount;
               i++
-            )
-              blackHoles.push(
-                new BlackHole(
-                  Math.random() * width,
-                  Math.random() * height,
-                  true
-                )
+            ) {
+              const x = 100 + Math.random() * (width - 200);
+              const y = 100 + Math.random() * (height - 200);
+
+              // Add warning signs
+              warnings.push(
+                new Warning(x, y, "blackhole", 180) // 3 second warning
               );
-            showEventText("Gravitational Anomaly!");
+
+              // Create black holes after warning
+              setTimeout(() => {
+                if (isGameRunning) {
+                  blackHoles.push(new BlackHole(x, y, true));
+                  // Create visual effect for black hole appearance
+                  for (let j = 0; j < 12; j++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    particles.push(
+                      new Particle(
+                        x + Math.cos(angle) * 5,
+                        y + Math.sin(angle) * 5,
+                        Math.random() * 3 + 1,
+                        "#aa66cc",
+                        {
+                          x: Math.cos(angle) * 3,
+                          y: Math.sin(angle) * 3,
+                        }
+                      )
+                    );
+                  }
+                  playSound("blackhole");
+                }
+              }, 180 * (1000 / 60)); // 3 seconds
+            }
+
+            playSound("warning");
             break;
           case "asteroidCircle":
             eventActive.type = "asteroidCircle";
@@ -4953,6 +5334,8 @@
             }
             break;
           case "missileBarrage":
+            eventActive.type = "missileBarrage";
+            showEventText("🚀 MISSILE BARRAGE INCOMING! 🚀");
             for (let i = 0; i < GAME_CONFIG.events.missileBarrage.count; i++) {
               setTimeout(() => {
                 if (isGameRunning) {
@@ -4960,7 +5343,7 @@
                 }
               }, i * GAME_CONFIG.events.missileBarrage.delay);
             }
-            showEventText("Missile Barrage!");
+            playSound("warning");
             break;
           case "laserGrid":
             for (let i = 0; i < GAME_CONFIG.events.laserGrid.gridSize; i++) {
@@ -5047,60 +5430,177 @@
             triggerAsteroidBelt();
             break;
 
-          case "laserTurrets":
-            eventActive.type = "laserTurrets";
-            showEventText("Laser Turrets Deployed!");
-            for (let i = 0; i < GAME_CONFIG.events.laserTurrets.count; i++) {
-              const angle =
-                (i / GAME_CONFIG.events.laserTurrets.count) * Math.PI * 2;
-              const distance = 200 + Math.random() * 150;
-              const x = canvas.width / 2 + Math.cos(angle) * distance;
-              const y = canvas.height / 2 + Math.sin(angle) * distance;
-              laserTurrets.push(new LaserTurret(x, y));
-            }
-            playSound("laser");
-            break;
+          // Laser Turrets event removed as requested
 
           case "plasmaStorm":
             eventActive.type = "plasmaStorm";
-            showEventText("🔥 PLASMA INFERNO UNLEASHED 🔥");
+            showEventText("⚠️ PLASMA INFERNO IMMINENT ⚠️");
 
-            // Create massive plasma storm across screen
-            for (let i = 0; i < 20; i++) {
-              setTimeout(() => {
-                // Create plasma fields in wave patterns
-                const wave = Math.floor(i / 5);
-                const waveY = (canvas.height / 4) * wave + Math.random() * 50;
-                const x = Math.random() * canvas.width;
+            // Pre-calculate all plasma field positions
+            class PlasmaWarning {
+              constructor(duration) {
+                this.positions = [];
+                this.timer = 0;
+                this.duration = duration;
+                this.warningDelay = duration * 0.7; // 70% time for warning, 30% for impact
 
-                const plasma = new PlasmaField(x, waveY);
-                plasma.radius *= 1.5; // Bigger fields
-                plasma.damageRate = 0.04; // More dangerous
-                plasmaFields.push(plasma);
+                // Pre-calculate plasma positions for 4 waves, 5 fields per wave
+                const waveCount = 4;
+                const fieldsPerWave = 5;
 
-                // Create plasma lightning between fields
-                if (i % 3 === 0 && plasmaFields.length > 1) {
-                  for (let j = 0; j < 5; j++) {
-                    particles.push(
-                      new Particle(
-                        x + Math.random() * 100 - 50,
-                        waveY + Math.random() * 50 - 25,
-                        Math.random() * 4 + 2,
-                        "#ff6600",
-                        {
-                          x: (Math.random() - 0.5) * 6,
-                          y: (Math.random() - 0.5) * 6,
-                        }
-                      )
-                    );
+                for (let wave = 0; wave < waveCount; wave++) {
+                  const baseY = (canvas.height / 5) * (wave + 1);
+
+                  for (let field = 0; field < fieldsPerWave; field++) {
+                    // Calculate position within the wave
+                    const x =
+                      (canvas.width / (fieldsPerWave + 1)) * (field + 1) +
+                      (Math.random() - 0.5) * 80;
+                    const y = baseY + (Math.random() - 0.5) * 60;
+                    const timing =
+                      ((wave * fieldsPerWave + field) * 80) / (1000 / 60); // Convert ms to frames
+
+                    this.positions.push({
+                      x,
+                      y,
+                      wave,
+                      timing,
+                      radius: 60 + Math.random() * 20, // Randomize radius slightly
+                    });
                   }
                 }
-              }, i * 80);
+              }
+
+              draw() {
+                ctx.save();
+
+                for (const pos of this.positions) {
+                  // Only show warnings that will appear soon
+                  if (
+                    this.timer + 60 > pos.timing &&
+                    this.timer < this.warningDelay
+                  ) {
+                    // Calculate warning progress (0-1)
+                    let alpha = 1;
+                    if (this.timer > this.warningDelay - 30) {
+                      // Fade out as plasma approaches
+                      alpha = (this.warningDelay - this.timer) / 30;
+                    } else if (this.timer < 30) {
+                      // Fade in
+                      alpha = this.timer / 30;
+                    }
+
+                    // Calculate warning intensity
+                    const pulseIntensity =
+                      Math.sin(this.timer * 0.2 + pos.wave) * 0.5 + 0.5;
+
+                    // Draw warning zone
+                    ctx.globalAlpha = alpha * 0.5;
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, pos.radius * 0.8, 0, Math.PI * 2);
+                    const gradient = ctx.createRadialGradient(
+                      pos.x,
+                      pos.y,
+                      0,
+                      pos.x,
+                      pos.y,
+                      pos.radius * 0.8
+                    );
+                    gradient.addColorStop(
+                      0,
+                      `rgba(255, 80, 0, ${0.3 + pulseIntensity * 0.2})`
+                    );
+                    gradient.addColorStop(
+                      0.7,
+                      `rgba(255, 50, 0, ${0.2 * alpha})`
+                    );
+                    gradient.addColorStop(1, "rgba(255, 0, 0, 0)");
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+
+                    // Draw warning outline
+                    ctx.beginPath();
+                    ctx.arc(
+                      pos.x,
+                      pos.y,
+                      pos.radius * (0.7 + pulseIntensity * 0.1),
+                      0,
+                      Math.PI * 2
+                    );
+                    ctx.strokeStyle = `rgba(255, 120, 0, ${0.7 * alpha})`;
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([10, 5]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Draw warning symbol
+                    ctx.fillStyle = `rgba(255, 200, 0, ${alpha})`;
+                    ctx.font = "bold 18px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("🔥", pos.x, pos.y);
+                  }
+                }
+
+                ctx.restore();
+              }
+
+              update() {
+                this.timer++;
+                this.draw();
+                return this.timer < this.duration;
+              }
             }
 
-            // Screen shake for intensity
-            triggerScreenShake(0.8);
-            playSound("explosion");
+            // Create plasma warning with 180 frames duration (3 seconds)
+            const plasmaWarning = new PlasmaWarning(180);
+            warnings.push(plasmaWarning);
+
+            playSound("warning");
+
+            // Create plasma storm after warning delay
+            setTimeout(() => {
+              if (isGameRunning) {
+                showEventText("🔥 PLASMA INFERNO UNLEASHED 🔥");
+
+                // Use the same positions as in the warnings
+                for (let i = 0; i < plasmaWarning.positions.length; i++) {
+                  const pos = plasmaWarning.positions[i];
+
+                  setTimeout(() => {
+                    if (isGameRunning) {
+                      // Create plasma field at the exact warning position
+                      const plasma = new PlasmaField(pos.x, pos.y);
+                      plasma.radius = pos.radius * 1.2; // Slightly bigger than warning
+                      plasma.damageRate = 0.04; // More dangerous
+                      plasmaFields.push(plasma);
+
+                      // Create plasma lightning between fields
+                      if (i % 3 === 0 && plasmaFields.length > 1) {
+                        for (let j = 0; j < 5; j++) {
+                          particles.push(
+                            new Particle(
+                              pos.x + Math.random() * 100 - 50,
+                              pos.y + Math.random() * 50 - 25,
+                              Math.random() * 4 + 2,
+                              "#ff6600",
+                              {
+                                x: (Math.random() - 0.5) * 6,
+                                y: (Math.random() - 0.5) * 6,
+                              }
+                            )
+                          );
+                        }
+                      }
+                    }
+                  }, i * 80);
+                }
+
+                // Screen shake for intensity
+                triggerScreenShake(0.8);
+                playSound("explosion");
+              }
+            }, 180 * (1000 / 60)); // 3 seconds warning
             break;
 
           case "crystalRain":
@@ -5216,28 +5716,135 @@
 
           case "meteorBombardment":
             eventActive.type = "meteorBombardment";
-            showEventText("Meteor Bombardment!");
-            for (
-              let i = 0;
-              i < GAME_CONFIG.events.meteorBombardment.count;
-              i++
-            ) {
-              setTimeout(() => {
-                const x = Math.random() * canvas.width;
-                const y = -30;
-                const meteor = new Asteroid(
-                  x,
-                  y,
-                  20 + Math.random() * 15,
-                  "#ff6b35",
-                  {
-                    x: (Math.random() - 0.5) * 2,
-                    y: GAME_CONFIG.events.meteorBombardment.speed,
+            showEventText("⚠️ METEOR BOMBARDMENT IMMINENT ⚠️");
+
+            // Create meteor warning indicators
+            class MeteorWarning {
+              constructor(duration) {
+                this.positions = [];
+                this.timer = 0;
+                this.duration = duration;
+                this.warningDelay = duration * 0.7; // 70% time for warning, 30% for impact
+
+                // Pre-calculate meteor positions
+                for (
+                  let i = 0;
+                  i < GAME_CONFIG.events.meteorBombardment.count;
+                  i++
+                ) {
+                  this.positions.push({
+                    x: Math.random() * canvas.width,
+                    y: -30,
+                    impactY: Math.random() * (canvas.height - 100) + 50,
+                    timing:
+                      (i * GAME_CONFIG.events.meteorBombardment.delay) /
+                      (1000 / 60), // Convert ms to frames
+                  });
+                }
+              }
+
+              draw() {
+                ctx.save();
+                for (const pos of this.positions) {
+                  // Only show warnings for meteors that will arrive soon
+                  if (
+                    this.timer + 60 > pos.timing &&
+                    this.timer < this.warningDelay
+                  ) {
+                    // Calculate warning progress (0-1)
+                    let alpha = 1;
+                    if (this.timer > this.warningDelay - 30) {
+                      // Fade out as meteor approaches
+                      alpha = (this.warningDelay - this.timer) / 30;
+                    } else if (this.timer < 30) {
+                      // Fade in
+                      alpha = this.timer / 30;
+                    }
+
+                    // Calculate warning line intensity
+                    const pulseIntensity =
+                      Math.sin(this.timer * 0.2) * 0.5 + 0.5;
+
+                    // Draw meteor trajectory
+                    ctx.globalAlpha = alpha * 0.6;
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, 0);
+                    ctx.lineTo(pos.x, pos.impactY);
+                    ctx.strokeStyle = `rgba(255, 80, 0, ${
+                      0.6 + pulseIntensity * 0.4
+                    })`;
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([8, 4]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Draw warning indicator at impact point
+                    ctx.beginPath();
+                    ctx.arc(
+                      pos.x,
+                      pos.impactY,
+                      20 + pulseIntensity * 5,
+                      0,
+                      Math.PI * 2
+                    );
+                    ctx.fillStyle = `rgba(255, 80, 0, ${0.2 * alpha})`;
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = `rgba(255, 180, 0, ${0.8 * alpha})`;
+                    ctx.stroke();
+
+                    // Draw warning symbol
+                    ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`;
+                    ctx.font = "bold 16px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("⚠️", pos.x, pos.impactY);
                   }
-                );
-                asteroids.push(meteor);
-              }, i * GAME_CONFIG.events.meteorBombardment.delay);
+                }
+                ctx.restore();
+              }
+
+              update() {
+                this.timer++;
+                this.draw();
+                return this.timer < this.duration;
+              }
             }
+
+            // Create meteor warning with 180 frames duration (3 seconds)
+            const meteorWarning = new MeteorWarning(180);
+            warnings.push(meteorWarning);
+
+            playSound("warning");
+
+            // Launch meteors after warning delay
+            setTimeout(() => {
+              if (isGameRunning) {
+                showEventText("☄️ METEOR BOMBARDMENT STARTED ☄️");
+
+                for (
+                  let i = 0;
+                  i < GAME_CONFIG.events.meteorBombardment.count;
+                  i++
+                ) {
+                  setTimeout(() => {
+                    // Use the same positions as in the warning
+                    const position = meteorWarning.positions[i];
+                    const meteor = new Asteroid(
+                      position.x,
+                      -30,
+                      20 + Math.random() * 15,
+                      "#ff6b35",
+                      {
+                        x: (Math.random() - 0.5) * 2,
+                        y: GAME_CONFIG.events.meteorBombardment.speed,
+                      }
+                    );
+                    asteroids.push(meteor);
+                  }, i * GAME_CONFIG.events.meteorBombardment.delay);
+                }
+              }
+            }, 180 * 0.7 * (1000 / 60)); // 70% of warning duration
             break;
 
           case "voidRifts":
@@ -5278,10 +5885,122 @@
             const superX = 100 + Math.random() * (canvas.width - 200);
             const superY = 100 + Math.random() * (canvas.height - 200);
 
-            // Show warning with expanding circle
+            // Enhanced warning with expanding circle and multiple visual indicators
             warnings.push(
               new Warning(superX, superY, "supernova", 180) // 3 second warning
             );
+
+            // Add an expanding circular warning zone
+            class SuperNovaWarning {
+              constructor(x, y, radius, duration) {
+                this.x = x;
+                this.y = y;
+                this.maxRadius = radius;
+                this.radius = 30;
+                this.growthRate = (radius - 30) / (duration * 0.7); // Grow to max size in 70% of the duration
+                this.timer = 0;
+                this.duration = duration;
+                this.alpha = 0;
+              }
+
+              draw() {
+                ctx.save();
+
+                // Calculate alpha based on time
+                if (this.timer < this.duration * 0.2) {
+                  this.alpha = this.timer / (this.duration * 0.2); // Fade in
+                } else if (this.timer > this.duration * 0.7) {
+                  this.alpha =
+                    (this.duration - this.timer) / (this.duration * 0.3); // Fade out
+                } else {
+                  this.alpha = 1;
+                }
+
+                ctx.globalAlpha = this.alpha * 0.6;
+
+                // Draw pulsing outer ring
+                const pulse = Math.sin(this.timer * 0.1) * 0.5 + 0.5;
+                ctx.beginPath();
+                ctx.arc(
+                  this.x,
+                  this.y,
+                  this.radius * (1 + pulse * 0.05),
+                  0,
+                  Math.PI * 2
+                );
+                ctx.strokeStyle = "#ff3333";
+                ctx.lineWidth = 3;
+                ctx.setLineDash([15, 10]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Draw danger zone
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                const gradient = ctx.createRadialGradient(
+                  this.x,
+                  this.y,
+                  0,
+                  this.x,
+                  this.y,
+                  this.radius
+                );
+                gradient.addColorStop(0, "rgba(255, 0, 0, 0.1)");
+                gradient.addColorStop(0.7, "rgba(255, 80, 0, 0.05)");
+                gradient.addColorStop(1, "rgba(255, 150, 0, 0)");
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // Draw warning symbols around the perimeter
+                const symbolCount = 8;
+                for (let i = 0; i < symbolCount; i++) {
+                  const angle = (i / symbolCount) * Math.PI * 2;
+                  const x = this.x + Math.cos(angle) * this.radius;
+                  const y = this.y + Math.sin(angle) * this.radius;
+
+                  ctx.fillStyle = `rgba(255, 255, 0, ${
+                    this.alpha * (Math.sin(this.timer * 0.2 + i) * 0.5 + 0.5)
+                  })`;
+                  ctx.font = "bold 18px Arial";
+                  ctx.textAlign = "center";
+                  ctx.textBaseline = "middle";
+                  ctx.fillText("⚠️", x, y);
+                }
+
+                // Draw central warning symbol
+                ctx.fillStyle = `rgba(255, 50, 50, ${this.alpha})`;
+                ctx.font = "bold 32px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("💥", this.x, this.y);
+
+                ctx.restore();
+              }
+
+              update() {
+                this.timer++;
+
+                // Grow the warning zone
+                if (
+                  this.radius < this.maxRadius &&
+                  this.timer < this.duration * 0.7
+                ) {
+                  this.radius += this.growthRate;
+                }
+
+                this.draw();
+                return this.timer < this.duration;
+              }
+            }
+
+            // Add the enhanced SuperNova warning
+            const superNovaWarning = new SuperNovaWarning(
+              superX,
+              superY,
+              300,
+              180
+            );
+            warnings.push(superNovaWarning);
 
             playSound("warning");
 
@@ -5297,14 +6016,42 @@
 
                 // Massive screen shake
                 triggerScreenShake(1.5);
+
+                // Thêm hiệu ứng âm thanh mạnh hơn
                 playSound("explosion");
+                setTimeout(() => playSound("explosion"), 200);
+                setTimeout(() => playSound("blackholeDestroy"), 400);
+
+                // Thêm hiệu ứng hạt ngay tại vị trí tạo supernova
+                for (let i = 0; i < 24; i++) {
+                  const angle = (i / 24) * Math.PI * 2;
+                  const speed = 5 + Math.random() * 10;
+                  particles.push(
+                    new Particle(
+                      superX,
+                      superY,
+                      Math.random() * 4 + 2,
+                      "#ffffff",
+                      {
+                        x: Math.cos(angle) * speed,
+                        y: Math.sin(angle) * speed,
+                      }
+                    )
+                  );
+                }
+
+                // Hiệu ứng sáng lóa
+                ctx.save();
+                ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+                ctx.fillRect(0, 0, width, height);
+                ctx.restore();
               }
             }, 180 * (1000 / 60)); // 3 seconds
             break;
 
           case "lightningStorm":
             eventActive.type = "lightningStorm";
-            showEventText("⚡ LIGHTNING STORM INCOMING ⚡");
+            showEventText("⚡ THUNDER SHIELD OPPORTUNITY! ⚡");
 
             // Create lightning storm
             lightningStorms.push(new LightningStorm());
