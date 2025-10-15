@@ -206,7 +206,7 @@ const GAME_CONFIG = {
   // EVENT SYSTEM - Hệ thống sự kiện
   // =============================================================================
   events: {
-    interval: 1200, // Khoảng cách sự kiện - tăng từ 1000 để ít sự kiện hơn
+    interval: 3000, // Khoảng cách sự kiện - tăng mạnh để giãn ra nhiều
     duration: 5000, // Thời gian hiển thị message (ms)
 
     // Event types - MASSIVELY EXPANDED
