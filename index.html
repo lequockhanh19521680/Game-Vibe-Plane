@@ -53,7 +53,20 @@
     
     <!-- Load game modules in order -->
     <script src="js/audio/audioSystem.js"></script>
-    <script src="js/entities.js"></script>
+    
+    <!-- Load base classes first (SOLID principles) -->
+    <script src="js/base/Entity.js"></script>
+    
+    <!-- Load entity classes -->
+    <script src="js/entities/player.js"></script>
+    <script src="js/entities/visuals.js"></script>
+    <script src="js/entities/warnings.js"></script>
+    <script src="js/entities/obstacles.js"></script>
+    <script src="js/entities/collectibles.js"></script>
+    <script src="js/entities/hazards.js"></script>
+    <script src="js/entities/portals.js"></script>
+    
+    <!-- Load game logic -->
     <script src="js/core/game.js"></script>
     <script src="js/utils/helpers.js"></script>
     <script src="js/main.js"></script>
