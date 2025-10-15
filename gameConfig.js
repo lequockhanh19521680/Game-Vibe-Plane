@@ -527,7 +527,7 @@ const GAME_CONFIG = {
       powerup: 0.06,
       blackhole: 0.03,
       backgroundMusic: 0.015,
-      // Âm thanh mới
+      // Âm thanh không gian
       blackholeGrowth: 0.02,
       blackholeDestroy: 0.04,
       fragmentHit: 0.08,
@@ -535,13 +535,50 @@ const GAME_CONFIG = {
       wormhole: 0.05,
       shield: 0.04,
       freeze: 0.03,
+      // Âm thanh không gian mới
+      plasmaStorm: 0.07,
+      temporalRift: 0.06,
+      quantumFluctuation: 0.05,
+      cosmicRadiation: 0.04,
+      pulsarBurst: 0.06,
+      supernova: 0.09,
+      ambientSpace: 0.02,
     },
 
-    // Cài đặt nhạc nền
+    // Cài đặt nhạc nền vũ trụ
     backgroundMusic: {
-      frequencies: [220, 330, 440, 550], // Tần số nốt nhạc
-      interval: 1500, // Khoảng cách giữa các nốt (ms)
-      duration: 2, // Thời gian mỗi nốt (s)
+      // Tần số nốt nhạc được điều chỉnh để tạo không gian vũ trụ sâu lắng
+      // Sử dụng các tần số hài hòa tự nhiên và quãng mở tạo cảm giác không gian vô tận
+      frequencies: [110, 146.83, 196, 220, 293.66, 329.63, 392],
+
+      // Các mẫu âm thanh khác nhau cho cảm giác thay đổi liên tục
+      patterns: [
+        [0, 2, 4, 6], // Quãng năm và tám tạo cảm giác rộng mở
+        [1, 3, 5, 3], // Series dựa trên các quãng bốn tạo cảm giác bí ẩn
+        [6, 4, 2, 0], // Dải giảm dần gợi cảm giác về quy mô vũ trụ
+        [2, 0, 3, 5], // Mẫu ngẫu nhiên tạo cảm giác không thể dự đoán
+      ],
+
+      // Các loại sóng âm khác nhau cho mỗi lớp nhạc nền
+      waveTypes: ["sine", "triangle", "sine", "triangle"],
+
+      // Thời gian cài đặt
+      interval: 2000, // Khoảng cách giữa các nốt (ms) - kéo dài để tạo cảm giác thời gian vũ trụ
+      duration: 3.5, // Thời gian mỗi nốt (s) - kéo dài để âm thanh trôi chảy hơn
+      fadeTime: 2, // Thời gian fade để âm thanh mượt mà hơn
+
+      // Cài đặt biến điệu không gian
+      spaceModulation: {
+        enable: true, // Bật biến điệu không gian
+        depth: 3, // Độ sâu biến điệu (Hz)
+        speed: 0.1, // Tốc độ biến điệu (Hz)
+      },
+
+      // Reverb và không gian
+      spatialSettings: {
+        reverbLevel: 0.3, // Mức độ âm vang không gian
+        stereoWidth: 0.7, // Độ rộng âm thanh stereo (0-1)
+      },
     },
   },
 
