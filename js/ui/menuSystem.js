@@ -10,6 +10,9 @@ function showMainMenu() {
   // Show main menu screen
   uiElements.mainMenuScreen.style.display = "flex";
   uiElements.mainMenuScreen.classList.add("active");
+
+  // Ensure menu-active class is on body for cursor styling
+  document.body.classList.add("menu-active");
 }
 
 // Function to show the leaderboard screen
@@ -22,6 +25,9 @@ function showLeaderboard() {
   // Show leaderboard screen
   uiElements.leaderboardScreen.style.display = "flex";
   uiElements.leaderboardScreen.classList.add("active");
+
+  // Ensure menu-active class is on body for cursor styling
+  document.body.classList.add("menu-active");
 
   // Populate leaderboard data
   updateLeaderboard();
@@ -37,6 +43,47 @@ function showHelp() {
   // Show help screen
   uiElements.helpScreen.style.display = "flex";
   uiElements.helpScreen.classList.add("active");
+
+  // Ensure menu-active class is on body for cursor styling
+  document.body.classList.add("menu-active");
+}
+
+// Function to handle cloud saving/uploading issues
+function handleCloudSaveIssue(error) {
+  console.error('Cloud save error:', error);
+  
+  // Create and show a notification
+  const notification = document.createElement('div');
+  notification.className = 'cloud-save-notification';
+  notification.innerHTML = `
+    <div class="notification-content">
+      <h3>Cloud Save Error</h3>
+      <p>There was a problem accessing cloud storage:</p>
+      <p class="error-message">${error.message || 'File permission error'}</p>
+      <p>Possible solutions:</p>
+      <ul>
+        <li>Check browser permissions for file access</li>
+        <li>Try a different browser</li>
+        <li>Make sure you're using HTTPS</li>
+        <li>Check S3 bucket CORS configuration</li>
+      </ul>
+      <button id="close-notification">Close</button>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Add event listener to close button
+  document.getElementById('close-notification').addEventListener('click', () => {
+    notification.remove();
+  });
+  
+  // Auto-close after 15 seconds
+  setTimeout(() => {
+    if (document.body.contains(notification)) {
+      notification.remove();
+    }
+  }, 15000);
 }
 
 // Function to update the leaderboard with current data

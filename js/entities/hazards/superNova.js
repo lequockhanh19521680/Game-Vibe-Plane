@@ -117,14 +117,25 @@ class SuperNova {
 
     // Check if player is caught in the supernova's expanding shockwave
     const playerDist = Math.hypot(player.x - this.x, player.y - this.y);
-    if (
-      playerDist < outerRadius &&
-      playerDist >= innerRadius &&
-      !player.shieldActive
-    ) {
-      // Player is caught in the supernova explosion
-      endGame("supernova explosion");
-      return; // Stop processing if game over
+    if (playerDist < outerRadius && playerDist >= innerRadius) {
+      if (player.shieldActive) {
+        // Player có khiên thường, vẫn bảo vệ được
+        player.shieldHit(); // Hiệu ứng khiên bị tấn công
+        playSound("shield-hit", 1.0);
+      } else if (player.thunderShieldActive) {
+        // Player có khiên thunder, kích hoạt phản đòn sóng xung kích điện
+        player.triggerThunderCounterShockwave();
+
+        // Xóa siêu tân tinh vì đã bị phản đòn
+        superNovas = superNovas.filter((sn) => sn !== this);
+
+        // Tiếp tục xử lý các vật thể khác
+        return;
+      } else {
+        // Player không có bảo vệ gì, kết thúc trò chơi
+        endGame("supernova explosion");
+        return; // Stop processing if game over
+      }
     }
 
     // Update last clear radius for next frame

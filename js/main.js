@@ -74,7 +74,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Hide cursor during gameplay
-    document.body.style.cursor = "none";
+    document.body.classList.remove("menu-active");
+    document.body.classList.remove("game-over");
+    document.body.classList.add("game-running");
 
     // Initialize game
     if (typeof window.init === "function") {
@@ -110,8 +112,9 @@ document.addEventListener("DOMContentLoaded", function () {
     // Show main menu container
     uiElements.mainMenuContainer.style.display = "flex";
 
-    // Make sure cursor is visible
-    document.body.style.cursor = "default";
+    // Make sure cursor is visible and remove game-over class
+    document.body.classList.remove("game-running");
+    document.body.classList.remove("game-over");
 
     // Make sure we're showing the main menu panel, not leaderboard or help
     showMainMenu();
@@ -129,8 +132,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!isGameRunning) return;
     console.log(`Game Over! Reason: ${reason}`);
     isGameRunning = false;
-    // Show cursor again when game ends
-    document.body.style.cursor = "default";
+    // Show cursor when game ends
+    document.body.classList.remove("game-running");
+    document.body.classList.add("game-over");
     stopBackgroundMusic();
     playSound("explosion");
     cancelAnimationFrame(animationFrameId);
@@ -316,15 +320,10 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   window.addEventListener("mousemove", (e) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-
-    // Reset the cursor style to default when game is not running
-    if (!isGameRunning) {
-      document.body.style.cursor = "default";
-    } else {
-      // Hide cursor during gameplay
-      document.body.style.cursor = "none";
+    // Only track mouse position if the game is running
+    if (isGameRunning) {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
     }
   });
   window.addEventListener(
@@ -368,6 +367,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // --- Initial Draw ---
   // Initialize UI state
+  document.body.classList.add("menu-active");
   uiElements.mainMenuContainer.style.display = "flex";
   showMainMenu(); // Make sure the main menu panel is visible, not leaderboard/help
   uiElements.gameOverScreen.style.display = "none";

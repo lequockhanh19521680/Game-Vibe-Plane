@@ -96,16 +96,56 @@ window.init = function () {
   magneticStorms = [];
   lightningStorms = [];
 
-  // Activate initial shield at game start
-  if (GAME_CONFIG.player.initialShieldDuration) {
-    player.shieldActive = true;
-    player.shieldTimer = GAME_CONFIG.player.initialShieldDuration;
-    const shieldSeconds = Math.floor(
-      GAME_CONFIG.player.initialShieldDuration / 60
+  // Kích hoạt sự kiện sớm ngay từ đầu game để tăng sự thú vị
+  setTimeout(() => {
+    if (isGameRunning) {
+      triggerRandomEvent();
+    }
+  }, 3000); // Kích hoạt sự kiện đầu tiên sau 3 giây
+
+  // Thiết lập lịch trình sự kiện sớm ban đầu
+  setTimeout(() => {
+    if (isGameRunning) {
+      triggerRandomEvent();
+    }
+  }, 8000); // Kích hoạt sự kiện thứ hai sau 8 giây
+
+  // Kích hoạt thunder shield ngay từ đầu game thay vì shield thường
+  player.activateThunderShield(); // Kích hoạt thunder shield
+  const thunderShieldSeconds = Math.floor(player.thunderShieldDuration / 60);
+  showEventText(`⚡ THUNDER SHIELD Activated! (${thunderShieldSeconds}s) ⚡`);
+
+  // Hiệu ứng kích hoạt ban đầu mạnh mẽ hơn
+  for (let i = 0; i < 30; i++) {
+    const angle = (i / 30) * Math.PI * 2;
+    const distance = player.radius * (2 + Math.random() * 2);
+    particles.push(
+      new Particle(
+        player.x + Math.cos(angle) * distance,
+        player.y + Math.sin(angle) * distance,
+        Math.random() * 3 + 1,
+        "#ffff00",
+        {
+          x: Math.cos(angle) * 4,
+          y: Math.sin(angle) * 4,
+        }
+      )
     );
-    showEventText(`Starting Shield Activated! (${shieldSeconds}s)`);
-    playSound("shield");
   }
+
+  // Hiệu ứng tia sét xung quanh người chơi khi bắt đầu game
+  setTimeout(() => {
+    if (isGameRunning && player.thunderShieldActive) {
+      const angles = 8; // 8 tia sét
+      for (let i = 0; i < angles; i++) {
+        const angle = (i / angles) * Math.PI * 2;
+        const targetX = player.x + Math.cos(angle) * player.thunderShieldRadius;
+        const targetY = player.y + Math.sin(angle) * player.thunderShieldRadius;
+        player.createLightningStrike(targetX, targetY, true);
+      }
+      playSound("thunder", 0.7);
+    }
+  }, 300);
 
   // Create stars
   for (let i = 0; i < 3; i++) {
@@ -421,14 +461,22 @@ window.animate = function () {
   }
 
   // Thêm cơ hội ngẫu nhiên cho sự kiện xuất hiện
-  if (Math.random() < 0.0003 && !eventActive.type) {
-    // 0.03% cơ hội mỗi frame
+  if (Math.random() < 0.0015 && !eventActive.type) {
+    // 0.15% cơ hội mỗi frame (tăng từ 0.03% lên 0.15% - gấp 5 lần)
     triggerRandomEvent();
   }
   if (eventActive.type && timers.difficulty > eventActive.endTime) {
     if (eventActive.type === "speedZone")
       globalSpeedMultiplier /= GAME_CONFIG.events.speedZone.speedMultiplier;
     eventActive.type = null;
+    // Thêm cơ hội kích hoạt sự kiện tiếp theo ngay sau khi sự kiện hiện tại kết thúc (25% cơ hội)
+    if (Math.random() < 0.25) {
+      setTimeout(() => {
+        if (isGameRunning && !eventActive.type) {
+          triggerRandomEvent();
+        }
+      }, 500); // Chờ 0.5 giây trước khi kích hoạt sự kiện tiếp theo
+    }
   }
 
   let currentSpawnInterval =
