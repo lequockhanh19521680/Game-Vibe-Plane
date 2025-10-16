@@ -1,7 +1,53 @@
 // --- Main Game Entry Point ---
 // Make sure DOM is loaded before running code
-// Define canvas and ctx globally so they can be used across files
-let canvas, ctx;
+// Define canvas, ctx, width, and height globally so they can be used across files
+let canvas, ctx, width, height;
+
+// Game state variables - global so they can be accessed from game.js and other modules
+let player,
+  stars,
+  asteroids,
+  particles,
+  lasers,
+  blackHoles,
+  missiles,
+  laserMines,
+  crystalClusters,
+  fragments,
+  warnings,
+  energyOrbs,
+  plasmaFields,
+  crystalShards,
+  quantumPortals,
+  shieldGenerators,
+  freezeZones,
+  superNovas,
+  wormholes,
+  magneticStorms,
+  lightningStorms;
+let mouse = { x: 0, y: 0 },
+  prevMouse = { x: 0, y: 0 };
+let score = 0,
+  highScore = 0;
+let gameStartTime = 0,
+  survivalTime = 0;
+let lastDifficultyLevel = 0;
+let animationFrameId;
+let timers = {
+  asteroid: 0,
+  difficulty: 0,
+  laser: 0,
+  blackHole: 0,
+  missile: 0,
+  mine: 0,
+  crystal: 0,
+};
+let spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval;
+let isGameRunning = false;
+let globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed;
+let nebulae = [];
+let nextEventScore = 1000;
+let eventActive = { type: null, endTime: 0 };
 
 document.addEventListener("DOMContentLoaded", function () {
   // --- Constants & Variables ---
@@ -20,52 +66,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // Game over buttons
   const restartButton = document.getElementById("restart-button");
   const mainMenuButton = document.getElementById("main-menu-button");
-
-  let width, height;
-  let player,
-    stars,
-    asteroids,
-    particles,
-    lasers,
-    blackHoles,
-    missiles,
-    laserMines,
-    crystalClusters,
-    fragments,
-    warnings,
-    energyOrbs,
-    plasmaFields,
-    crystalShards,
-    quantumPortals,
-    shieldGenerators,
-    freezeZones,
-    superNovas,
-    wormholes,
-    magneticStorms,
-    lightningStorms;
-  let mouse = { x: 0, y: 0 },
-    prevMouse = { x: 0, y: 0 };
-  let score = 0,
-    highScore = 0;
-  let gameStartTime = 0,
-    survivalTime = 0;
-  let lastDifficultyLevel = 0;
-  let animationFrameId;
-  let timers = {
-    asteroid: 0,
-    difficulty: 0,
-    laser: 0,
-    blackHole: 0,
-    missile: 0,
-    mine: 0,
-    crystal: 0,
-  };
-  let spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval;
-  let isGameRunning = false;
-  let globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed;
-  let nebulae = [];
-  let nextEventScore = 1000;
-  let eventActive = { type: null, endTime: 0 };
 
   function startGame() {
     // Initialize audio system first (will only work after user interaction)
