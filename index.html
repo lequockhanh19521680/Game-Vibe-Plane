@@ -43,6 +43,16 @@
               Move to score points. Avoid asteroids, black holes & missiles.
               Survive as long as possible!
             </p>
+            <div class="username-input-container">
+              <input
+                type="text"
+                id="username-input"
+                maxlength="20"
+                placeholder="Enter username (optional)"
+                autocomplete="off"
+              />
+              <p class="username-hint">Leave empty to play as "Me"</p>
+            </div>
             <div class="button-container vertical">
               <button id="start-button" class="menu-button primary">
                 Start Battle
@@ -137,6 +147,9 @@
 
     <!-- Load game configuration -->
     <script src="gameConfig.js"></script>
+
+    <!-- Load backend API integration -->
+    <script src="js/api/backendApi.js"></script>
 
     <!-- Load game modules in order -->
     <script src="js/audio/audioSystem.js"></script>
