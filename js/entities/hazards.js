@@ -77,10 +77,7 @@ class PlasmaField {
       const dist = Math.hypot(fragment.x - this.x, fragment.y - this.y);
       if (dist < pushRadius && dist > 0) {
         const force = (0.08 * (pushRadius - dist)) / pushRadius;
-        const angle = Math.atan2(
-          fragment.y - this.y,
-          fragment.x - this.x
-        );
+        const angle = Math.atan2(fragment.y - this.y, fragment.x - this.x);
         fragment.velocity.x += Math.cos(angle) * force;
         fragment.velocity.y += Math.sin(angle) * force;
       }
@@ -96,13 +93,13 @@ class FreezeZone {
     this.x = x;
     this.y = y;
     this.radius = GAME_CONFIG.newObjects.freezeZone.radius;
-    this.effectStrength =
-      GAME_CONFIG.newObjects.freezeZone.effectStrength;
-    this.particleCount = GAME_CONFIG.newObjects.freezeZone.particleCount;
+    this.effectStrength = GAME_CONFIG.newObjects.freezeZone.effectStrength;
+    this.particleCount = GAME_CONFIG.newObjects.freezeZone.particleCount * 1.5; // Increase particles for better visual
     this.particles = [];
     this.age = 0;
-    this.lifetime = 300;
+    this.lifetime = GAME_CONFIG.events.freezeZone.duration || 450; // Use config value or fallback
     this.pulsePhase = Math.random() * Math.PI * 2;
+    this.frozenObjects = []; // Track objects that are completely frozen
 
     // Create ice particles
     for (let i = 0; i < this.particleCount; i++) {
@@ -176,23 +173,70 @@ class FreezeZone {
     asteroids.forEach((asteroid) => {
       const dist = Math.hypot(asteroid.x - this.x, asteroid.y - this.y);
       if (dist < freezeDistance) {
+        // Apply slow effect to all asteroids in range
         asteroid.velocity.x *= this.effectStrength;
         asteroid.velocity.y *= this.effectStrength;
 
-        // Chance to freeze asteroid completely
-        if (Math.random() < 0.005) {
-          // 0.5% chance per frame
-          asteroid.velocity.x *= 0.1;
-          asteroid.velocity.y *= 0.1;
-
-          // Create ice crystal around asteroid
-          crystalShards.push(
-            new CrystalShard(
-              asteroid.x + (Math.random() - 0.5) * 20,
-              asteroid.y + (Math.random() - 0.5) * 20
+        // Visual effect - ice particles coming off asteroids
+        if (Math.random() < 0.1) {
+          // 10% chance per frame
+          const angle = Math.random() * Math.PI * 2;
+          particles.push(
+            new Particle(
+              asteroid.x + Math.cos(angle) * asteroid.radius,
+              asteroid.y + Math.sin(angle) * asteroid.radius,
+              Math.random() * 2 + 1,
+              GAME_CONFIG.newObjects.freezeZone.color,
+              {
+                x: Math.cos(angle) * 1,
+                y: Math.sin(angle) * 1,
+              }
             )
           );
         }
+
+        // Chance to freeze asteroid completely (higher chance now)
+        if (Math.random() < 0.02) {
+          // 2% chance per frame (up from 0.5%)
+          // Almost completely stop the asteroid
+          asteroid.velocity.x *= 0.05;
+          asteroid.velocity.y *= 0.05;
+
+          // Add visual frozen effect
+          if (!asteroid.isFrozen) {
+            asteroid.isFrozen = true;
+            asteroid.originalColor = asteroid.color;
+            asteroid.color = GAME_CONFIG.newObjects.freezeZone.color;
+
+            // Add ice particles instead of creating crystals
+            for (let i = 0; i < 8; i++) {
+              const angle = Math.random() * Math.PI * 2;
+              particles.push(
+                new Particle(
+                  asteroid.x + Math.cos(angle) * asteroid.radius,
+                  asteroid.y + Math.sin(angle) * asteroid.radius,
+                  Math.random() * 2 + 1,
+                  GAME_CONFIG.newObjects.freezeZone.color,
+                  {
+                    x: Math.cos(angle) * 0.5,
+                    y: Math.sin(angle) * 0.5,
+                  }
+                )
+              );
+            }
+
+            // Add to tracked frozen objects
+            this.frozenObjects.push({
+              object: asteroid,
+              type: "asteroid",
+              freezeTime: this.age,
+            });
+          }
+        }
+      } else if (asteroid.isFrozen) {
+        // Check if this asteroid should thaw out (if outside freeze zone)
+        asteroid.isFrozen = false;
+        asteroid.color = asteroid.originalColor || asteroid.color;
       }
     });
 
@@ -200,16 +244,63 @@ class FreezeZone {
     missiles.forEach((missile) => {
       const dist = Math.hypot(missile.x - this.x, missile.y - this.y);
       if (dist < freezeDistance) {
+        // Slow down the missile
         missile.velocity.x *= this.effectStrength;
         missile.velocity.y *= this.effectStrength;
 
-        // Chance to completely freeze missile
-        if (Math.random() < 0.01) {
-          // 1% chance per frame
+        // Visual effect - ice trail
+        if (Math.random() < 0.2) {
+          // 20% chance per frame
+          missile.trail.push({
+            x: missile.x,
+            y: missile.y,
+            r: missile.radius / 1.5,
+            a: 1,
+            color: GAME_CONFIG.newObjects.freezeZone.color, // Add ice color to trail
+          });
+        }
+
+        // Chance to completely freeze missile (higher chance)
+        if (Math.random() < 0.03) {
+          // 3% chance per frame (up from 1%)
+          // Completely stop the missile
           missile.velocity.x = 0;
           missile.velocity.y = 0;
-          missile.turnSpeed *= 0.1; // Almost stop turning
+          missile.turnSpeed *= 0.05; // Almost completely stop turning
+
+          // Add visual frozen effect
+          if (!missile.isFrozen) {
+            missile.isFrozen = true;
+
+            // Create ice crystal effect around missile
+            for (let i = 0; i < 8; i++) {
+              const angle = (i / 8) * Math.PI * 2;
+              particles.push(
+                new Particle(
+                  missile.x + Math.cos(angle) * 10,
+                  missile.y + Math.sin(angle) * 10,
+                  3,
+                  GAME_CONFIG.newObjects.freezeZone.color,
+                  {
+                    x: Math.cos(angle) * 2,
+                    y: Math.sin(angle) * 2,
+                  }
+                )
+              );
+            }
+
+            // Add to tracked frozen objects
+            this.frozenObjects.push({
+              object: missile,
+              type: "missile",
+              freezeTime: this.age,
+            });
+          }
         }
+      } else if (missile.isFrozen) {
+        // Allow gradual thawing when outside freeze zone
+        missile.isFrozen = false;
+        missile.turnSpeed /= 0.05; // Restore normal turning
       }
     });
 
@@ -342,10 +433,7 @@ class LaserTurret {
     let bestScore = -1;
 
     targets.forEach((target) => {
-      const dist = Math.hypot(
-        this.x - target.obj.x,
-        this.y - target.obj.y
-      );
+      const dist = Math.hypot(this.x - target.obj.x, this.y - target.obj.y);
       if (dist < this.trackingRange) {
         const score = target.priority / (dist / 100); // Priority/distance ratio
         if (score > bestScore) {
@@ -411,19 +499,15 @@ class LaserTurret {
   }
 
   fireLaser(targetType = "player") {
-    const laserEndX =
-      this.x + Math.cos(this.rotation + Math.PI / 2) * 1000;
-    const laserEndY =
-      this.y + Math.sin(this.rotation + Math.PI / 2) * 1000;
+    const laserEndX = this.x + Math.cos(this.rotation + Math.PI / 2) * 1000;
+    const laserEndY = this.y + Math.sin(this.rotation + Math.PI / 2) * 1000;
 
     // Create laser beam visual effect
     for (let i = 0; i < 5; i++) {
       particles.push(
         new Particle(
-          this.x +
-            Math.cos(this.rotation + Math.PI / 2) * this.barrelLength,
-          this.y +
-            Math.sin(this.rotation + Math.PI / 2) * this.barrelLength,
+          this.x + Math.cos(this.rotation + Math.PI / 2) * this.barrelLength,
+          this.y + Math.sin(this.rotation + Math.PI / 2) * this.barrelLength,
           Math.cos(this.rotation + Math.PI / 2) * (5 + i),
           Math.sin(this.rotation + Math.PI / 2) * (5 + i),
           "#ff5722"
@@ -567,9 +651,7 @@ class LightningStorm {
       // Gate ring
       ctx.beginPath();
       ctx.arc(0, 0, gate.radius, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgb(${255 * chargeRatio}, ${
-        255 * chargeRatio
-      }, 255)`;
+      ctx.strokeStyle = `rgb(${255 * chargeRatio}, ${255 * chargeRatio}, 255)`;
       ctx.lineWidth = 4;
       ctx.shadowColor = "#88ddff";
       ctx.shadowBlur = 15;
@@ -636,8 +718,7 @@ class LightningStorm {
       // Add gate particles
       if (Math.random() < 0.3) {
         const angle = Math.random() * Math.PI * 2;
-        const distance =
-          gate.radius * 0.5 + Math.random() * gate.radius * 0.5;
+        const distance = gate.radius * 0.5 + Math.random() * gate.radius * 0.5;
         gate.particles.push({
           x: gate.x + Math.cos(angle) * distance,
           y: gate.y + Math.sin(angle) * distance,
@@ -724,9 +805,7 @@ class LightningStorm {
       // Check if player is near the lightning path
       for (let i = 0; i < bolt.segments.length - 1; i++) {
         const seg1 =
-          i === 0
-            ? { x: bolt.startX, y: bolt.startY }
-            : bolt.segments[i - 1];
+          i === 0 ? { x: bolt.startX, y: bolt.startY } : bolt.segments[i - 1];
         const seg2 = bolt.segments[i];
 
         const dist = this.distanceToLineSegment(
@@ -876,10 +955,8 @@ class MagneticStorm {
         const deltaY = (arc.endY - arc.startY) / segments;
 
         for (let i = 1; i <= segments; i++) {
-          const nextX =
-            arc.startX + deltaX * i + (Math.random() - 0.5) * 30;
-          const nextY =
-            arc.startY + deltaY * i + (Math.random() - 0.5) * 30;
+          const nextX = arc.startX + deltaX * i + (Math.random() - 0.5) * 30;
+          const nextY = arc.startY + deltaY * i + (Math.random() - 0.5) * 30;
           ctx.lineTo(nextX, nextY);
           currentX = nextX;
           currentY = nextY;
@@ -914,8 +991,7 @@ class MagneticStorm {
     if (this.age < 60) {
       this.intensity = (this.age / 60) * this.maxIntensity;
     } else if (this.age > this.lifetime - 60) {
-      this.intensity =
-        ((this.lifetime - this.age) / 60) * this.maxIntensity;
+      this.intensity = ((this.lifetime - this.age) / 60) * this.maxIntensity;
     } else {
       this.intensity =
         this.maxIntensity * (0.8 + Math.sin(this.pulseTimer) * 0.2);
@@ -967,10 +1043,7 @@ class MagneticStorm {
       this.chargedAsteroids.forEach((asteroidId) => {
         const asteroid = asteroids.find((a) => a.id === asteroidId);
         if (asteroid) {
-          const dist = Math.hypot(
-            player.x - asteroid.x,
-            player.y - asteroid.y
-          );
+          const dist = Math.hypot(player.x - asteroid.x, player.y - asteroid.y);
           if (dist < closestDistance && dist < 300) {
             // Only target within range
             closestDistance = dist;
@@ -1139,9 +1212,7 @@ class MagneticStorm {
         if (distance < field.radius && distance > 0) {
           isInMagneticField = true;
           const force =
-            (field.strength *
-              this.intensity *
-              (field.radius - distance)) /
+            (field.strength * this.intensity * (field.radius - distance)) /
             field.radius;
           const forceX = (dx / distance) * force * field.polarity;
           const forceY = (dy / distance) * force * field.polarity;
@@ -1347,9 +1418,7 @@ class SuperNova {
               x: Math.cos(angle) * speed,
               y: Math.sin(angle) * speed,
             };
-            fragments.push(
-              new Fragment(asteroid.x, asteroid.y, velocity)
-            );
+            fragments.push(new Fragment(asteroid.x, asteroid.y, velocity));
           }
         }
 
@@ -1440,8 +1509,7 @@ class SuperNova {
       const particleCount = 5;
       for (let i = 0; i < particleCount; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const dist =
-          innerRadius + (outerRadius - innerRadius) * Math.random();
+        const dist = innerRadius + (outerRadius - innerRadius) * Math.random();
         particles.push(
           new Particle(
             this.x + Math.cos(angle) * dist,
@@ -1458,4 +1526,3 @@ class SuperNova {
     }
   }
 }
-

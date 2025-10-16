@@ -1,13 +1,14 @@
 // Warning indicators
 
 class Warning extends Entity {
-  constructor(x, y, type, duration = 120) {
+  constructor(x, y, type, duration = 120, angle = 0) {
     super(x, y);
     this.type = type; // 'blackhole' or 'missile'
     this.duration = duration;
     this.timer = 0;
     this.radius = GAME_CONFIG.ui.warning.radius;
     this.alpha = 0;
+    this.angle = angle; // Direction angle for directional warnings (used for missile warnings)
   }
 
   draw() {
@@ -17,8 +18,7 @@ class Warning extends Entity {
 
     // Pulsing warning circle
     const pulse =
-      Math.sin(this.timer * GAME_CONFIG.ui.warning.pulseSpeed) * 0.5 +
-      0.5;
+      Math.sin(this.timer * GAME_CONFIG.ui.warning.pulseSpeed) * 0.5 + 0.5;
     const currentRadius =
       this.radius + pulse * GAME_CONFIG.ui.warning.pulseIntensity;
 
@@ -44,8 +44,12 @@ class Warning extends Entity {
         warningColor = "#ff6600"; // Orange for plasma
         warningSymbol = "🔥";
         break;
+      case "missile":
+        warningColor = "#f48fb1"; // Pink for missiles
+        warningSymbol = ""; // No symbol for missile, we'll draw an arrow
+        break;
       default:
-        warningColor = "#f48fb1"; // Pink for missiles and others
+        warningColor = "#f48fb1"; // Pink for other warnings
         warningSymbol = "!";
     }
 
@@ -55,12 +59,45 @@ class Warning extends Entity {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Warning symbol
-    ctx.fillStyle = warningColor;
-    ctx.font = "bold 20px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(warningSymbol, 0, 0);
+    // For missiles, draw directional arrow - Enhanced for better visibility
+    if (this.type === "missile") {
+      ctx.save();
+      ctx.rotate(this.angle);
+
+      // Draw larger arrow with glow effect
+      ctx.shadowColor = warningColor;
+      ctx.shadowBlur = 10;
+
+      // Draw arrow
+      ctx.beginPath();
+      ctx.moveTo(0, -20); // Arrow point (made larger)
+      ctx.lineTo(15, 10); // Bottom right (made larger)
+      ctx.lineTo(-15, 10); // Bottom left (made larger)
+      ctx.closePath();
+
+      ctx.fillStyle = warningColor;
+      ctx.fill();
+
+      // Add enhanced trail effect for arrow
+      ctx.beginPath();
+      ctx.moveTo(0, 12); // Start at base of arrow
+      ctx.lineTo(8, 25); // Right zigzag (extended)
+      ctx.lineTo(-8, 18); // Left zigzag (extended)
+      ctx.lineTo(0, 30); // End of trail (extended)
+
+      ctx.strokeStyle = warningColor;
+      ctx.lineWidth = 3; // Thicker line
+      ctx.stroke();
+
+      ctx.restore();
+    } else {
+      // Warning symbol for non-missile warnings
+      ctx.fillStyle = warningColor;
+      ctx.font = "bold 20px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(warningSymbol, 0, 0);
+    }
 
     ctx.restore();
   }
@@ -79,6 +116,14 @@ class Warning extends Entity {
         (this.duration - this.timer) / GAME_CONFIG.ui.warning.fadeOutTime;
     } else {
       this.alpha = 1;
+    }
+
+    // Add pulsing intensity for missile warnings
+    if (this.type === "missile") {
+      // Make the warning pulse more intensely as time gets closer to missile launch
+      const timeRatio = this.timer / this.duration;
+      const pulsingIntensity = 0.7 + 0.3 * timeRatio; // Intensify pulsing as time passes
+      this.alpha *= Math.sin(this.timer * 0.15) * 0.2 + pulsingIntensity;
     }
 
     this.draw();

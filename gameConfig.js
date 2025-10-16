@@ -9,40 +9,41 @@ const GAME_CONFIG = {
   // PLAYER SETTINGS - Cài đặt người chơi
   // =============================================================================
   player: {
-    radius: 15, // Kích thước player
-    responsiveness: 0.15, // Độ nhạy điều khiển (0.1 = chậm, 0.2 = nhanh)
-    friction: 0.95, // Ma sát tự nhiên (0.9 = nhiều, 0.99 = ít)
+    radius: 15, // Kích thước player - giữ nguyên
+    responsiveness: 0.12, // Độ nhạy điều khiển - giảm để khó điều khiển hơn
+    friction: 0.92, // Ma sát tự nhiên - giảm để khó điều khiển hơn
     trailLength: 20, // Độ dài vệt khói
     trailFadeSpeed: 0.05, // Tốc độ mờ dần vệt khói
+    initialShieldDuration: 0, // Thời gian khiên ban đầu (đã tắt)
   },
 
   // =============================================================================
   // DIFFICULTY PROGRESSION - Hệ thống khó dần
   // =============================================================================
   difficulty: {
-    baseSpawnInterval: 150, // Thời gian spawn ban đầu - tăng từ 120 để dễ thở hơn
-    minSpawnInterval: 25, // Thời gian spawn tối thiểu - giảm từ 45 để level cao ngạt thở
-    spawnDecreaseStep: 1.5, // Giảm spawn interval mỗi lần - giảm từ 2 để chậm hơn
+    baseSpawnInterval: 60, // Thời gian spawn ban đầu - giảm từ 85 xuống 60 để thiên thạch xuất hiện nhiều hơn
+    minSpawnInterval: 30, // Thời gian spawn tối thiểu - giảm từ 40 xuống 30 để thiên thạch liên tục xuất hiện
+    spawnDecreaseStep: 0.8, // Giảm spawn interval mỗi lần - tăng từ 0.7 lên 0.8 để nhanh chóng tăng mật độ thiên thạch
 
-    baseSpeed: 0.6, // Tốc độ cơ bản - giảm từ 0.8 để đầu dễ hơn
-    speedIncreaseStep: 0.06, // Tăng tốc độ mỗi level - tăng từ 0.04 để level cao khó hơn
-    microSpeedIncrease: 0.01, // Tăng tốc độ nhỏ liên tục - giảm từ 0.015
+    baseSpeed: 1.2, // Tốc độ cơ bản - tăng mạnh từ 0.9 lên 1.2 để đầu game khó hơn
+    speedIncreaseStep: 0.018, // Tăng tốc độ mỗi level - giảm từ 0.03 xuống 0.018 để độ khó tăng chậm hơn
+    microSpeedIncrease: 0.003, // Tăng tốc độ nhỏ liên tục - giảm từ 0.005 xuống 0.003 để độ khó tăng chậm hơn
 
-    levelUpInterval: 30, // Giây để lên level - mỗi 30 giây lên 1 level
-    microProgressInterval: 900, // Frame để tăng khó nhỏ - tăng từ 800
+    levelUpInterval: 30, // Giây để lên level - giữ nguyên
+    microProgressInterval: 1500, // Frame để tăng khó nhỏ - tăng từ 1200 lên 1500 để độ khó tăng chậm hơn
   },
 
   // =============================================================================
   // ASTEROID SETTINGS - Cài đặt thiên thạch
   // =============================================================================
   asteroids: {
-    minRadius: 10, // Kích thước tối thiểu - giảm từ 12 để đầu dễ hơn
-    maxRadius: 45, // Kích thước tối đa - tăng từ 35 để level cao khó hơn
-    baseSpeed: 1.5, // Tốc độ cơ bản - giảm từ 0.7 để đầu dễ hơn
-    speedVariation: 1.2, // Biến thiên tốc độ - giảm từ 1.5
-    speedIncreasePerLevel: 0.35, // Tăng tốc độ mỗi level - tăng từ 0.2 để level cao ngạt thở
-    fragmentSpeed: 0.99, // Tốc độ giảm của mảnh vỡ
-    colors: ["#ff4444", "#ffbb33", "#99cc00"], // Màu sắc
+    minRadius: 15, // Kích thước tối thiểu - tăng để khó né hơn
+    maxRadius: 40, // Kích thước tối đa - giảm để không quá khó về sau
+    baseSpeed: 3.8, // Tốc độ cơ bản - tăng rất mạnh để đầu game khó hơn nhiều (từ 2.2 lên 3.8)
+    speedVariation: 1.8, // Biến thiên tốc độ - tăng lên để đa dạng hơn (từ 1.5 lên 1.8)
+    speedIncreasePerLevel: 0.08, // Tăng tốc độ mỗi level - giảm nhiều để độ khó tăng chậm hơn (từ 0.15 xuống 0.08)
+    fragmentSpeed: 0.99, // Tốc độ giảm của mảnh vỡ - giữ nguyên
+    colors: ["#ff4444", "#ffbb33", "#99cc00"], // Màu sắc - giữ nguyên
 
     // Spawn patterns - Thiên thạch rơi từ trên xuống
     spawnPatterns: {
@@ -56,20 +57,20 @@ const GAME_CONFIG = {
   // BLACK HOLE SETTINGS - Cài đặt hố đen
   // =============================================================================
   blackHoles: {
-    spawnScore: 500, // Điểm bắt đầu xuất hiện - giảm mạnh để xuất hiện sớm
-    spawnInterval: 900, // Khoảng cách spawn - tăng từ 800 để ít hơn ở đầu
-    warningDuration: 180, // Thời gian cảnh báo - tăng từ 150 để chuẩn bị tốt hơn
-    warningDelay: 3000, // Delay sau cảnh báo - tăng từ 2500
+    spawnScore: 250, // Điểm bắt đầu xuất hiện - giảm mạnh để xuất hiện sớm hơn nữa
+    spawnInterval: 700, // Khoảng cách spawn - giảm để hố đen xuất hiện thường xuyên hơn
+    warningDuration: 120, // Thời gian cảnh báo - giảm để khó tránh hơn
+    warningDelay: 2000, // Delay sau cảnh báo - giảm để khó chuẩn bị hơn
 
-    baseRadius: 6, // Bán kính ban đầu - giảm từ 8 để đầu dễ hơn
-    baseMaxRadius: 60, // Bán kính tối đa ban đầu - tăng từ 45 để level cao khó hơn
-    radiusIncreasePerLevel: 12, // Tăng radius mỗi level - tăng từ 8 để level cao ngạt thở
+    baseRadius: 10, // Bán kính ban đầu - tăng lên để đầu game khó hơn
+    baseMaxRadius: 50, // Bán kính tối đa ban đầu - giảm để không quá khó về sau
+    radiusIncreasePerLevel: 5, // Tăng radius mỗi level - giảm để độ khó tăng chậm hơn
 
-    baseGravityRadius: 110, // Vùng hấp dẫn ban đầu - giảm từ 130 để đầu dễ
-    gravityRadiusIncreasePerLevel: 25, // Tăng vùng hấp dẫn mỗi level - tăng từ 15
+    baseGravityRadius: 150, // Vùng hấp dẫn ban đầu - tăng để đầu game khó hơn
+    gravityRadiusIncreasePerLevel: 10, // Tăng vùng hấp dẫn mỗi level - giảm để độ khó tăng chậm hơn
 
-    baseStrength: 0.025, // Sức hấp dẫn cơ bản - giảm từ 0.035 để đầu dễ
-    strengthIncreasePerLevel: 0.015, // Tăng sức hấp dẫn mỗi level - tăng từ 0.008
+    baseStrength: 0.04, // Sức hấp dẫn cơ bản - tăng để đầu game khó hơn
+    strengthIncreasePerLevel: 0.008, // Tăng sức hấp dẫn mỗi level - giảm để độ khó tăng chậm hơn
 
     baseGrowthRate: 0.03, // Tốc độ lớn cơ bản - giảm từ 0.04
     growthRateIncreasePerLevel: 0.025, // Tăng tốc độ lớn mỗi level - tăng từ 0.015
@@ -85,17 +86,17 @@ const GAME_CONFIG = {
   // MISSILE SETTINGS - Cài đặt tên lửa
   // =============================================================================
   missiles: {
-    spawnScore: 800, // Điểm bắt đầu xuất hiện - giảm mạnh để đa dạng
-    spawnInterval: 600, // Khoảng cách spawn
-    warningDuration: 150, // Thời gian cảnh báo
-    warningDelay: 2500, // Delay sau cảnh báo
+    spawnScore: 400, // Điểm bắt đầu xuất hiện - giảm mạnh để xuất hiện sớm hơn
+    spawnInterval: 450, // Khoảng cách spawn - giảm để tên lửa xuất hiện thường xuyên hơn
+    warningDuration: 100, // Thời gian cảnh báo - giảm để khó chuẩn bị hơn
+    warningDelay: 1800, // Delay sau cảnh báo - giảm để khó chuẩn bị hơn
 
-    radius: 5, // Kích thước
-    baseSpeed: 0.195, // Tốc độ cơ bản - nhanh hơn xíu
-    speedIncreasePerLevel: 0.03, // Tăng tốc độ mỗi level
+    radius: 6, // Kích thước - tăng để khó né hơn
+    baseSpeed: 0.3, // Tốc độ cơ bản - tăng mạnh để đầu game khó hơn
+    speedIncreasePerLevel: 0.015, // Tăng tốc độ mỗi level - giảm để độ khó tăng chậm hơn
 
-    baseTurnSpeed: 0.025, // Tốc độ rẽ cơ bản - nhanh hơn
-    turnSpeedIncreasePerLevel: 0.015, // Tăng tốc độ rẽ mỗi level
+    baseTurnSpeed: 0.04, // Tốc độ rẽ cơ bản - tăng để đầu game khó hơn
+    turnSpeedIncreasePerLevel: 0.007, // Tăng tốc độ rẽ mỗi level - giảm để độ khó tăng chậm hơn
 
     speedUpTime: 350, // Thời gian để tăng tốc
     speedUpMultiplier: 1.8, // Hệ số tăng tốc - nhanh hơn
@@ -114,21 +115,21 @@ const GAME_CONFIG = {
   // LASER SETTINGS - Cài đặt laser
   // =============================================================================
   lasers: {
-    spawnScore: 1200, // Điểm bắt đầu xuất hiện - giảm mạnh để đa dạng
-    baseInterval: 400, // Khoảng cách spawn cơ bản - tăng từ 300 để đầu ít hơn
-    intervalDecreasePerLevel: 18, // Giảm interval mỗi level - tăng từ 12 để level cao ngạt thở
-    minInterval: 80, // Interval tối thiểu - giảm từ 150 để level cao cực khó
+    spawnScore: 600, // Điểm bắt đầu xuất hiện - giảm mạnh để xuất hiện sớm hơn
+    baseInterval: 300, // Khoảng cách spawn cơ bản - giảm để đầu game khó hơn
+    intervalDecreasePerLevel: 10, // Giảm interval mỗi level - giảm để độ khó tăng chậm hơn
+    minInterval: 120, // Interval tối thiểu - tăng để level cao không quá khó
 
-    maxConcurrent: 1, // Số laser tối đa cùng lúc - giảm từ 2 để đầu dễ hơn
-    lasersPerLevel: 3, // Chia level để tính số laser - giảm từ 4
+    maxConcurrent: 2, // Số laser tối đa cùng lúc - tăng để đầu game khó hơn
+    lasersPerLevel: 4, // Chia level để tính số laser - tăng để đa dạng hơn
 
-    baseTargetChance: 0.15, // Xác suất nhắm mục tiêu cơ bản - giảm từ 0.25 để đầu dễ
-    targetChanceIncreasePerLevel: 0.05, // Tăng xác suất mỗi level - tăng từ 0.03
-    maxTargetChance: 0.75, // Xác suất tối đa - tăng từ 0.5 để level cao ngạt thở
+    baseTargetChance: 0.3, // Xác suất nhắm mục tiêu cơ bản - tăng để đầu game khó hơn
+    targetChanceIncreasePerLevel: 0.03, // Tăng xác suất mỗi level - giảm để độ khó tăng chậm hơn
+    maxTargetChance: 0.6, // Xác suất tối đa - giảm để level cao không quá khó
 
-    warningTime: 150, // Thời gian cảnh báo - tăng từ 120 để đầu dễ hơn
-    beamDuration: 20, // Thời gian tồn tại beam - tăng từ 15 để level cao khó hơn
-    staggerDelay: 150, // Delay giữa các laser - giảm từ 200 để level cao nhanh hơn
+    warningTime: 100, // Thời gian cảnh báo - giảm để đầu game khó hơn
+    beamDuration: 25, // Thời gian tồn tại beam - tăng để khó tránh hơn
+    staggerDelay: 120, // Delay giữa các laser - giảm để nhanh hơn
 
     playerHitRadius: 7.5, // Bán kính va chạm với player
   },
@@ -206,7 +207,7 @@ const GAME_CONFIG = {
   // EVENT SYSTEM - Hệ thống sự kiện
   // =============================================================================
   events: {
-    interval: 3000, // Khoảng cách sự kiện - tăng mạnh để giãn ra nhiều
+    interval: 1800, // Khoảng cách sự kiện - giảm để sự kiện xuất hiện thường xuyên hơn (từ 3000 xuống 1800)
     duration: 5000, // Thời gian hiển thị message (ms)
 
     // Event types - MASSIVELY EXPANDED
@@ -333,12 +334,12 @@ const GAME_CONFIG = {
     },
 
     asteroidRain: {
-      count: 18, // Số thiên thạch - tăng từ 12 để khó hơn
-      delay: 180, // Delay giữa các thiên thạch - giảm từ 250 để nhanh hơn
-      minRadius: 6, // Kích thước tối thiểu - giảm từ 8 để nhiều hơn
-      maxRadius: 30, // Kích thước tối đa - tăng từ 22 để khó tránh hơn
-      speedMultiplier: 2.2, // Hệ số tốc độ - tăng từ 1.6
-      speedVariation: 3.5, // Biến thiên tốc độ - tăng từ 2.5
+      count: 30, // Số thiên thạch - tăng từ 18 lên 30 để tạo mưa thiên thạch dày đặc hơn
+      delay: 120, // Delay giữa các thiên thạch - giảm từ 180 xuống 120 để thiên thạch xuất hiện nhanh hơn
+      minRadius: 6, // Kích thước tối thiểu - giữ nguyên
+      maxRadius: 25, // Kích thước tối đa - giảm từ 30 xuống 25 để cân bằng với số lượng thiên thạch tăng lên
+      speedMultiplier: 4.0, // Hệ số tốc độ - tăng từ 3.5 lên 4.0 để có hiệu ứng mưa thiên thạch nhanh hơn
+      speedVariation: 2.8, // Biến thiên tốc độ - tăng từ 2.5 lên 2.8 để tạo thêm biến động tự nhiên
     },
 
     asteroidCircle: {
@@ -382,9 +383,9 @@ const GAME_CONFIG = {
 
     freezeZone: {
       count: 4, // Số vùng đóng băng
-      radius: 100, // Bán kính vùng ảnh hưởng
-      slowFactor: 0.3, // Hệ số chậm lại (30% tốc độ)
-      duration: 200, // Thời gian tồn tại
+      radius: 120, // Bán kính vùng ảnh hưởng (tăng từ 100)
+      slowFactor: 0.2, // Hệ số chậm lại (20% tốc độ - hiệu ứng mạnh hơn)
+      duration: 450, // Thời gian tồn tại (tăng từ 200 lên 450)
     },
 
     magneticStorm: {
@@ -419,9 +420,9 @@ const GAME_CONFIG = {
     },
 
     crystalRain: {
-      count: 32, // Số crystal shard (tăng để có nhiều cluster)
+      count: 20, // Số crystal shard (giảm từ 32 xuống 20 để dễ thu thập)
       delay: 80, // Delay giữa các crystal (chậm hơn để tạo formation)
-      clusterSize: 8, // Số crystal mỗi cluster
+      clusterSize: 5, // Số crystal mỗi cluster (giảm từ 8 xuống 5)
       driftSpeed: 1.2, // Tốc độ trôi dạt
     },
 
@@ -526,6 +527,7 @@ const GAME_CONFIG = {
       score: 0.04,
       powerup: 0.06,
       blackhole: 0.03,
+      thunder: 0.12, // Volume for thunder strike sound
       backgroundMusic: 0.015,
       // Âm thanh không gian
       blackholeGrowth: 0.02,
@@ -651,15 +653,18 @@ const GAME_CONFIG = {
   // SCORING SYSTEM - Hệ thống điểm số (chỉ tăng điểm khi di chuyển)
   // =============================================================================
   scoring: {
-    movementMultiplier: 0.4, // Điểm từ di chuyển - tăng từ 0.12 để bù trừ việc bỏ survival bonus
-    asteroidDestroy: 25, // Điểm phá hủy thiên thạch - khuyến khích phá hủy
-    survivalBonus: 0, // Điểm sống sót - bỏ hoàn toàn, chỉ tăng điểm khi di chuyển
+    movementMultiplier: 0.12, // Giảm xuống từ 0.2 để tăng điểm chậm hơn nhiều
+    speedMultiplier: 0.5, // Giảm xuống từ 0.8 để tăng điểm chậm hơn nhiều
+    speedMinThreshold: 3, // Thêm ngưỡng tốc độ tối thiểu 3 để yêu cầu di chuyển nhanh hơn
+    speedScoreInterval: 30, // Tăng từ 20 lên 30 frames để điểm tăng chậm hơn
+    asteroidDestroy: 15, // Giảm điểm phá hủy thiên thạch từ 25 xuống 15
+    survivalBonus: 0, // Điểm sống sót - giữ nguyên 0, chỉ tăng điểm khi di chuyển
 
-    // Dynamic movement threshold - giảm dần theo level
-    baseMovementThreshold: 15, // Ngưỡng tối thiểu pixel ban đầu (level 1)
-    minMovementThreshold: 2, // Ngưỡng tối thiểu tuyệt đối (level cao)
-    thresholdDecreasePerLevel: 0.5, // Giảm threshold mỗi level
-    thresholdDecreaseRate: 0.95, // Hệ số giảm dần (exponential decay)
+    // Bỏ ngưỡng cho movement (tăng điểm ngay từ đầu, không cần di chuyển nhiều)
+    baseMovementThreshold: 0, // Không còn ngưỡng pixel tối thiểu
+    minMovementThreshold: 0, // Không còn ngưỡng tuyệt đối
+    thresholdDecreasePerLevel: 0, // Không còn giảm threshold theo level
+    thresholdDecreaseRate: 1, // Không còn áp dụng
   },
 
   // =============================================================================
@@ -678,6 +683,7 @@ const GAME_CONFIG = {
 
     // Storage
     localStorageKey: "stellarDriftHighScore", // Key lưu high score
+    leaderboardKey: "stellarDriftLeaderboard", // Key lưu leaderboard
   },
 };
 

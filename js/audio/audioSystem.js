@@ -7,20 +7,45 @@ let analyserNode = null;
 
 // Enhanced audio initialization with space ambience
 function initAudioSystem() {
+  // Only create AudioContext when needed (after user interaction)
   if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    try {
+      // Create AudioContext with options to allow autoplay
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioContext = new AudioContext({
+        latencyHint: "interactive",
+        sampleRate: 44100,
+      });
 
-    // Create audio processing nodes for cosmic effects
-    analyserNode = audioContext.createAnalyser();
-    analyserNode.fftSize = 2048;
-    analyserNode.connect(audioContext.destination);
+      // Create audio processing nodes for cosmic effects
+      analyserNode = audioContext.createAnalyser();
+      analyserNode.fftSize = 2048;
+      analyserNode.connect(audioContext.destination);
 
-    // Create reverb node for spacious sound
-    createSpaceReverb();
+      // Create reverb node for spacious sound
+      createSpaceReverb();
+
+      console.log("Audio system initialized successfully");
+    } catch (e) {
+      console.warn("Audio system initialization failed:", e);
+    }
   }
 
-  if (audioContext.state === "suspended") {
-    audioContext.resume();
+  // Resume audio context on user interaction
+  if (audioContext && audioContext.state === "suspended") {
+    try {
+      // Use a user gesture to resume audio context
+      audioContext
+        .resume()
+        .then(() => {
+          console.log("AudioContext resumed successfully");
+        })
+        .catch((err) => {
+          console.warn("Could not resume AudioContext:", err);
+        });
+    } catch (e) {
+      console.error("Error resuming AudioContext:", e);
+    }
   }
 
   // Start cosmic ambient background if not already playing
@@ -773,8 +798,64 @@ function createWormholeSound() {
 }
 
 function createShieldSound() {
-  createSound(400, 0.4, "sine", GAME_CONFIG.audio.volumes.shield);
-  createSound(600, 0.3, "triangle", GAME_CONFIG.audio.volumes.shield * 0.7);
+  // Base shield activation sound
+  createSound(600, 0.3, "sine", GAME_CONFIG.audio.volumes.shield * 1.2, true, {
+    attack: 0.02,
+    decay: 0.1,
+    sustain: true,
+    sustainLevel: 0.7,
+    release: 0.4,
+  });
+
+  // Shield energy field
+  createSound(
+    1200,
+    0.35,
+    "triangle",
+    GAME_CONFIG.audio.volumes.shield * 0.8,
+    true,
+    {
+      attack: 0.1,
+      decay: 0.2,
+      sustain: true,
+      sustainLevel: 0.3,
+      release: 0.5,
+      modulate: true,
+      modFreq: 5,
+      modDepth: 10,
+    }
+  );
+}
+
+// Shield hit sound - played when shield absorbs impact
+function createShieldHitSound() {
+  // Energy absorption impact
+  createSound(800, 0.15, "sine", GAME_CONFIG.audio.volumes.shield * 0.9, true, {
+    attack: 0.01,
+    decay: 0.05,
+    sustain: true,
+    sustainLevel: 0.8,
+    release: 0.1,
+  });
+
+  // Shield resonance response
+  createSound(
+    1600,
+    0.2,
+    "triangle",
+    GAME_CONFIG.audio.volumes.shield * 0.6,
+    true,
+    {
+      attack: 0.01,
+      decay: 0.1,
+      sustain: true,
+      sustainLevel: 0.5,
+      release: 0.1,
+      modulate: true,
+      modFreq: 10,
+      modDepth: 30,
+    }
+  );
 }
 
 function createFreezeSound() {
@@ -823,6 +904,62 @@ function createFreezeSound() {
       }
     );
   }, 100);
+}
+
+function createThunderSound(volume = 1.0) {
+  // Main thunder crack sound
+  createSound(
+    100,
+    0.15,
+    "sawtooth",
+    GAME_CONFIG.audio.volumes.thunder * volume,
+    false,
+    {
+      attack: 0.01,
+      decay: 0.05,
+      sustain: true,
+      sustainLevel: 1.0,
+      release: 0.3,
+      modulate: true,
+      modFreq: 8,
+      modDepth: 50,
+    }
+  );
+
+  // High-frequency electrical discharge
+  createSound(
+    3000,
+    0.25,
+    "sawtooth",
+    GAME_CONFIG.audio.volumes.thunder * 0.5 * volume,
+    false,
+    {
+      attack: 0.01,
+      decay: 0.1,
+      sustain: true,
+      sustainLevel: 0.7,
+      release: 0.2,
+      modulate: true,
+      modFreq: 12,
+      modDepth: 80,
+    }
+  );
+
+  // Rumble component
+  createSound(
+    60,
+    0.4,
+    "sine",
+    GAME_CONFIG.audio.volumes.thunder * 0.7 * volume,
+    false,
+    {
+      attack: 0.05,
+      decay: 0.2,
+      sustain: true,
+      sustainLevel: 0.5,
+      release: 0.5,
+    }
+  );
 }
 
 // Create pulsating plasma storm sound
@@ -1415,8 +1552,14 @@ function playSound(soundType) {
     case "shield":
       createShieldSound();
       break;
+    case "shield-hit":
+      createShieldHitSound();
+      break;
     case "freeze":
       createFreezeSound();
+      break;
+    case "thunder":
+      createThunderSound();
       break;
     case "supernova":
       createSuperNovaSound();

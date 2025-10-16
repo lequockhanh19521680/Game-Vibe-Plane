@@ -146,13 +146,7 @@ class Wormhole {
       const angle = (i / 8) * Math.PI * 2 + this.rotationAngle * 0.5;
       const r = this.radius * 0.8;
       ctx.beginPath();
-      ctx.arc(
-        Math.cos(angle) * r,
-        Math.sin(angle) * r,
-        2,
-        0,
-        Math.PI * 2
-      );
+      ctx.arc(Math.cos(angle) * r, Math.sin(angle) * r, 2, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(186, 85, 211, ${alpha})`;
       ctx.fill();
     }
@@ -211,29 +205,26 @@ class Wormhole {
   }
 
   shootAsteroidAtPlayer() {
-    // Calculate direction to player
-    const dx = player.x - this.x;
-    const dy = player.y - this.y;
-    const distance = Math.hypot(dx, dy);
-
-    // Add some spread for difficulty
-    const spread = 0.3;
-    const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * spread;
-
-    // Create asteroid near wormhole
+    // Nhắm thiên thạch về phía người chơi
+    const angle = Math.atan2(player.y - this.y, player.x - this.x);
     const spawnDistance = this.radius + 20;
+
+    // Tạo thiên thạch từ cổng
     const spawnX = this.x + Math.cos(angle) * spawnDistance;
     const spawnY = this.y + Math.sin(angle) * spawnDistance;
 
     const asteroidSpeed = 3 + Math.random() * 2;
+    const velocityX = Math.cos(angle) * asteroidSpeed;
+    const velocityY = Math.sin(angle) * asteroidSpeed;
+
     const asteroid = new Asteroid(
       spawnX,
       spawnY,
       15 + Math.random() * 10,
       "#ff6b9d", // Pink color for wormhole asteroids
       {
-        x: Math.cos(angle) * asteroidSpeed,
-        y: Math.sin(angle) * asteroidSpeed,
+        x: velocityX,
+        y: velocityY,
       }
     );
 
@@ -255,4 +246,3 @@ class Wormhole {
     playSound("wormhole", 0.5);
   }
 }
-

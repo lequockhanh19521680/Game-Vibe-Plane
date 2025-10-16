@@ -14,49 +14,135 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/dialog.css" />
   </head>
   <body>
     <canvas id="game-canvas"></canvas>
 
     <div id="ui-container">
+      <!-- In-game UI elements -->
       <div id="score-container">
         <div id="score-display">Score: 0</div>
-        <div id="level-display">Level: 1</div>
-        <div id="time-display">Time: 0s</div>
         <div id="highscore-display">High Score: 0</div>
         <div id="survival-display">Time: 0:00</div>
       </div>
 
       <div id="event-text"></div>
 
-      <div id="start-screen" class="ui-element">
-        <h1>Stellar Drift</h1>
-        <h2>SINGULARITY</h2>
-        <p>
-          Move to score points. Avoid asteroids, black holes & missiles. Survive
-          as long as possible!
-        </p>
-        <button id="start-button">Start Battle</button>
+      <!-- Main Menu UI with multiple sections -->
+      <div id="main-menu-container">
+        <div id="menu-title" class="menu-section">
+          <h1>Stellar Drift</h1>
+          <h2>SINGULARITY</h2>
+        </div>
+
+        <div id="menu-content" class="menu-section">
+          <div id="main-menu-screen" class="menu-panel active">
+            <p>
+              Move to score points. Avoid asteroids, black holes & missiles.
+              Survive as long as possible!
+            </p>
+            <div class="button-container vertical">
+              <button id="start-button" class="menu-button primary">
+                Start Battle
+              </button>
+              <button id="leaderboard-button" class="menu-button">
+                Leaderboard
+              </button>
+              <button id="help-button" class="menu-button">How to Play</button>
+            </div>
+          </div>
+
+          <div id="leaderboard-screen" class="menu-panel">
+            <h3>Leaderboard</h3>
+            <div id="leaderboard-content">
+              <div id="leaderboard-list">
+                <!-- Leaderboard entries will be added here dynamically -->
+                <p class="leaderboard-empty">
+                  No high scores yet. Be the first!
+                </p>
+              </div>
+            </div>
+            <button id="back-from-leaderboard" class="menu-button">
+              Back to Menu
+            </button>
+          </div>
+
+          <div id="help-screen" class="menu-panel">
+            <h3>How to Play</h3>
+            <div class="help-content">
+              <p><strong>Move:</strong> Move your mouse to control your ship</p>
+              <p>
+                <strong>Score:</strong> Moving around earns points, destroying
+                obstacles gives bonus
+              </p>
+              <p>
+                <strong>Survive:</strong> Avoid obstacles and hazards as long as
+                possible
+              </p>
+              <p>
+                <strong>Power-ups:</strong> Collect crystals for temporary
+                shields
+              </p>
+            </div>
+            <button id="back-from-help" class="menu-button">
+              Back to Menu
+            </button>
+          </div>
+        </div>
       </div>
 
+      <!-- Game Over Screen -->
       <div id="game-over-screen" class="ui-element">
         <h2>Game Over</h2>
         <p id="final-score">Your score: 0</p>
         <p id="final-time">Survival time: 0:00</p>
         <p id="new-highscore-msg">New High Score!</p>
-        <button id="restart-button">Try Again</button>
+        <div class="button-container">
+          <button id="restart-button">Try Again</button>
+          <button id="main-menu-button">Main Menu</button>
+        </div>
+      </div>
+
+      <!-- High Score Dialog -->
+      <div
+        id="high-score-dialog-overlay"
+        class="dialog-overlay"
+        style="display: none"
+      ></div>
+      <div
+        id="high-score-dialog"
+        class="high-score-dialog"
+        style="display: none"
+      >
+        <h3>New High Score!</h3>
+        <p>
+          Congratulations! You've achieved a new high score of
+          <span id="dialog-score">0</span>!
+        </p>
+        <p>Enter your name for the leaderboard:</p>
+        <input
+          type="text"
+          id="player-name-input"
+          maxlength="15"
+          placeholder="Enter your name"
+          autocomplete="off"
+        />
+        <div class="button-container">
+          <button id="save-score-button">Save Score</button>
+        </div>
       </div>
     </div>
 
     <!-- Load game configuration -->
     <script src="gameConfig.js"></script>
-    
+
     <!-- Load game modules in order -->
     <script src="js/audio/audioSystem.js"></script>
-    
+
     <!-- Load base classes first (SOLID principles) -->
     <script src="js/base/Entity.js"></script>
-    
+
     <!-- Load entity classes -->
     <script src="js/entities/player.js"></script>
     <script src="js/entities/visuals.js"></script>
@@ -65,10 +151,17 @@
     <script src="js/entities/collectibles.js"></script>
     <script src="js/entities/hazards.js"></script>
     <script src="js/entities/portals.js"></script>
-    
+
+    <!-- Load UI system -->
+    <script src="js/ui/common.js"></script>
+    <script src="js/ui/menuSystem.js"></script>
+    <script src="js/ui/initUI.js"></script>
+
     <!-- Load game logic -->
-    <script src="js/core/game.js"></script>
     <script src="js/utils/helpers.js"></script>
+    <script src="js/core/game.js"></script>
+
+    <!-- Load main game last -->
     <script src="js/main.js"></script>
   </body>
 </html>

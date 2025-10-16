@@ -1,0 +1,68 @@
+.high-score-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(15, 15, 30, 0.9);
+  padding: 2rem 3rem;
+  border-radius: 20px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.high-score-dialog h3 {
+  color: var(--highlight-color);
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  text-shadow: 0 0 10px var(--highlight-color);
+}
+
+.high-score-dialog p {
+  margin-bottom: 1.5rem;
+}
+
+.high-score-dialog input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(0, 255, 255, 0.3);
+  color: white;
+  padding: 0.8rem 1rem;
+  font-family: "Exo 2", sans-serif;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  width: 100%;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.high-score-dialog input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 10px var(--primary-color);
+}
+
+.high-score-dialog .button-container {
+  margin-top: 1rem;
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 99;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
