@@ -53,6 +53,8 @@ let globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed;
 let nebulae = [];
 let nextEventScore = 1000;
 let eventActive = { type: null, endTime: 0 };
+let currentUsername = ''; // Store username for current game session
+let deathReason = ''; // Store death reason for backend submission
 
 document.addEventListener("DOMContentLoaded", function () {
   // --- Constants & Variables ---
@@ -73,6 +75,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const mainMenuButton = document.getElementById("main-menu-button");
 
   function startGame() {
+    // Get username from input field
+    const usernameInput = document.getElementById("username-input");
+    currentUsername = usernameInput ? usernameInput.value.trim() : '';
+    if (!currentUsername) {
+      currentUsername = 'Me'; // Default username
+    }
+    
     // Initialize audio system first (will only work after user interaction)
     if (typeof initAudioSystem === "function") {
       initAudioSystem();
@@ -137,6 +146,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!isGameRunning) return;
     console.log(`Game Over! Reason: ${reason}`);
     isGameRunning = false;
+    deathReason = reason; // Store death reason
+    
     // Show cursor when game ends
     document.body.classList.remove("game-running");
     document.body.classList.add("game-over");
@@ -164,6 +175,23 @@ document.addEventListener("DOMContentLoaded", function () {
     const seconds = survivalTime % 60;
     const timeFormatted = `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
+    // Submit score to backend
+    if (window.BackendAPI) {
+      window.BackendAPI.submitScore(currentUsername, score, survivalTime, reason)
+        .then(response => {
+          if (response) {
+            console.log('Score submitted to backend successfully', response);
+            // Optionally show country info to user
+            if (response.country) {
+              console.log('Your country:', response.country);
+            }
+          }
+        })
+        .catch(err => {
+          console.error('Failed to submit score to backend:', err);
+        });
+    }
+
     // Check for high score
     const isHighScore = score > highScore;
     if (isHighScore) {
@@ -181,8 +209,10 @@ document.addEventListener("DOMContentLoaded", function () {
           "block";
         document.getElementById("high-score-dialog").style.display = "flex";
 
-        // Focus on input field
-        document.getElementById("player-name-input").focus();
+        // Focus on input field and pre-fill with current username
+        const playerNameInput = document.getElementById("player-name-input");
+        playerNameInput.value = currentUsername === 'Me' ? '' : currentUsername;
+        playerNameInput.focus();
       }, 1500);
     } else {
       uiElements.newHighscoreMsg.style.display = "none";

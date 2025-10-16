@@ -87,12 +87,39 @@ function handleCloudSaveIssue(error) {
 }
 
 // Function to update the leaderboard with current data
-function updateLeaderboard() {
-  // Get leaderboard data from localStorage
+async function updateLeaderboard() {
+  // Try to fetch from backend first
+  if (window.BackendAPI && window.BACKEND_CONFIG.USE_BACKEND) {
+    try {
+      const backendData = await window.BackendAPI.fetchLeaderboard(10);
+      if (backendData && backendData.leaderboard) {
+        displayLeaderboardData(backendData.leaderboard, true);
+        return;
+      }
+    } catch (error) {
+      console.error('Error fetching from backend:', error);
+    }
+  }
+  
+  // Fallback to local storage
   const leaderboardData = loadLeaderboardData();
+  displayLeaderboardData(leaderboardData, false);
+}
 
+// Function to display leaderboard data
+function displayLeaderboardData(leaderboardData, isFromBackend) {
   // Clear current list
   uiElements.leaderboardList.innerHTML = "";
+
+  // Add source indicator
+  const sourceIndicator = document.createElement("p");
+  sourceIndicator.classList.add("leaderboard-source");
+  sourceIndicator.textContent = isFromBackend ? "🌐 Global Leaderboard" : "💾 Local Leaderboard";
+  sourceIndicator.style.textAlign = "center";
+  sourceIndicator.style.marginBottom = "10px";
+  sourceIndicator.style.fontSize = "0.9em";
+  sourceIndicator.style.opacity = "0.8";
+  uiElements.leaderboardList.appendChild(sourceIndicator);
 
   // Check if we have any entries
   if (leaderboardData.length === 0) {
@@ -108,11 +135,21 @@ function updateLeaderboard() {
     const entryElement = document.createElement("div");
     entryElement.classList.add("leaderboard-entry");
 
-    entryElement.innerHTML = `
-      <span class="leaderboard-rank">${index + 1}</span>
-      <span class="leaderboard-name">${entry.name}</span>
-      <span class="leaderboard-score">${entry.score}</span>
-    `;
+    // Format based on data source
+    if (isFromBackend) {
+      entryElement.innerHTML = `
+        <span class="leaderboard-rank">${entry.rank || index + 1}</span>
+        <span class="leaderboard-name">${entry.username}</span>
+        <span class="leaderboard-score">${entry.score}</span>
+        ${entry.country ? `<span class="leaderboard-country">${entry.country}</span>` : ''}
+      `;
+    } else {
+      entryElement.innerHTML = `
+        <span class="leaderboard-rank">${index + 1}</span>
+        <span class="leaderboard-name">${entry.name}</span>
+        <span class="leaderboard-score">${entry.score}</span>
+      `;
+    }
 
     uiElements.leaderboardList.appendChild(entryElement);
   });
