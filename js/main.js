@@ -24,7 +24,12 @@ let player,
   superNovas,
   wormholes,
   magneticStorms,
-  lightningStorms;
+  lightningStorms,
+  gravityWaves,
+  timeDistortions,
+  chainLightnings,
+  voidRifts,
+  cosmicMines;
 let mouse = { x: 0, y: 0 },
   prevMouse = { x: 0, y: 0 };
 let score = 0,
