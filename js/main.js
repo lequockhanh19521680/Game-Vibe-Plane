@@ -1,7 +1,7 @@
 // --- Main Game Entry Point ---
 // Make sure DOM is loaded before running code
-// Define canvas and ctx globally so they can be used across files
-let canvas, ctx;
+// Define canvas, ctx, width, and height globally so they can be used across files
+let canvas, ctx, width, height;
 
 document.addEventListener("DOMContentLoaded", function () {
   // --- Constants & Variables ---
@@ -21,7 +21,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const restartButton = document.getElementById("restart-button");
   const mainMenuButton = document.getElementById("main-menu-button");
 
-  let width, height;
   let player,
     stars,
     asteroids,

@@ -1245,6 +1245,7 @@ window.animate = function() {
   }
 
   // Survival milestone rewards removed as requested
+} // Close window.animate function
 
 
 function showEventText(text) {
@@ -1581,10 +1582,6 @@ function triggerRandomEvent() {
             showEventText("🚀 MISSILES LAUNCHED! 🚀");
           }
         }, 120 * (1000 / 60)); // 2 seconds
-      }
-      // This is the fallback for events
-      eventActive.type = "denseField";
-      showEventText("Asteroid Storm!");
       break;
     case "laserSwarm":
       for (let i = 0; i < GAME_CONFIG.events.laserSwarm.laserCount; i++) {
@@ -2015,9 +2012,7 @@ function triggerRandomEvent() {
           playSound("explosion");
         }
       }, 180 * (1000 / 60)); // 3 seconds warning
-      break;
-
-  } // Close previous function
+  } // Close handlePlasmaStormEvent function
 
   function handleCrystalRainEvent() {
       eventActive.type = "crystalRain";
@@ -2091,9 +2086,7 @@ function triggerRandomEvent() {
       }
 
       playSound("crystal");
-      break;
-
-  } // Close previous function
+  } // Close handleCrystalRainEvent function
 
   function handleQuantumTunnelsEvent() {
       eventActive.type = "quantumTunnels";
@@ -2339,6 +2332,6 @@ function triggerRandomEvent() {
       playSound("warning");
       triggerScreenShake(0.4);
   }
-c o n s o l e . l o g ( ' G a m e . j s   l o a d e d   s u c c e s s f u l l y ' ) ; 
- 
- 
+} // Close triggerRandomEvent function
+
+console.log('Game.js loaded successfully');
