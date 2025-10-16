@@ -95,6 +95,11 @@ window.init = function () {
   wormholes = [];
   magneticStorms = [];
   lightningStorms = [];
+  gravityWaves = [];
+  timeDistortions = [];
+  chainLightnings = [];
+  voidRifts = [];
+  cosmicMines = [];
 
   // Kích hoạt sự kiện sớm ngay từ đầu game để tăng sự thú vị
   setTimeout(() => {
@@ -241,6 +246,28 @@ window.animate = function () {
   lightningStorms = lightningStorms.filter((storm, index) =>
     updateLightningStorm(storm, index)
   );
+  
+  // Update new creative objects
+  gravityWaves = gravityWaves.filter((wave) => {
+    wave.draw();
+    return !wave.update();
+  });
+  timeDistortions = timeDistortions.filter((distortion) => {
+    distortion.draw();
+    return !distortion.update();
+  });
+  chainLightnings = chainLightnings.filter((lightning) => {
+    lightning.draw();
+    return !lightning.update();
+  });
+  voidRifts = voidRifts.filter((rift) => {
+    rift.draw();
+    return !rift.update();
+  });
+  cosmicMines = cosmicMines.filter((mine) => {
+    mine.draw();
+    return !mine.update();
+  });
 
   // Update player last to ensure it's on top
   if (player) player.update();

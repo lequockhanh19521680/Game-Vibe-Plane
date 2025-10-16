@@ -250,6 +250,11 @@ const GAME_CONFIG = {
       "energy_barriers",
       "meteor_bombardment",
       "void_rifts",
+      "gravity_wave_cascade",
+      "temporal_chaos",
+      "lightning_network",
+      "void_storm",
+      "mine_field_detonation",
     ],
 
     // Event messages - MASSIVELY EXPANDED
@@ -291,6 +296,11 @@ const GAME_CONFIG = {
       energy_barriers: "⚡ ENERGY BARRIER GRID!",
       meteor_bombardment: "☄️ METEOR BOMBARDMENT!",
       void_rifts: "🌌 VOID RIFTS OPENING!",
+      gravity_wave_cascade: "🌊 GRAVITY WAVE CASCADE!",
+      temporal_chaos: "⏰ TEMPORAL CHAOS EVENT!",
+      lightning_network: "⚡ LIGHTNING NETWORK ACTIVE!",
+      void_storm: "🌀 VOID STORM DETECTED!",
+      mine_field_detonation: "💥 COSMIC MINE FIELD!",
     },
 
     // Điều kiện mở khóa sự kiện - giảm mạnh để tất cả sự kiện xuất hiện ngay từ đầu game
@@ -460,6 +470,39 @@ const GAME_CONFIG = {
       lifetime: 120, // Thời gian tồn tại (2 giây)
       clearBonus: 10, // Điểm thưởng khi clear object
     },
+
+    // === NEW CREATIVE EVENTS ===
+    
+    gravityWaveCascade: {
+      count: 4, // Số sóng trọng lực
+      delay: 800, // Delay giữa các sóng (ms)
+      duration: 6000, // Thời gian event (ms)
+    },
+
+    temporalChaos: {
+      slowZoneCount: 3, // Số vùng chậm
+      fastZoneCount: 2, // Số vùng nhanh
+      duration: 8000, // Thời gian event (ms)
+    },
+
+    lightningNetwork: {
+      count: 5, // Số quả cầu lightning
+      spacing: 150, // Khoảng cách giữa các quả cầu
+      duration: 10000, // Thời gian event (ms)
+    },
+
+    voidStorm: {
+      riftCount: 6, // Số void rift
+      spawnDelay: 500, // Delay giữa các rift (ms)
+      duration: 12000, // Thời gian event (ms)
+    },
+
+    mineFieldDetonation: {
+      mineCount: 8, // Số cosmic mine
+      gridSize: 3, // Kích thước lưới (3x3)
+      chainReaction: true, // Nổ dây chuyền
+      duration: 15000, // Thời gian event (ms)
+    },
   },
 
   // =============================================================================
@@ -508,6 +551,62 @@ const GAME_CONFIG = {
       pulseFrequency: 30, // Tần suất pulse
       color: "#e91e63", // Màu hồng
       particleCount: 15, // Số particle từ trường
+    },
+
+    // === NEW CREATIVE OBJECTS ===
+    
+    gravityWave: {
+      radius: 30, // Bán kính ban đầu của sóng
+      maxRadius: 400, // Bán kính tối đa
+      expansionSpeed: 5, // Tốc độ mở rộng
+      pushForce: 0.8, // Lực đẩy vật thể
+      lifetime: 120, // Tuổi thọ (frames)
+      color: "#7c4dff", // Màu tím xanh
+      waveCount: 3, // Số vòng sóng đồng tâm
+    },
+
+    timeDistortion: {
+      radius: 120, // Bán kính vùng ảnh hưởng
+      slowFactor: 0.3, // Hệ số chậm (30% tốc độ)
+      fastFactor: 2.0, // Hệ số nhanh (200% tốc độ)
+      lifetime: 300, // Tuổi thọ (frames)
+      color: "#00e5ff", // Màu xanh cyan
+      pulseSpeed: 0.08, // Tốc độ pulse
+      particleCount: 25, // Số particle thời gian
+    },
+
+    chainLightning: {
+      radius: 20, // Bán kính quả cầu
+      chainRange: 150, // Khoảng cách chain tối đa
+      maxChains: 5, // Số chain tối đa
+      damage: 0.5, // Sát thương mỗi chain
+      chainInterval: 30, // Khoảng cách giữa các lần chain (frames)
+      lifetime: 400, // Tuổi thọ (frames)
+      color: "#ffeb3b", // Màu vàng
+      glowIntensity: 20, // Độ sáng
+    },
+
+    voidRift: {
+      radius: 40, // Bán kính rift
+      pullRadius: 120, // Bán kính hút
+      pullStrength: 0.15, // Lực hút
+      teleportChance: 0.7, // Xác suất teleport (70%)
+      lifetime: 350, // Tuổi thọ (frames)
+      color: "#1a0033", // Màu tím đen
+      edgeColor: "#9c27b0", // Màu viền tím
+      rotationSpeed: 0.05, // Tốc độ xoay
+    },
+
+    cosmicMine: {
+      radius: 15, // Bán kính mine
+      triggerRadius: 80, // Bán kính kích hoạt
+      armTime: 60, // Thời gian trang bị (frames)
+      explosionRadius: 100, // Bán kính nổ
+      shrapnelCount: 12, // Số mảnh vỡ
+      shrapnelSpeed: 6, // Tốc độ mảnh vỡ
+      shrapnelLifetime: 150, // Tuổi thọ mảnh vỡ (frames)
+      color: "#ff1744", // Màu đỏ
+      pulseSpeed: 0.15, // Tốc độ pulse khi armed
     },
   },
 

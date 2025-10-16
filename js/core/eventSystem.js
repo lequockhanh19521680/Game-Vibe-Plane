@@ -75,6 +75,12 @@ function triggerRandomEvent() {
     { type: "voidRifts", weight: 12 }, // Tăng từ 6 lên 12
     { type: "superNova", weight: 10 }, // Tăng từ 5 lên 10
     { type: "lightningStorm", weight: 18 }, // Tăng từ 10 lên 18 (đặc biệt quan trọng cho thunder shield)
+    // NEW CREATIVE EVENTS
+    { type: "gravityWaveCascade", weight: 16 }, // Sóng trọng lực liên tiếp
+    { type: "temporalChaos", weight: 14 }, // Hỗn loạn thời gian
+    { type: "lightningNetwork", weight: 15 }, // Mạng lưới sét
+    { type: "voidStorm", weight: 13 }, // Bão hố đen
+    { type: "mineFieldDetonation", weight: 12 }, // Vùng mìn nổ
   ];
 
   // Loại bỏ tính toán trọng số dựa trên điểm số - tất cả sự kiện đều có thể xuất hiện ngẫu nhiên
@@ -628,6 +634,27 @@ function triggerRandomEvent() {
     case "lightningStorm":
       handleLightningStormEvent();
       break;
+
+    // NEW CREATIVE EVENTS
+    case "gravityWaveCascade":
+      handleGravityWaveCascadeEvent();
+      break;
+
+    case "temporalChaos":
+      handleTemporalChaosEvent();
+      break;
+
+    case "lightningNetwork":
+      handleLightningNetworkEvent();
+      break;
+
+    case "voidStorm":
+      handleVoidStormEvent();
+      break;
+
+    case "mineFieldDetonation":
+      handleMineFieldDetonationEvent();
+      break;
   }
 
   // Create a new wrapper function for the plasmaStorm event
@@ -1109,5 +1136,123 @@ function triggerRandomEvent() {
 
     playSound("warning");
     triggerScreenShake(0.4);
+  }
+
+  // NEW CREATIVE EVENT HANDLERS
+
+  function handleGravityWaveCascadeEvent() {
+    const config = GAME_CONFIG.events.gravityWaveCascade;
+    eventActive.type = "gravityWaveCascade";
+    showEventText("🌊 GRAVITY WAVE CASCADE!");
+
+    // Create multiple gravity waves in sequence
+    for (let i = 0; i < config.count; i++) {
+      setTimeout(() => {
+        if (isGameRunning) {
+          const x = Math.random() * width;
+          const y = Math.random() * height;
+          gravityWaves.push(new GravityWave(x, y));
+          playSound("warning", 0.5);
+          triggerScreenShake(0.2);
+        }
+      }, i * config.delay);
+    }
+  }
+
+  function handleTemporalChaosEvent() {
+    const config = GAME_CONFIG.events.temporalChaos;
+    eventActive.type = "temporalChaos";
+    showEventText("⏰ TEMPORAL CHAOS EVENT!");
+
+    // Create slow zones
+    for (let i = 0; i < config.slowZoneCount; i++) {
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      timeDistortions.push(new TimeDistortion(x, y, false)); // Slow
+    }
+
+    // Create fast zones
+    for (let i = 0; i < config.fastZoneCount; i++) {
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      timeDistortions.push(new TimeDistortion(x, y, true)); // Fast
+    }
+
+    playSound("warning");
+    triggerScreenShake(0.3);
+  }
+
+  function handleLightningNetworkEvent() {
+    const config = GAME_CONFIG.events.lightningNetwork;
+    eventActive.type = "lightningNetwork";
+    showEventText("⚡ LIGHTNING NETWORK ACTIVE!");
+
+    // Create lightning orbs in a network pattern
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    for (let i = 0; i < config.count; i++) {
+      const angle = (i / config.count) * Math.PI * 2;
+      const x = centerX + Math.cos(angle) * config.spacing;
+      const y = centerY + Math.sin(angle) * config.spacing;
+      
+      chainLightnings.push(new ChainLightning(x, y));
+    }
+
+    playSound("thunder", 0.6);
+    triggerScreenShake(0.4);
+  }
+
+  function handleVoidStormEvent() {
+    const config = GAME_CONFIG.events.voidStorm;
+    eventActive.type = "voidStorm";
+    showEventText("🌀 VOID STORM DETECTED!");
+
+    // Create void rifts in pairs for teleportation chaos
+    for (let i = 0; i < config.riftCount / 2; i++) {
+      setTimeout(() => {
+        if (isGameRunning) {
+          const x1 = Math.random() * width;
+          const y1 = Math.random() * height;
+          const x2 = Math.random() * width;
+          const y2 = Math.random() * height;
+          
+          const rift1 = new VoidRift(x1, y1);
+          const rift2 = new VoidRift(x2, y2, rift1);
+          
+          voidRifts.push(rift1, rift2);
+          playSound("wormhole", 0.4);
+        }
+      }, i * config.spawnDelay);
+    }
+
+    triggerScreenShake(0.3);
+  }
+
+  function handleMineFieldDetonationEvent() {
+    const config = GAME_CONFIG.events.mineFieldDetonation;
+    eventActive.type = "mineFieldDetonation";
+    showEventText("💥 COSMIC MINE FIELD!");
+
+    // Create mines in a grid pattern
+    const gridSize = config.gridSize;
+    const spacingX = width / (gridSize + 1);
+    const spacingY = height / (gridSize + 1);
+
+    let mineIndex = 0;
+    for (let i = 1; i <= gridSize; i++) {
+      for (let j = 1; j <= gridSize; j++) {
+        if (mineIndex >= config.mineCount) break;
+        
+        const x = spacingX * i + (Math.random() - 0.5) * spacingX * 0.3;
+        const y = spacingY * j + (Math.random() - 0.5) * spacingY * 0.3;
+        
+        cosmicMines.push(new CosmicMine(x, y));
+        mineIndex++;
+      }
+    }
+
+    playSound("warning");
+    triggerScreenShake(0.2);
   }
 } // Close triggerRandomEvent function
