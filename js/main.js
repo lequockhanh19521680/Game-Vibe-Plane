@@ -73,6 +73,9 @@ document.addEventListener("DOMContentLoaded", function () {
       initAudioSystem();
     }
 
+    // Hide cursor during gameplay
+    document.body.style.cursor = "none";
+
     // Initialize game
     if (typeof window.init === "function") {
       window.init();
@@ -107,6 +110,9 @@ document.addEventListener("DOMContentLoaded", function () {
     // Show main menu container
     uiElements.mainMenuContainer.style.display = "flex";
 
+    // Make sure cursor is visible
+    document.body.style.cursor = "default";
+
     // Make sure we're showing the main menu panel, not leaderboard or help
     showMainMenu();
 
@@ -118,10 +124,13 @@ document.addEventListener("DOMContentLoaded", function () {
     cancelAnimationFrame(animationFrameId);
     stopBackgroundMusic();
   }
-  function endGame(reason = "unknown") {
+  // Make endGame function globally available
+  window.endGame = function (reason = "unknown") {
     if (!isGameRunning) return;
     console.log(`Game Over! Reason: ${reason}`);
     isGameRunning = false;
+    // Show cursor again when game ends
+    document.body.style.cursor = "default";
     stopBackgroundMusic();
     playSound("explosion");
     cancelAnimationFrame(animationFrameId);
@@ -175,7 +184,7 @@ document.addEventListener("DOMContentLoaded", function () {
       uiElements.gameOverScreen.style.display = "flex";
       uiElements.scoreContainer.style.opacity = "0";
     }, 1000);
-  }
+  };
 
   // --- Event Listeners ---
 
@@ -309,6 +318,14 @@ document.addEventListener("DOMContentLoaded", function () {
   window.addEventListener("mousemove", (e) => {
     mouse.x = e.clientX;
     mouse.y = e.clientY;
+
+    // Reset the cursor style to default when game is not running
+    if (!isGameRunning) {
+      document.body.style.cursor = "default";
+    } else {
+      // Hide cursor during gameplay
+      document.body.style.cursor = "none";
+    }
   });
   window.addEventListener(
     "touchmove",

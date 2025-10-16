@@ -1,0 +1,22 @@
+/* Cursor handling styles */
+body.game-running {
+  cursor: none; /* Hide cursor during gameplay */
+}
+
+body.game-over,
+body.menu-active {
+  cursor: default; /* Show cursor in menus and game over */
+}
+
+#game-over-screen,
+#main-menu-container,
+.dialog-overlay,
+.high-score-dialog,
+button {
+  cursor: default; /* Always show cursor on interactive elements */
+}
+
+/* Explicitly set pointer cursor on buttons */
+button {
+  cursor: pointer;
+}

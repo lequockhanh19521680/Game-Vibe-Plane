@@ -14,7 +14,7 @@ const GAME_CONFIG = {
     friction: 0.92, // Ma sát tự nhiên - giảm để khó điều khiển hơn
     trailLength: 20, // Độ dài vệt khói
     trailFadeSpeed: 0.05, // Tốc độ mờ dần vệt khói
-    initialShieldDuration: 0, // Thời gian khiên ban đầu (đã tắt)
+    initialShieldDuration: 300, // Thời gian khiên ban đầu - kích hoạt 5 giây
   },
 
   // =============================================================================

@@ -191,13 +191,20 @@ class Laser {
     const beamWidth = 15;
     const glowWidth = 25;
 
+    // Calculate gradient coordinates
+    const x0 = this.x - Math.cos(this.angle) * 100;
+    const y0 = this.y - Math.sin(this.angle) * 100;
+    const x1 = this.x + Math.cos(this.angle) * 100;
+    const y1 = this.y + Math.sin(this.angle) * 100;
+
+    // Validate coordinates are finite
+    if ([x0, y0, x1, y1].some((v) => !isFinite(v))) {
+      ctx.restore();
+      return;
+    }
+
     // Create gradient for Superman-style beam
-    const gradient = ctx.createLinearGradient(
-      this.x - Math.cos(this.angle) * 100,
-      this.y - Math.sin(this.angle) * 100,
-      this.x + Math.cos(this.angle) * 100,
-      this.y + Math.sin(this.angle) * 100
-    );
+    const gradient = ctx.createLinearGradient(x0, y0, x1, y1);
 
     // Bright center with red-tinted edges like Superman's heat vision
     gradient.addColorStop(0, "rgba(255, 255, 255, 0.9)");
