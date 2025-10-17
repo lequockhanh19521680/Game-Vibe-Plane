@@ -14,9 +14,28 @@ const uiElements = {
   finalTimeEl: document.getElementById("final-time"),
   newHighscoreMsg: document.getElementById("new-highscore-msg"),
   eventText: document.getElementById("event-text"),
+  leaderboardScreen: document.getElementById("leaderboard-screen"),
+  howToPlayScreen: document.getElementById("how-to-play-screen"),
+  pauseMenu: document.getElementById("pause-menu"),
+  pauseButton: document.getElementById("pause-button"),
 };
 const startButton = document.getElementById("start-button");
 const restartButton = document.getElementById("restart-button");
+const leaderboardButton = document.getElementById("leaderboard-button");
+const howToPlayButton = document.getElementById("how-to-play-button");
+const backToMainMenuButton = document.getElementById(
+  "back-to-main-menu-button"
+);
+const backToMainFromHowToPlayButton = document.getElementById(
+  "back-to-main-from-how-to-play-button"
+);
+const resumeButton = document.getElementById("resume-button");
+const restartFromPauseButton = document.getElementById(
+  "restart-from-pause-button"
+);
+const mainMenuFromPauseButton = document.getElementById(
+  "main-menu-from-pause-button"
+);
 
 let width, height;
 let player,
@@ -59,6 +78,7 @@ let timers = {
 };
 let spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval;
 let isGameRunning = false;
+let isPaused = false;
 let globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed;
 let nebulae = [];
 let nextEventScore = 1000;
@@ -71,20 +91,18 @@ function startGame() {
   uiElements.startScreen.style.display = "none";
   uiElements.gameOverScreen.style.display = "none";
   uiElements.scoreContainer.style.opacity = "1";
+  uiElements.pauseButton.style.display = "block";
 }
 function endGame(reason = "unknown") {
   if (!isGameRunning) return;
   console.log(`Game Over! Reason: ${reason}`);
   isGameRunning = false;
+  uiElements.pauseButton.style.display = "none";
   stopBackgroundMusic();
   playSound("explosion");
   cancelAnimationFrame(animationFrameId);
   triggerScreenShake(GAME_CONFIG.visual.screenShake.explosionIntensity);
-  for (
-    let i = 0;
-    i < GAME_CONFIG.visual.particles.explosionCount * 8;
-    i++
-  )
+  for (let i = 0; i < GAME_CONFIG.visual.particles.explosionCount * 8; i++)
     particles.push(
       new Particle(player.x, player.y, Math.random() * 3, "#ff4444", {
         x:
@@ -117,6 +135,17 @@ function endGame(reason = "unknown") {
   }, 1000);
 }
 
+function togglePause() {
+  isPaused = !isPaused;
+  if (isPaused) {
+    uiElements.pauseMenu.style.display = "flex";
+    cancelAnimationFrame(animationFrameId);
+  } else {
+    uiElements.pauseMenu.style.display = "none";
+    animate();
+  }
+}
+
 // --- Event Listeners ---
 startButton.addEventListener("click", () => {
   playSound("buttonHover");
@@ -127,13 +156,54 @@ restartButton.addEventListener("click", () => {
   startGame();
 });
 
+leaderboardButton.addEventListener("click", () => {
+  playSound("buttonHover");
+  showLeaderboard();
+});
+
+howToPlayButton.addEventListener("click", () => {
+  playSound("buttonHover");
+  showHowToPlay();
+});
+
+backToMainMenuButton.addEventListener("click", () => {
+  playSound("buttonHover");
+  showMainMenu();
+});
+
+backToMainFromHowToPlayButton.addEventListener("click", () => {
+  playSound("buttonHover");
+  showMainMenu();
+});
+
+uiElements.pauseButton.addEventListener("click", () => {
+  playSound("buttonHover");
+  togglePause();
+});
+
+resumeButton.addEventListener("click", () => {
+  playSound("buttonHover");
+  togglePause();
+});
+
+restartFromPauseButton.addEventListener("click", () => {
+  playSound("buttonHover");
+  togglePause();
+  startGame();
+});
+
+mainMenuFromPauseButton.addEventListener("click", () => {
+  playSound("buttonHover");
+  togglePause();
+  isGameRunning = false;
+  uiElements.pauseButton.style.display = "none";
+  uiElements.scoreContainer.style.opacity = "0";
+  showMainMenu();
+});
+
 // Button hover sound effects
-startButton.addEventListener("mouseenter", () =>
-  playSound("buttonHover")
-);
-restartButton.addEventListener("mouseenter", () =>
-  playSound("buttonHover")
-);
+startButton.addEventListener("mouseenter", () => playSound("buttonHover"));
+restartButton.addEventListener("mouseenter", () => playSound("buttonHover"));
 
 window.addEventListener("mousemove", (e) => {
   mouse.x = e.clientX;
@@ -157,6 +227,14 @@ window.addEventListener("resize", () => {
   nebulae = Array(5)
     .fill(null)
     .map(() => createNebula());
+});
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "p" || e.key === "Escape") {
+    if (isGameRunning) {
+      togglePause();
+    }
+  }
 });
 
 // --- Initial Draw ---
@@ -191,4 +269,3 @@ stars.forEach((s) => s.draw());
 uiElements.highscoreDisplay.innerText = `High Score: ${
   localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0
 }`;
-

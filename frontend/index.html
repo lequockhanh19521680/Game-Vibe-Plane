@@ -14,6 +14,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/dialog.css" />
   </head>
   <body>
     <canvas id="game-canvas"></canvas>
@@ -37,6 +38,8 @@
           as long as possible!
         </p>
         <button id="start-button">Start Battle</button>
+        <button id="leaderboard-button">Leaderboard</button>
+        <button id="how-to-play-button">How to Play</button>
       </div>
 
       <div id="game-over-screen" class="ui-element">
@@ -46,18 +49,52 @@
         <p id="new-highscore-msg">New High Score!</p>
         <button id="restart-button">Try Again</button>
       </div>
+
+      <div id="leaderboard-screen" class="ui-element" style="display: none">
+        <h2>Dashboard</h2>
+        <div class="dashboard-tabs">
+          <button class="dashboard-tab active" data-tab="leaderboard">
+            Leaderboard
+          </button>
+          <button class="dashboard-tab" data-tab="stats">My Stats</button>
+        </div>
+        <div id="leaderboard-content" class="dashboard-content active">
+          <h3>Global Leaderboard</h3>
+          <div id="leaderboard-list"></div>
+        </div>
+        <div id="stats-content" class="dashboard-content">
+          <h3>Your Statistics</h3>
+          <div id="player-stats"></div>
+        </div>
+        <button id="back-to-main-menu-button">Back</button>
+      </div>
+
+      <div id="how-to-play-screen" class="ui-element" style="display: none">
+        <h2>How to Play</h2>
+        <p>
+          - **Move:** Use your mouse or finger to guide the ship.
+          <br />- **Score:** Earn points by moving and surviving. <br />-
+          **Avoid:** Dodge asteroids, missiles, black holes, and lasers. <br />-
+          **Power-ups:** Collect crystals to gain a temporary shield.
+        </p>
+        <button id="back-to-main-from-how-to-play-button">Back</button>
+      </div>
+
+      <div id="pause-menu" class="ui-element" style="display: none">
+        <h2>Paused</h2>
+        <button id="resume-button">Resume</button>
+        <button id="restart-from-pause-button">Restart</button>
+        <button id="main-menu-from-pause-button">Main Menu</button>
+      </div>
+      <button id="pause-button" style="display: none">❚❚</button>
     </div>
 
-    <!-- Load game configuration -->
     <script src="gameConfig.js"></script>
-    
-    <!-- Load game modules in order -->
+
     <script src="js/audio/audioSystem.js"></script>
-    
-    <!-- Load base classes first (SOLID principles) -->
+
     <script src="js/base/Entity.js"></script>
-    
-    <!-- Load entity classes -->
+
     <script src="js/entities/player.js"></script>
     <script src="js/entities/visuals.js"></script>
     <script src="js/entities/warnings.js"></script>
@@ -65,10 +102,10 @@
     <script src="js/entities/collectibles.js"></script>
     <script src="js/entities/hazards.js"></script>
     <script src="js/entities/portals.js"></script>
-    
-    <!-- Load game logic -->
+
     <script src="js/core/game.js"></script>
     <script src="js/utils/helpers.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/ui/menuSystem.js"></script>
   </body>
 </html>
