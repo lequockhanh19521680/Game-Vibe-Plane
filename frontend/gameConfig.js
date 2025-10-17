@@ -9,106 +9,104 @@ const GAME_CONFIG = {
   // PLAYER SETTINGS - Cài đặt người chơi
   // =============================================================================
   player: {
-    radius: 20, // Kích thước player - TĂNG từ 15 lên 20 cho PC
-    responsiveness: 0.15, // Độ nhạy điều khiển - tăng lên để dễ điều khiển hơn
-    friction: 0.94, // Ma sát tự nhiên - tăng lên để giữ tốc độ di chuyển ổn định hơn
+    radius: 15, // Kích thước player
+    responsiveness: 0.15, // Độ nhạy điều khiển (0.1 = chậm, 0.2 = nhanh)
+    friction: 0.95, // Ma sát tự nhiên (0.9 = nhiều, 0.99 = ít)
     trailLength: 20, // Độ dài vệt khói
     trailFadeSpeed: 0.05, // Tốc độ mờ dần vệt khói
-    initialShieldDuration: 600, // Thời gian khiên ban đầu - tăng từ 5 giây lên 10 giây
-    startWithThunderShield: true, // Bắt đầu game với thunder shield
   },
 
   // =============================================================================
-  // DIFFICULTY PROGRESSION - Hệ thống khó dần (PC MODE - EXTREMELY HARD START)
+  // DIFFICULTY PROGRESSION - Hệ thống khó dần
   // =============================================================================
   difficulty: {
-    baseSpawnInterval: 40, // GIẢM XUỐNG 40 - Spawn CỰC NHANH ngay từ đầu
-    minSpawnInterval: 25, // GIẢM XUỐNG 25 - Cho phép spawn siêu nhanh
-    spawnDecreaseStep: 1.0, // TĂNG LÊN 1.0 - Độ khó tăng CỰC NHANH
+    baseSpawnInterval: 150, // Thời gian spawn ban đầu - tăng từ 120 để dễ thở hơn
+    minSpawnInterval: 25, // Thời gian spawn tối thiểu - giảm từ 45 để level cao ngạt thở
+    spawnDecreaseStep: 1.5, // Giảm spawn interval mỗi lần - giảm từ 2 để chậm hơn
 
-    baseSpeed: 1.3, // TĂNG LÊN 1.3 - Objects bay CỰC NHANH ngay từ đầu
-    speedIncreaseStep: 0.025, // TĂNG LÊN 0.025 - Tốc độ tăng rất nhanh
-    microSpeedIncrease: 0.004, // TĂNG LÊN 0.004 - Tăng tốc liên tục nhanh hơn
+    baseSpeed: 0.6, // Tốc độ cơ bản - giảm từ 0.8 để đầu dễ hơn
+    speedIncreaseStep: 0.06, // Tăng tốc độ mỗi level - tăng từ 0.04 để level cao khó hơn
+    microSpeedIncrease: 0.01, // Tăng tốc độ nhỏ liên tục - giảm từ 0.015
 
-    levelUpInterval: 30, // Giây để lên level - giữ nguyên
-    microProgressInterval: 1200, // GIẢM XUỐNG 1200 - Độ khó tăng CỰC NHANH
+    levelUpInterval: 30, // Giây để lên level - mỗi 30 giây lên 1 level
+    microProgressInterval: 900, // Frame để tăng khó nhỏ - tăng từ 800
   },
 
   // =============================================================================
-  // ASTEROID SETTINGS - Cài đặt thiên thạch (PC MODE - EXTREME)
+  // ASTEROID SETTINGS - Cài đặt thiên thạch
   // =============================================================================
   asteroids: {
-    minRadius: 24, // TĂNG từ 18 lên 24 - Thiên thạch to hơn, dễ thấy
-    maxRadius: 60, // TĂNG từ 48 lên 60 - Kích thước max lớn hơn
-    baseSpeed: 3.8, // TĂNG LÊN 3.8 - Tốc độ CỰC NHANH ngay từ đầu
-    speedVariation: 2.5, // TĂNG LÊN 2.5 - Biến thiên CỰC LỚN, cực khó đoán
-    speedIncreasePerLevel: 0.1, // TĂNG LÊN 0.1 - Tăng tốc rất nhanh
-    fragmentSpeed: 0.99, // Tốc độ giảm của mảnh vỡ - giữ nguyên
-    colors: ["#ff4444", "#ffbb33", "#99cc00"], // Màu sắc - giữ nguyên
+    minRadius: 10, // Kích thước tối thiểu - giảm từ 12 để đầu dễ hơn
+    maxRadius: 45, // Kích thước tối đa - tăng từ 35 để level cao khó hơn
+    baseSpeed: 1.5, // Tốc độ cơ bản - giảm từ 0.7 để đầu dễ hơn
+    speedVariation: 1.2, // Biến thiên tốc độ - giảm từ 1.5
+    speedIncreasePerLevel: 0.35, // Tăng tốc độ mỗi level - tăng từ 0.2 để level cao ngạt thở
+    fragmentSpeed: 0.99, // Tốc độ giảm của mảnh vỡ
+    colors: ["#ff4444", "#ffbb33", "#99cc00"], // Màu sắc
 
-    // Spawn patterns - CỰC KHÓ - Rất nhiều góc độ ngẫu nhiên
+    // Spawn patterns - Thiên thạch rơi từ trên xuống
     spawnPatterns: {
-      topDown: 0.35, // 35% - GIẢM thêm để có nhiều góc độ khó đoán
-      slightAngle: 0.35, // 35% - TĂNG góc nghiêng
-      diagonal: 0.3, // 30% - TĂNG MẠNH rơi từ góc, CỰC KHÓ NÉ
+      topDown: 0.7, // 70% - Straight down from top
+      slightAngle: 0.2, // 20% - Slight angle from top
+      diagonal: 0.1, // 10% - Diagonal from corners
     },
   },
 
   // =============================================================================
-  // BLACK HOLE SETTINGS - Cài đặt hố đen (PC MODE - BRUTAL)
+  // BLACK HOLE SETTINGS - Cài đặt hố đen
   // =============================================================================
   blackHoles: {
-    spawnScore: 150, // GIẢM XUỐNG 150 - Xuất hiện CỰC SỚM
-    spawnInterval: 550, // GIẢM XUỐNG 550 - Xuất hiện CỰC THƯỜNG XUYÊN
-    warningDuration: 100, // GIẢM XUỐNG 100 - Ít thời gian chuẩn bị
-    warningDelay: 1500, // GIẢM XUỐNG 1.5 giây - Ít thời gian phản ứng
+    spawnScore: 500, // Điểm bắt đầu xuất hiện - giảm mạnh để xuất hiện sớm
+    spawnInterval: 900, // Khoảng cách spawn - tăng từ 800 để ít hơn ở đầu
+    warningDuration: 180, // Thời gian cảnh báo - tăng từ 150 để chuẩn bị tốt hơn
+    warningDelay: 3000, // Delay sau cảnh báo - tăng từ 2500
 
-    baseRadius: 8, // Bán kính ban đầu - giảm xuống để dễ tránh hơn
-    baseMaxRadius: 45, // Bán kính tối đa ban đầu - giảm xuống để dễ tránh hơn
-    radiusIncreasePerLevel: 3, // Tăng radius mỗi level - giảm để độ khó tăng chậm hơn
+    baseRadius: 6, // Bán kính ban đầu - giảm từ 8 để đầu dễ hơn
+    baseMaxRadius: 60, // Bán kính tối đa ban đầu - tăng từ 45 để level cao khó hơn
+    radiusIncreasePerLevel: 12, // Tăng radius mỗi level - tăng từ 8 để level cao ngạt thở
 
-    baseGravityRadius: 120, // Vùng hấp dẫn ban đầu - giảm xuống để dễ thoát hơn
-    gravityRadiusIncreasePerLevel: 8, // Tăng vùng hấp dẫn mỗi level - giảm để độ khó tăng chậm hơn
+    baseGravityRadius: 110, // Vùng hấp dẫn ban đầu - giảm từ 130 để đầu dễ
+    gravityRadiusIncreasePerLevel: 25, // Tăng vùng hấp dẫn mỗi level - tăng từ 15
 
-    baseStrength: 0.03, // Sức hấp dẫn cơ bản - giảm để dễ thoát hơn
-    strengthIncreasePerLevel: 0.005, // Tăng sức hấp dẫn mỗi level - giảm để độ khó tăng chậm hơn
+    baseStrength: 0.025, // Sức hấp dẫn cơ bản - giảm từ 0.035 để đầu dễ
+    strengthIncreasePerLevel: 0.015, // Tăng sức hấp dẫn mỗi level - tăng từ 0.008
 
-    baseGrowthRate: 0.02, // Tốc độ lớn cơ bản - giảm để hố đen phát triển chậm hơn
-    growthRateIncreasePerLevel: 0.015, // Tăng tốc độ lớn mỗi level - giảm để tăng chậm hơn
+    baseGrowthRate: 0.03, // Tốc độ lớn cơ bản - giảm từ 0.04
+    growthRateIncreasePerLevel: 0.025, // Tăng tốc độ lớn mỗi level - tăng từ 0.015
 
-    playerForceMultiplier: 1.5, // Hệ số lực tác dụng lên player - giảm để player bị ảnh hưởng ít hơn
+    playerForceMultiplier: 1.8, // Hệ số lực tác dụng lên player - giảm từ 2.0
     shakeThreshold: 0.7, // Ngưỡng gây rung màn hình
     shakeIntensity: 0.05, // Cường độ rung
 
-    temporaryLifetime: 250, // Tuổi thọ hố đen tạm thời - tăng lại
+    temporaryLifetime: 200, // Tuổi thọ hố đen tạm thời - giảm từ 250
   },
 
   // =============================================================================
-  // MISSILE SETTINGS - Cài đặt tên lửa (PC MODE - DEADLY)
+  // MISSILE SETTINGS - Cài đặt tên lửa
   // =============================================================================
   missiles: {
-    spawnScore: 250, // GIẢM XUỐNG 250 - Xuất hiện CỰC SỚM
-    spawnInterval: 400, // GIẢM XUỐNG 400 - Xuất hiện CỰC THƯỜNG XUYÊN
-    warningDuration: 80, // GIẢM XUỐNG 80 - Rất ít thời gian cảnh báo
-    warningDelay: 1200, // GIẢM XUỐNG 1.2 giây - Rất ít thời gian chuẩn bị
+    spawnScore: 800, // Điểm bắt đầu xuất hiện - giảm mạnh để đa dạng
+    spawnInterval: 600, // Khoảng cách spawn
+    warningDuration: 150, // Thời gian cảnh báo
+    warningDelay: 2500, // Delay sau cảnh báo
 
-    radius: 13, // GIẢM từ 18 xuống 13 - Nhỏ hơn, dễ né hơn
-    baseSpeed: 0.35, // TĂNG LÊN 0.35 - CỰC NHANH
-    speedIncreasePerLevel: 0.018, // TĂNG LÊN 0.018 - Tăng tốc rất nhanh
+    radius: 5, // Kích thước
+    baseSpeed: 0.195, // Tốc độ cơ bản - nhanh hơn xíu
+    speedIncreasePerLevel: 0.03, // Tăng tốc độ mỗi level
 
-    baseTurnSpeed: 0.04, // TĂNG LÊN 0.04 - Rẽ CỰC NHANH, gần như không thoát được
-    turnSpeedIncreasePerLevel: 0.01, // TĂNG LÊN 0.01 - Tăng độ rẽ rất nhanh
+    baseTurnSpeed: 0.025, // Tốc độ rẽ cơ bản - nhanh hơn
+    turnSpeedIncreasePerLevel: 0.015, // Tăng tốc độ rẽ mỗi level
 
-    speedUpTime: 450, // Thời gian để tăng tốc - tăng lên để tên lửa cần nhiều thời gian hơn để tăng tốc
-    speedUpMultiplier: 1.5, // Hệ số tăng tốc - giảm xuống để tên lửa không quá nhanh
-    turnSpeedUpMultiplier: 1.3, // Hệ số tăng tốc độ rẽ - giảm xuống để tên lửa rẽ chậm hơn
+    speedUpTime: 350, // Thời gian để tăng tốc
+    speedUpMultiplier: 1.8, // Hệ số tăng tốc - nhanh hơn
+    turnSpeedUpMultiplier: 1.5, // Hệ số tăng tốc độ rẽ
 
-    lifetime: 800, // Tuổi thọ - giảm xuống để tên lửa biến mất nhanh hơn
-    fragmentCount: 6, // Số mảnh vỡ khi nổ - giảm thêm để ít mảnh vỡ hơn
-    fragmentCountOnImpact: 4, // Số mảnh vỡ khi va chạm - giảm thêm để ít mảnh vỡ hơn
+    lifetime: 900, // Tuổi thọ - tồn tại nhỏ hơn 1 giây (900 frames = 15 giây @ 60fps)
+    fragmentCount: 8, // Số mảnh vỡ khi nổ - giảm từ 10
+    fragmentCountOnImpact: 5, // Số mảnh vỡ khi va chạm - giảm từ 6
 
     velocity: {
-      friction: 0.94, // Ma sát - tăng thêm để tên lửa chậm dần nhanh hơn
+      friction: 0.92, // Ma sát - tăng từ 0.88 để dễ điều khiển hơn
     },
   },
 
@@ -116,23 +114,23 @@ const GAME_CONFIG = {
   // LASER SETTINGS - Cài đặt laser
   // =============================================================================
   lasers: {
-    spawnScore: 800, // Điểm bắt đầu xuất hiện - tăng lên để xuất hiện muộn hơn
-    baseInterval: 400, // Khoảng cách spawn cơ bản - tăng lên để laser xuất hiện ít hơn
-    intervalDecreasePerLevel: 8, // Giảm interval mỗi level - giảm để độ khó tăng chậm hơn
-    minInterval: 180, // Interval tối thiểu - tăng để level cao không quá khó
+    spawnScore: 1200, // Điểm bắt đầu xuất hiện - giảm mạnh để đa dạng
+    baseInterval: 400, // Khoảng cách spawn cơ bản - tăng từ 300 để đầu ít hơn
+    intervalDecreasePerLevel: 18, // Giảm interval mỗi level - tăng từ 12 để level cao ngạt thở
+    minInterval: 80, // Interval tối thiểu - giảm từ 150 để level cao cực khó
 
-    maxConcurrent: 1, // Số laser tối đa cùng lúc - giảm xuống còn 1 để dễ né
-    lasersPerLevel: 6, // Chia level để tính số laser - tăng lên để các level cao mới có nhiều laser
+    maxConcurrent: 1, // Số laser tối đa cùng lúc - giảm từ 2 để đầu dễ hơn
+    lasersPerLevel: 3, // Chia level để tính số laser - giảm từ 4
 
-    baseTargetChance: 0.2, // Xác suất nhắm mục tiêu cơ bản - giảm để đầu game dễ hơn
-    targetChanceIncreasePerLevel: 0.02, // Tăng xác suất mỗi level - giảm để độ khó tăng chậm hơn
-    maxTargetChance: 0.5, // Xác suất tối đa - giảm để level cao không quá khó
+    baseTargetChance: 0.15, // Xác suất nhắm mục tiêu cơ bản - giảm từ 0.25 để đầu dễ
+    targetChanceIncreasePerLevel: 0.05, // Tăng xác suất mỗi level - tăng từ 0.03
+    maxTargetChance: 0.75, // Xác suất tối đa - tăng từ 0.5 để level cao ngạt thở
 
-    warningTime: 150, // Thời gian cảnh báo - tăng để dễ chuẩn bị hơn
-    beamDuration: 20, // Thời gian tồn tại beam - giảm xuống để dễ tránh hơn
-    staggerDelay: 180, // Delay giữa các laser - tăng lên để có nhiều thời gian chuẩn bị
+    warningTime: 150, // Thời gian cảnh báo - tăng từ 120 để đầu dễ hơn
+    beamDuration: 20, // Thời gian tồn tại beam - tăng từ 15 để level cao khó hơn
+    staggerDelay: 150, // Delay giữa các laser - giảm từ 200 để level cao nhanh hơn
 
-    playerHitRadius: 6, // Bán kính va chạm với player - giảm để né dễ hơn
+    playerHitRadius: 7.5, // Bán kính va chạm với player
   },
 
   // =============================================================================
@@ -156,8 +154,8 @@ const GAME_CONFIG = {
 
     // Missile fragment settings
     missileFragments: {
-      minRadius: 12, // Kích thước tối thiểu mảnh tên lửa - tăng từ 3 lên 12 (2/3 kích thước tên lửa chính)
-      maxRadius: 15, // Kích thước tối đa mảnh tên lửa - tăng từ 6 lên 15 (gần bằng tên lửa chính)
+      minRadius: 3, // Kích thước tối thiểu mảnh tên lửa
+      maxRadius: 6, // Kích thước tối đa mảnh tên lửa
       minLife: 80, // Tuổi thọ tối thiểu
       maxLife: 120, // Tuổi thọ tối đa
       color: "#f48fb1", // Màu sắc mảnh tên lửa
@@ -192,8 +190,8 @@ const GAME_CONFIG = {
   // CRYSTAL CLUSTER SETTINGS - Cài đặt cụm pha lê
   // =============================================================================
   crystalClusters: {
-    spawnScore: 1200, // Điểm bắt đầu xuất hiện - giảm để xuất hiện sớm hơn
-    spawnInterval: 600, // Khoảng cách spawn - giảm để xuất hiện thường xuyên hơn
+    spawnScore: 2000, // Điểm bắt đầu xuất hiện
+    spawnInterval: 800, // Khoảng cách spawn
 
     radius: 20, // Bán kính cluster
     lifetime: 300, // Tuổi thọ (frames)
@@ -208,7 +206,7 @@ const GAME_CONFIG = {
   // EVENT SYSTEM - Hệ thống sự kiện
   // =============================================================================
   events: {
-    interval: 1200, // Khoảng cách sự kiện - giảm xuống 1200 từ 2500 để sự kiện xảy ra thường xuyên hơn
+    interval: 3000, // Khoảng cách sự kiện - tăng mạnh để giãn ra nhiều
     duration: 5000, // Thời gian hiển thị message (ms)
 
     // Event types - MASSIVELY EXPANDED
@@ -250,11 +248,6 @@ const GAME_CONFIG = {
       "energy_barriers",
       "meteor_bombardment",
       "void_rifts",
-      "gravity_wave_cascade",
-      "temporal_chaos",
-      "lightning_network",
-      "void_storm",
-      "mine_field_detonation",
     ],
 
     // Event messages - MASSIVELY EXPANDED
@@ -296,28 +289,23 @@ const GAME_CONFIG = {
       energy_barriers: "⚡ ENERGY BARRIER GRID!",
       meteor_bombardment: "☄️ METEOR BOMBARDMENT!",
       void_rifts: "🌌 VOID RIFTS OPENING!",
-      gravity_wave_cascade: "🌊 GRAVITY WAVE CASCADE!",
-      temporal_chaos: "⏰ TEMPORAL CHAOS EVENT!",
-      lightning_network: "⚡ LIGHTNING NETWORK ACTIVE!",
-      void_storm: "🌀 VOID STORM DETECTED!",
-      mine_field_detonation: "💥 COSMIC MINE FIELD!",
     },
 
-    // Điều kiện mở khóa sự kiện - giảm mạnh để tất cả sự kiện xuất hiện ngay từ đầu game
+    // Điều kiện mở khóa sự kiện - giảm mạnh để đa dạng ngay từ đầu
     unlockThresholds: {
-      laserSwarm: 100, // Giảm từ 500 xuống 100
-      gravitationalAnomaly: 200, // Giảm từ 1000 xuống 200
-      laserGrid: 300, // Giảm từ 1500 xuống 300
-      blackHoleChain: 400, // Giảm từ 2000 xuống 400
-      missileBarrage: 500, // Giảm từ 2500 xuống 500
-      timeWarp: 600, // Giảm từ 3000 xuống 600
-      // Events mới - có thể xuất hiện ngay từ đầu game
-      wormholePortal: 100, // Giảm từ 500 xuống 100
-      shieldGenerator: 200, // Giảm từ 1000 xuống 200
-      freezeZone: 300, // Giảm từ 1500 xuống 300
-      magneticStorm: 400, // Giảm từ 2000 xuống 400
-      asteroidBelt: 500, // Giảm từ 2500 xuống 500
-      laserTurrets: 600, // Giảm từ 3000 xuống 600
+      laserSwarm: 500, // level sớm
+      gravitationalAnomaly: 1000,
+      laserGrid: 1500, // level sớm
+      blackHoleChain: 2000,
+      missileBarrage: 2500, // level trung bình
+      timeWarp: 3000,
+      // Events mới - xuất hiện rất sớm
+      wormholePortal: 500, // level rất sớm
+      shieldGenerator: 1000, // level sớm
+      freezeZone: 1500, // level rất sớm
+      magneticStorm: 2000, // level trung bình
+      asteroidBelt: 2500, // level sớm
+      laserTurrets: 3000, // level trung bình
     },
 
     // Cài đặt từng sự kiện
@@ -334,23 +322,23 @@ const GAME_CONFIG = {
     },
 
     laserSwarm: {
-      laserCount: 4, // Số laser - giảm xuống 4 để dễ né tránh
-      targetChance: 0.4, // Xác suất nhắm mục tiêu - giảm xuống 0.4 để ít laser nhắm vào người chơi
-      delay: 300, // Delay giữa các laser - tăng lên 300 để có thời gian né tránh
+      laserCount: 6, // Số laser - tăng từ 4 để level trung bình khó hơn
+      targetChance: 0.6, // Xác suất nhắm mục tiêu - tăng từ 0.4
+      delay: 200, // Delay giữa các laser - giảm từ 300 để nhanh hơn
     },
 
     laserGrid: {
-      gridSize: 6, // Kích thước lưới - giảm xuống 6 để ít laser hơn
-      delay: 250, // Delay giữa các laser - tăng lên 250 để có thời gian né tránh
+      gridSize: 9, // Kích thước lưới - tăng từ 6 để level cao ngạt thở
+      delay: 150, // Delay giữa các laser - giảm từ 250 để nhanh hơn
     },
 
     asteroidRain: {
-      count: 18, // Số thiên thạch - giảm xuống còn 18 để ít thiên thạch hơn
-      delay: 180, // Delay giữa các thiên thạch - tăng lên 180 để có nhiều thời gian né tránh
-      minRadius: 6, // Kích thước tối thiểu - giữ nguyên
-      maxRadius: 22, // Kích thước tối đa - giảm thêm để dễ né tránh hơn
-      speedMultiplier: 3.0, // Hệ số tốc độ - giảm xuống 3.0 để thiên thạch chậm hơn
-      speedVariation: 2.0, // Biến thiên tốc độ - giảm để ổn định và dễ dự đoán hơn
+      count: 18, // Số thiên thạch - tăng từ 12 để khó hơn
+      delay: 180, // Delay giữa các thiên thạch - giảm từ 250 để nhanh hơn
+      minRadius: 6, // Kích thước tối thiểu - giảm từ 8 để nhiều hơn
+      maxRadius: 30, // Kích thước tối đa - tăng từ 22 để khó tránh hơn
+      speedMultiplier: 2.2, // Hệ số tốc độ - tăng từ 1.6
+      speedVariation: 3.5, // Biến thiên tốc độ - tăng từ 2.5
     },
 
     asteroidCircle: {
@@ -394,18 +382,18 @@ const GAME_CONFIG = {
 
     freezeZone: {
       count: 4, // Số vùng đóng băng
-      radius: 120, // Bán kính vùng ảnh hưởng (tăng từ 100)
-      slowFactor: 0.2, // Hệ số chậm lại (20% tốc độ - hiệu ứng mạnh hơn)
-      duration: 450, // Thời gian tồn tại (tăng từ 200 lên 450)
+      radius: 100, // Bán kính vùng ảnh hưởng
+      slowFactor: 0.3, // Hệ số chậm lại (30% tốc độ)
+      duration: 200, // Thời gian tồn tại
     },
 
     magneticStorm: {
-      lifetime: 300, // Giảm xuống còn 5 giây
-      maxIntensity: 0.9, // Giảm cường độ tối đa
-      fieldCount: 3, // Giảm số từ trường
-      fieldRadius: 100, // Giảm bán kính từ trường
-      playerAffectMultiplier: 0.2, // Giảm ảnh hưởng lên player
-      objectAffectMultiplier: 0.4, // Giảm ảnh hưởng lên objects
+      lifetime: 480, // 8 giây
+      maxIntensity: 1.2, // Cường độ tối đa
+      fieldCount: 4, // Số từ trường
+      fieldRadius: 120, // Bán kính từ trường
+      playerAffectMultiplier: 0.3, // Ảnh hưởng lên player
+      objectAffectMultiplier: 0.5, // Ảnh hưởng lên objects
     },
 
     asteroidBelt: {
@@ -431,10 +419,10 @@ const GAME_CONFIG = {
     },
 
     crystalRain: {
-      count: 5,
-      delay: 80,
-      clusterSize: 5,
-      driftSpeed: 1.2,
+      count: 32, // Số crystal shard (tăng để có nhiều cluster)
+      delay: 80, // Delay giữa các crystal (chậm hơn để tạo formation)
+      clusterSize: 8, // Số crystal mỗi cluster
+      driftSpeed: 1.2, // Tốc độ trôi dạt
     },
 
     quantumTunnels: {
@@ -469,39 +457,6 @@ const GAME_CONFIG = {
       expansionSpeed: 8, // Tốc độ mở rộng
       lifetime: 120, // Thời gian tồn tại (2 giây)
       clearBonus: 10, // Điểm thưởng khi clear object
-    },
-
-    // === NEW CREATIVE EVENTS ===
-
-    gravityWaveCascade: {
-      count: 4, // Số sóng trọng lực
-      delay: 800, // Delay giữa các sóng (ms)
-      duration: 6000, // Thời gian event (ms)
-    },
-
-    temporalChaos: {
-      slowZoneCount: 3, // Số vùng chậm
-      fastZoneCount: 2, // Số vùng nhanh
-      duration: 8000, // Thời gian event (ms)
-    },
-
-    lightningNetwork: {
-      count: 5, // Số quả cầu lightning
-      spacing: 150, // Khoảng cách giữa các quả cầu
-      duration: 10000, // Thời gian event (ms)
-    },
-
-    voidStorm: {
-      riftCount: 6, // Số void rift
-      spawnDelay: 500, // Delay giữa các rift (ms)
-      duration: 12000, // Thời gian event (ms)
-    },
-
-    mineFieldDetonation: {
-      mineCount: 8, // Số cosmic mine
-      gridSize: 3, // Kích thước lưới (3x3)
-      chainReaction: true, // Nổ dây chuyền
-      duration: 15000, // Thời gian event (ms)
     },
   },
 
@@ -552,62 +507,6 @@ const GAME_CONFIG = {
       color: "#e91e63", // Màu hồng
       particleCount: 15, // Số particle từ trường
     },
-
-    // === NEW CREATIVE OBJECTS ===
-
-    gravityWave: {
-      radius: 30, // Bán kính ban đầu của sóng
-      maxRadius: 400, // Bán kính tối đa
-      expansionSpeed: 5, // Tốc độ mở rộng
-      pushForce: 0.8, // Lực đẩy vật thể
-      lifetime: 120, // Tuổi thọ (frames)
-      color: "#7c4dff", // Màu tím xanh
-      waveCount: 3, // Số vòng sóng đồng tâm
-    },
-
-    timeDistortion: {
-      radius: 120, // Bán kính vùng ảnh hưởng
-      slowFactor: 0.3, // Hệ số chậm (30% tốc độ)
-      fastFactor: 2.0, // Hệ số nhanh (200% tốc độ)
-      lifetime: 300, // Tuổi thọ (frames)
-      color: "#00e5ff", // Màu xanh cyan
-      pulseSpeed: 0.08, // Tốc độ pulse
-      particleCount: 25, // Số particle thời gian
-    },
-
-    chainLightning: {
-      radius: 25, // Bán kính quả cầu (TĂNG để dễ nhìn)
-      chainRange: 200, // Khoảng cách chain tối đa (TĂNG để player thấy sớm)
-      maxChains: 5, // Số chain tối đa
-      damage: 0.5, // Sát thương mỗi chain
-      chainInterval: 30, // Khoảng cách giữa các lần chain (frames)
-      lifetime: 400, // Tuổi thọ (frames)
-      color: "#ffeb3b", // Màu vàng
-      glowIntensity: 30, // Độ sáng (TĂNG để chains sáng hơn)
-    },
-
-    voidRift: {
-      radius: 50, // Bán kính rift (TĂNG để dễ nhìn)
-      pullRadius: 150, // Bán kính hút (TĂNG để warning sớm hơn)
-      pullStrength: 0.15, // Lực hút
-      teleportChance: 0.7, // Xác suất teleport (70%)
-      lifetime: 350, // Tuổi thọ (frames)
-      color: "#4a148c", // Màu tím ĐẬM HƠN (thay vì đen)
-      edgeColor: "#e91e63", // Màu viền hồng SÁNG (thay vì tím nhạt)
-      rotationSpeed: 0.05, // Tốc độ xoay
-    },
-
-    cosmicMine: {
-      radius: 15, // Bán kính mine
-      triggerRadius: 80, // Bán kính kích hoạt
-      armTime: 60, // Thời gian trang bị (frames)
-      explosionRadius: 100, // Bán kính nổ
-      shrapnelCount: 12, // Số mảnh vỡ
-      shrapnelSpeed: 6, // Tốc độ mảnh vỡ
-      shrapnelLifetime: 150, // Tuổi thọ mảnh vỡ (frames)
-      color: "#ff1744", // Màu đỏ
-      pulseSpeed: 0.15, // Tốc độ pulse khi armed
-    },
   },
 
   // =============================================================================
@@ -627,7 +526,6 @@ const GAME_CONFIG = {
       score: 0.04,
       powerup: 0.06,
       blackhole: 0.03,
-      thunder: 0.12, // Volume for thunder strike sound
       backgroundMusic: 0.015,
       // Âm thanh không gian
       blackholeGrowth: 0.02,
@@ -736,74 +634,32 @@ const GAME_CONFIG = {
   // =============================================================================
   ui: {
     eventText: {
-      duration: 2500, // Giảm thời gian hiển thị để không che khuất gameplay quá lâu
-      fontSize: "clamp(1.2rem, 3vw, 2.5rem)", // Responsive font size, nhỏ hơn trên mobile
+      duration: 2000, // Thời gian hiển thị (ms)
+      fontSize: "2.5rem", // Kích thước font
     },
+
     warning: {
       radius: 30, // Bán kính cảnh báo
       pulseIntensity: 15, // Cường độ pulse
       pulseSpeed: 0.3, // Tốc độ pulse
       fadeInTime: 20, // Thời gian fade in (frame)
       fadeOutTime: 20, // Thời gian fade out (frame)
-
-      // Universal warning system for all objects
-      universal: {
-        enabled: true, // Bật hệ thống cảnh báo toàn diện
-        duration: 120, // 2 giây cảnh báo (60fps * 2)
-        delay: 2000, // 2 giây delay sau cảnh báo (ms)
-        showRadius: true, // Hiển thị vùng ảnh hưởng trong warning
-
-        // Mobile-specific warning adjustments
-        mobile: {
-          radiusMultiplier: 1.5, // Tăng kích thước warning 1.5 lần trên mobile
-          pulseSpeedMultiplier: 1.2, // Tăng tốc độ pulse trên mobile
-          durationMultiplier: 1.3, // Tăng thời gian warning trên mobile
-        },
-      },
-    },
-
-    // Mobile responsiveness settings
-    mobile: {
-      detected: false, // Will be set by detection script
-      scaleFactor: 0.7, // Scale down UI elements for mobile
-      minTouchSize: 44, // Minimum touch target size (pixels)
-      safeAreaPadding: 20, // Padding from screen edges
-
-      // Object size adjustments for mobile
-      objects: {
-        asteroidSizeMultiplier: 0.8, // Giảm kích thước asteroid 20%
-        playerSizeMultiplier: 0.9, // Giảm kích thước player 10%
-        missileSizeMultiplier: 0.7, // Giảm kích thước missile 30%
-        blackHoleSizeMultiplier: 0.8, // Giảm kích thước black hole 20%
-        laserWidthMultiplier: 0.6, // Giảm độ rộng laser 40%
-        effectRadiusMultiplier: 0.75, // Giảm vùng ảnh hưởng các hiệu ứng 25%
-      },
-
-      // Text and font adjustments
-      text: {
-        baseFontSizeMultiplier: 0.8, // Giảm font size 20%
-        eventTextSizeMultiplier: 0.7, // Giảm event text size 30%
-        scoreFontSizeMultiplier: 0.75, // Giảm score font size 25%
-      },
     },
   },
 
   // =============================================================================
-  // SCORING SYSTEM - Hệ thống điểm số (tăng điểm nhiều hơn để dễ đạt mốc mở khóa)
+  // SCORING SYSTEM - Hệ thống điểm số (chỉ tăng điểm khi di chuyển)
   // =============================================================================
   scoring: {
-    movementMultiplier: 0.2, // Tăng lên 0.2 để tăng điểm nhanh hơn
-    speedMultiplier: 0.8, // Tăng lên 0.8 để tăng điểm nhanh hơn
-    speedMinThreshold: 2, // Giảm ngưỡng tốc độ tối thiểu xuống 2 để dễ đạt điểm
-    speedScoreInterval: 20, // Giảm xuống 20 frames để điểm tăng nhanh hơn
-    asteroidDestroy: 25, // Tăng điểm phá hủy thiên thạch lên 25
-    survivalBonus: 5, // TĂNG từ 1 lên 5 - 5 điểm mỗi giây sống sót
+    movementMultiplier: 0.4, // Điểm từ di chuyển - tăng từ 0.12 để bù trừ việc bỏ survival bonus
+    asteroidDestroy: 25, // Điểm phá hủy thiên thạch - khuyến khích phá hủy
+    survivalBonus: 0, // Điểm sống sót - bỏ hoàn toàn, chỉ tăng điểm khi di chuyển
 
-    // Bỏ ngưỡng cho movement (tăng điểm ngay từ đầu, không cần di chuyển nhiều)
-    baseMovementThreshold: 0, // Không còn ngưỡng pixel tối thiểu
-    minMovementThreshold: 0, // Không còn ngưỡng tuyệt đối
-    thresholdDecreasePerLevel: 0, // Không còn giảm threshold theo level
-    thresholdDecreaseRate: 1, // Không còn áp dụng
+    // Dynamic movement threshold - giảm dần theo level
+    baseMovementThreshold: 5, // Ngưỡng tối thiểu pixel ban đầu (level 1)
+    minMovementThreshold: 2, // Ngưỡng tối thiểu tuyệt đối (level cao)
+    thresholdDecreasePerLevel: 0.5, // Giảm threshold mỗi level
+    thresholdDecreaseRate: 0.95, // Hệ số giảm dần (exponential decay)
   },
 
   // =============================================================================
@@ -822,7 +678,6 @@ const GAME_CONFIG = {
 
     // Storage
     localStorageKey: "stellarDriftHighScore", // Key lưu high score
-    leaderboardKey: "stellarDriftLeaderboard", // Key lưu leaderboard
   },
 };
 
