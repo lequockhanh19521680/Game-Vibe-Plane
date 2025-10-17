@@ -36,6 +36,9 @@ const restartFromPauseButton = document.getElementById(
 const mainMenuFromPauseButton = document.getElementById(
   "main-menu-from-pause-button"
 );
+const mainMenuFromOverButton = document.getElementById(
+  "main-menu-from-over-button"
+);
 
 let width, height;
 let player,
@@ -198,6 +201,28 @@ mainMenuFromPauseButton.addEventListener("click", () => {
   isGameRunning = false;
   uiElements.pauseButton.style.display = "none";
   uiElements.scoreContainer.style.opacity = "0";
+
+  // Clear the canvas and redraw the starfield background
+  ctx.fillStyle = "#050510";
+  ctx.fillRect(0, 0, width, height);
+  if (stars && stars.length > 0) {
+    stars.forEach((s) => s.draw());
+  }
+
+  showMainMenu();
+});
+
+mainMenuFromOverButton.addEventListener("click", () => {
+  playSound("buttonHover");
+  uiElements.gameOverScreen.style.display = "none";
+
+  // Clear the canvas and redraw the starfield background
+  ctx.fillStyle = "#050510";
+  ctx.fillRect(0, 0, width, height);
+  if (stars && stars.length > 0) {
+    stars.forEach((s) => s.draw());
+  }
+
   showMainMenu();
 });
 

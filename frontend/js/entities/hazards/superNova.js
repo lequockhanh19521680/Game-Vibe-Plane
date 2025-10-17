@@ -1,12 +1,13 @@
 class SuperNova {
   constructor(x, y) {
+    const config = GAME_CONFIG.events.superNova;
     this.x = x || canvas.width / 2;
     this.y = y || canvas.height / 2;
     this.radius = 10;
-    this.maxRadius = 300;
-    this.expansionSpeed = 11; // Faster expansion for more impact
+    this.maxRadius = config.maxRadius;
+    this.expansionSpeed = config.expansionSpeed;
     this.age = 0;
-    this.lifetime = 120; // 2 seconds
+    this.lifetime = config.lifetime;
     this.intensity = 1;
     this.lastClearRadius = 0; // Keep track of last cleared radius
     this.createFragmentsOnClear = false;
@@ -79,9 +80,10 @@ class SuperNova {
     } else if (this.radius < this.maxRadius) {
       this.radius += this.expansionSpeed;
       this.clearObjects();
-      // Add explosive particles for visual effect
-      if (this.age % 2 === 0) {
-        const particleCount = 4 + Math.floor(this.radius / 30);
+      // Add explosive particles for visual effect - OPTIMIZED
+      if (this.age % 5 === 0) {
+        // Spawn particles less frequently
+        const particleCount = 2 + Math.floor(this.radius / 60); // Spawn fewer particles
         for (let i = 0; i < particleCount; i++) {
           const angle = Math.random() * Math.PI * 2;
           const dist = this.radius - 20 + Math.random() * 40;

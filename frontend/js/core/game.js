@@ -94,6 +94,12 @@ function init() {
 }
 
 function animate() {
+  // Add a guard to ensure the animation loop stops when the game ends
+  if (!isGameRunning) {
+    cancelAnimationFrame(animationFrameId);
+    return;
+  }
+
   animationFrameId = requestAnimationFrame(animate);
   ctx.fillStyle = "#050510";
   ctx.fillRect(0, 0, width, height);
@@ -103,10 +109,6 @@ function animate() {
   });
 
   stars.sort((a, b) => a.layer - b.layer).forEach((s) => s.update());
-
-  // Logic game over đã được chuyển sang hàm endGame trong main.js
-  // Hàm animate sẽ dừng hoàn toàn khi game over.
-  // Khối if (!isGameRunning) đã được loại bỏ để tránh xóa màn hình.
 
   timers.difficulty++;
 

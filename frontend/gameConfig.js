@@ -92,7 +92,7 @@ const GAME_CONFIG = {
 
     radius: 5, // Kích thước
     baseSpeed: 0.195, // Tốc độ cơ bản - nhanh hơn xíu
-    speedIncreasePerLevel: 0.03, // Tăng tốc độ mỗi level
+    speedIncreasePerLevel: 0.015, // Tăng tốc độ mỗi level
 
     baseTurnSpeed: 0.025, // Tốc độ rẽ cơ bản - nhanh hơn
     turnSpeedIncreasePerLevel: 0.015, // Tăng tốc độ rẽ mỗi level
@@ -101,7 +101,7 @@ const GAME_CONFIG = {
     speedUpMultiplier: 1.8, // Hệ số tăng tốc - nhanh hơn
     turnSpeedUpMultiplier: 1.5, // Hệ số tăng tốc độ rẽ
 
-    lifetime: 900, // Tuổi thọ - tồn tại nhỏ hơn 1 giây (900 frames = 15 giây @ 60fps)
+    lifetime: 420, // Tuổi thọ - tồn tại nhỏ hơn 1 giây (900 frames = 15 giây @ 60fps)
     fragmentCount: 8, // Số mảnh vỡ khi nổ - giảm từ 10
     fragmentCountOnImpact: 5, // Số mảnh vỡ khi va chạm - giảm từ 6
 
@@ -193,7 +193,7 @@ const GAME_CONFIG = {
     spawnScore: 2000, // Điểm bắt đầu xuất hiện
     spawnInterval: 800, // Khoảng cách spawn
 
-    radius: 20, // Bán kính cluster
+    radius: 15, // Bán kính cluster
     lifetime: 300, // Tuổi thọ (frames)
     crystalCount: 6, // Số pha lê trong cluster
 
@@ -413,7 +413,9 @@ const GAME_CONFIG = {
 
     // Events mới
     plasmaStorm: {
-      count: 8, // Số plasma field
+      count: 6, // Số plasma field (was 8)
+      minRadius: 60, // Bán kính tối thiểu của plasma field
+      maxRadius: 90, // Bán kính tối đa của plasma field
       duration: 400, // Thời gian tồn tại
       intensity: 0.8, // Cường độ plasma
     },
@@ -448,12 +450,12 @@ const GAME_CONFIG = {
     voidRifts: {
       count: 4, // Số void rift
       radius: 60, // Bán kính rift
-      pullStrength: 0.12, // Sức hút
+      pullStrength: 0.16, // Sức hút
       lifetime: 280, // Tuổi thọ
     },
 
     superNova: {
-      maxRadius: 300, // Bán kính tối đa shockwave
+      maxRadius: 100, // Bán kính tối đa shockwave
       expansionSpeed: 8, // Tốc độ mở rộng
       lifetime: 120, // Thời gian tồn tại (2 giây)
       clearBonus: 10, // Điểm thưởng khi clear object
