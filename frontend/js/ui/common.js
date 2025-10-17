@@ -15,7 +15,7 @@ const uiElements = {
 
   // In-game display elements
   scoreDisplay: document.getElementById("score-display"),
-  timeDisplay: document.getElementById("time-display"),
+  timeDisplay: document.getElementById("survival-display"), // Points to the same element as survivalDisplay
   highscoreDisplay: document.getElementById("highscore-display"),
   survivalDisplay: document.getElementById("survival-display"),
 
@@ -27,4 +27,17 @@ const uiElements = {
 
   // Leaderboard elements
   leaderboardList: document.getElementById("leaderboard-list"),
+
+  // Pause menu elements
+  pauseButton: document.getElementById("pause-button"),
+  pauseMenu: document.getElementById("pause-menu"),
+
+  // New UI panels
+  leftGamePanel: document.getElementById("left-game-panel"),
+  rightGamePanel: document.getElementById("right-game-panel"),
+  liveLeaderboard: document.getElementById("live-leaderboard"),
+  leaderboardConnectionStatus: document.getElementById(
+    "leaderboard-connection-status"
+  ),
+  leaderboardContent: document.getElementById("leaderboard-content"),
 };

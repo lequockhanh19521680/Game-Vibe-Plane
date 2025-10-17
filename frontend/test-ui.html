@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UI Test</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <style>
+      body {
+        background: #050510;
+        padding: 20px;
+      }
+      .test-container {
+        border: 2px solid #ff0000;
+        padding: 20px;
+        margin: 20px;
+      }
+    </style>
+  </head>
+  <body class="game-running">
+    <h1 style="color: #00ffff">UI Test Page</h1>
+
+    <div class="test-container">
+      <h2 style="color: #ffbb33">Left Game Panel Test</h2>
+      <div id="left-game-panel" class="visible">
+        <button id="pause-button" class="game-ui-button">
+          <span>⏸️</span>
+          <span>Pause</span>
+        </button>
+        <div id="score-container">
+          <div id="score-display">Score: 12345</div>
+          <div id="highscore-display">High Score: 99999</div>
+          <div id="survival-display">Time: 5:32</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-container">
+      <h2 style="color: #ffbb33">Right Game Panel Test</h2>
+      <div id="right-game-panel">
+        <div id="live-leaderboard">
+          <div class="leaderboard-header">
+            <span>🏆</span>
+            <span>Live Leaderboard</span>
+          </div>
+          <div
+            id="leaderboard-connection-status"
+            class="connection-status connected"
+          >
+            🌐 Connected
+          </div>
+          <div id="leaderboard-content">
+            <div class="leaderboard-entry">
+              <span class="entry-rank">#1</span>
+              <span class="entry-name">Player One</span>
+              <span class="entry-score">50,000</span>
+            </div>
+            <div class="leaderboard-entry">
+              <span class="entry-rank">#2</span>
+              <span class="entry-name">Player Two</span>
+              <span class="entry-score">45,000</span>
+            </div>
+            <div class="leaderboard-entry">
+              <span class="entry-rank">#3</span>
+              <span class="entry-name">Player Three</span>
+              <span class="entry-score">40,000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Test element existence
+      console.log("Score Display:", document.getElementById("score-display"));
+      console.log(
+        "Highscore Display:",
+        document.getElementById("highscore-display")
+      );
+      console.log(
+        "Survival Display:",
+        document.getElementById("survival-display")
+      );
+      console.log("Left Panel:", document.getElementById("left-game-panel"));
+      console.log("Right Panel:", document.getElementById("right-game-panel"));
+
+      // Test computed styles
+      const scoreDisplay = document.getElementById("score-display");
+      if (scoreDisplay) {
+        const styles = window.getComputedStyle(scoreDisplay);
+        console.log("Score Display Styles:", {
+          display: styles.display,
+          visibility: styles.visibility,
+          opacity: styles.opacity,
+          fontSize: styles.fontSize,
+          color: styles.color,
+        });
+      }
+    </script>
+  </body>
+</html>

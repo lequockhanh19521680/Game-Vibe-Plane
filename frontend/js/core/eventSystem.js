@@ -1,4 +1,27 @@
+// Event text queue system to prevent flickering
+let eventTextQueue = [];
+let isShowingEventText = false;
+let currentEventTimeout = null;
+
 function showEventText(text) {
+  // Add to queue if currently showing text
+  if (isShowingEventText) {
+    eventTextQueue.push(text);
+    return;
+  }
+
+  // Mark as showing and display immediately
+  isShowingEventText = true;
+  displayEventText(text);
+}
+
+function displayEventText(text) {
+  // Clear any existing timeout
+  if (currentEventTimeout) {
+    clearTimeout(currentEventTimeout);
+    currentEventTimeout = null;
+  }
+
   uiElements.eventText.innerText = text;
   uiElements.eventText.style.fontSize = GAME_CONFIG.ui.eventText.fontSize;
   uiElements.eventText.style.opacity = "1";
@@ -35,10 +58,19 @@ function showEventText(text) {
     document.head.appendChild(style);
   }
 
-  setTimeout(() => {
+  currentEventTimeout = setTimeout(() => {
     uiElements.eventText.style.opacity = "0";
     uiElements.eventText.style.textShadow = "none";
     uiElements.eventText.style.animation = "none";
+
+    // Process next text in queue
+    isShowingEventText = false;
+    currentEventTimeout = null;
+
+    if (eventTextQueue.length > 0) {
+      const nextText = eventTextQueue.shift();
+      showEventText(nextText);
+    }
   }, GAME_CONFIG.ui.eventText.duration);
 }
 
@@ -49,38 +81,27 @@ function triggerChaosEvent(level) {
 }
 
 function triggerRandomEvent() {
-  // Base events with weights for probability - tăng trọng số tất cả các sự kiện
+  // SIMPLIFIED EVENTS - Removed duplicates, reduced difficulty
   const eventWeights = [
-    // Đã bỏ "denseField" vì tương tự với asteroidShower
-    { type: "speedZone", weight: 15 }, // Tăng từ 9 lên 15
-    { type: "instantMissiles", weight: 16 }, // Tăng từ 10 lên 16
-    { type: "laserSwarm", weight: 18 }, // Tăng từ 12 lên 18
-    { type: "gravitationalAnomaly", weight: 16 }, // Tăng từ 10 lên 16
-    // Đã bỏ sự kiện "asteroidRain" vì đã có thiên thạch rơi sẵn trong game
-    { type: "asteroidCircle", weight: 25 }, // Tăng từ 18 lên 25
-    { type: "asteroidShower", weight: 28 }, // Tăng từ 20 lên 28
-    { type: "missileBarrage", weight: 18 }, // Tăng từ 12 lên 18
-    { type: "laserGrid", weight: 16 }, // Tăng từ 10 lên 16
-    { type: "blackHoleChain", weight: 14 }, // Tăng từ 8 lên 14
-    // New events - với trọng số cao hơn
-    { type: "wormholePortal", weight: 14 }, // Tăng từ 8 lên 14
-    { type: "freezeZone", weight: 12 }, // Tăng từ 6 lên 12
-    { type: "magneticStorm", weight: 14 }, // Tăng từ 8 lên 14
-    // Đã bỏ "asteroidBelt" vì tương tự với asteroidCircle
-    { type: "plasmaStorm", weight: 15 }, // Tăng từ 9 lên 15
-    { type: "crystalRain", weight: 13 }, // Tăng từ 7 lên 13
-    { type: "quantumTunnels", weight: 12 }, // Tăng từ 6 lên 12
-    // Đã bỏ sự kiện "gravityWells" vì tương tự với blackHoleChain
-    // Đã bỏ sự kiện "meteorBombardment" vì tương tự với mưa thiên thạch
-    { type: "voidRifts", weight: 12 }, // Tăng từ 6 lên 12
-    { type: "superNova", weight: 10 }, // Tăng từ 5 lên 10
-    { type: "lightningStorm", weight: 18 }, // Tăng từ 10 lên 18 (đặc biệt quan trọng cho thunder shield)
-    // NEW CREATIVE EVENTS
-    { type: "gravityWaveCascade", weight: 16 }, // Sóng trọng lực liên tiếp
-    { type: "temporalChaos", weight: 14 }, // Hỗn loạn thời gian
-    { type: "lightningNetwork", weight: 15 }, // Mạng lưới sét
-    { type: "voidStorm", weight: 13 }, // Bão hố đen
-    { type: "mineFieldDetonation", weight: 12 }, // Vùng mìn nổ
+    // CORE EVENTS - Basic gameplay (HIGHER weights = easier game)
+    { type: "asteroidShower", weight: 35 }, // Simple shower from top
+    { type: "instantMissiles", weight: 25 }, // 2 missiles with warning
+    { type: "laserGrid", weight: 20 }, // Laser pattern
+
+    // COLLECTIBLES - Good for player (INCREASED weights)
+    { type: "crystalRain", weight: 25 }, // Power-ups
+    { type: "lightningStorm", weight: 20 }, // Thunder shield opportunity
+
+    // MODERATE THREATS
+    { type: "freezeZone", weight: 15 }, // Slow zones
+    { type: "magneticStorm", weight: 15 }, // Magnetic pull
+    { type: "blackHoleChain", weight: 12 }, // Black holes
+
+    // ADVANCED THREATS (Lower weights = rarer)
+    { type: "plasmaStorm", weight: 10 }, // Plasma fields
+    { type: "superNova", weight: 8 }, // Big explosion
+    { type: "lightningNetwork", weight: 10 }, // Chain lightning
+    { type: "gravityWaveCascade", weight: 8 }, // Gravity waves
   ];
 
   // Loại bỏ tính toán trọng số dựa trên điểm số - tất cả sự kiện đều có thể xuất hiện ngẫu nhiên
@@ -141,11 +162,8 @@ function triggerRandomEvent() {
       }
       break;
 
-    case "speedZone":
-      eventActive.type = "speedZone";
-      globalSpeedMultiplier *= GAME_CONFIG.events.speedZone.speedMultiplier;
-      showEventText("Difficulty Spike!");
-      break;
+    // speedZone event REMOVED - Only showed text without real gameplay impact
+
     case "instantMissiles":
       // Loại bỏ điều kiện kiểm tra điểm số - event xuất hiện bất kể điểm số
       eventActive.type = "instantMissiles";
@@ -374,64 +392,8 @@ function triggerRandomEvent() {
         }
       }, 120 * (1000 / 60)); // 2 seconds
       break;
-    case "laserSwarm":
-      for (let i = 0; i < GAME_CONFIG.events.laserSwarm.laserCount; i++) {
-        setTimeout(() => {
-          if (isGameRunning) {
-            const shouldTarget =
-              Math.random() < GAME_CONFIG.events.laserSwarm.targetChance;
-            lasers.push(new Laser(shouldTarget));
-            if (shouldTarget) playSound("warning");
-          }
-        }, i * GAME_CONFIG.events.laserSwarm.delay);
-      }
-      showEventText("Laser Swarm!");
-      break;
-    case "gravitationalAnomaly":
-      eventActive.type = "gravitationalAnomaly";
-      showEventText("⚠️ GRAVITATIONAL ANOMALY DETECTED ⚠️");
-
-      // Create warning indicators first
-      for (
-        let i = 0;
-        i < GAME_CONFIG.events.gravitationalAnomaly.blackHoleCount;
-        i++
-      ) {
-        const x = 100 + Math.random() * (width - 200);
-        const y = 100 + Math.random() * (height - 200);
-
-        // Add warning signs
-        warnings.push(
-          new Warning(x, y, "blackhole", 180) // 3 second warning
-        );
-
-        // Create black holes after warning
-        setTimeout(() => {
-          if (isGameRunning) {
-            blackHoles.push(new BlackHole(x, y, true));
-            // Create visual effect for black hole appearance
-            for (let j = 0; j < 12; j++) {
-              const angle = Math.random() * Math.PI * 2;
-              particles.push(
-                new Particle(
-                  x + Math.cos(angle) * 5,
-                  y + Math.sin(angle) * 5,
-                  Math.random() * 3 + 1,
-                  "#aa66cc",
-                  {
-                    x: Math.cos(angle) * 3,
-                    y: Math.sin(angle) * 3,
-                  }
-                )
-              );
-            }
-            playSound("blackhole");
-          }
-        }, 180 * (1000 / 60)); // 3 seconds
-      }
-
-      playSound("warning");
-      break;
+    // laserSwarm event REMOVED - Duplicate of laserGrid with worse gameplay
+    // gravitationalAnomaly event REMOVED - Duplicate of blackHoleChain
     case "asteroidCircle":
       eventActive.type = "asteroidCircle";
       showEventText("Asteroid Circle Formation!");
@@ -575,29 +537,28 @@ function triggerRandomEvent() {
       showEventText("Black Hole Chain!");
       break;
 
-    case "wormholePortal":
-      eventActive.type = "wormholePortal";
-      showEventText("Wormhole Assault!");
-      for (let i = 0; i < GAME_CONFIG.events.wormholePortal.count; i++) {
-        setTimeout(() => {
-          // Create wormhole that shoots asteroids
-          const x = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
-          const y = Math.random() * canvas.height * 0.6 + canvas.height * 0.2;
-          wormholes.push(new Wormhole(x, y));
-        }, i * 1000); // Spawn wormholes with 1 second delay
-      }
-      playSound("wormhole");
-      break;
-
+    // wormholePortal event REMOVED - Duplicate of portals system
     case "freezeZone":
       eventActive.type = "freezeZone";
-      showEventText("Freeze Zones Activated!");
+      showEventText("❄️ FREEZE ZONES IMMINENT ❄️");
+
       for (let i = 0; i < GAME_CONFIG.events.freezeZone.count; i++) {
-        const x = Math.random() * canvas.width;
-        const y = Math.random() * canvas.height;
-        freezeZones.push(new FreezeZone(x, y));
+        setTimeout(() => {
+          if (isGameRunning) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+
+            const warningSystem = spawnWithWarning("freeze", x, y, {
+              radius: GAME_CONFIG.events.freezeZone.radius,
+            });
+
+            warningSystem.spawn(() => {
+              freezeZones.push(new FreezeZone(x, y));
+              playSound("freeze");
+            });
+          }
+        }, i * 500); // Stagger freeze zone creation
       }
-      playSound("freeze");
       break;
 
     case "magneticStorm":
@@ -619,10 +580,7 @@ function triggerRandomEvent() {
       handleCrystalRainEvent();
       break;
 
-    case "quantumTunnels":
-      handleQuantumTunnelsEvent();
-      break;
-
+    // quantumTunnels event REMOVED - Duplicate of portal system
     case "voidRifts":
       handleVoidRiftsEvent();
       break;
@@ -771,36 +729,45 @@ function triggerRandomEvent() {
       }
     }
 
-    // Create plasma warning with 180 frames duration (3 seconds)
-    const plasmaWarning = new PlasmaWarning(180);
-    warnings.push(plasmaWarning);
+    // Use universal warning system for each plasma field
+    const waveCount = 4;
+    const fieldsPerWave = 5;
+    const allPlasmaData = [];
 
-    playSound("warning");
+    // Pre-calculate all plasma positions
+    for (let wave = 0; wave < waveCount; wave++) {
+      const baseY = (canvas.height / 5) * (wave + 1);
 
-    // Create plasma storm after warning delay
-    setTimeout(() => {
-      if (isGameRunning) {
-        showEventText("🔥 PLASMA INFERNO UNLEASHED 🔥");
+      for (let field = 0; field < fieldsPerWave; field++) {
+        const x =
+          (canvas.width / (fieldsPerWave + 1)) * (field + 1) +
+          (Math.random() - 0.5) * 80;
+        const y = baseY + (Math.random() - 0.5) * 60;
+        const radius = 60 + Math.random() * 20;
+        const timing = wave * fieldsPerWave + field;
 
-        // Use the same positions as in the warnings
-        for (let i = 0; i < plasmaWarning.positions.length; i++) {
-          const pos = plasmaWarning.positions[i];
+        allPlasmaData.push({ x, y, radius, timing });
 
-          setTimeout(() => {
-            if (isGameRunning) {
-              // Create plasma field at the exact warning position
-              const plasma = new PlasmaField(pos.x, pos.y);
-              plasma.radius = pos.radius * 1.2; // Slightly bigger than warning
-              plasma.damageRate = 0.04; // More dangerous
+        // Create individual warning for each plasma field
+        setTimeout(() => {
+          if (isGameRunning) {
+            const warningSystem = spawnWithWarning("plasma", x, y, {
+              radius: radius,
+            });
+
+            warningSystem.spawn(() => {
+              const plasma = new PlasmaField(x, y);
+              plasma.radius = radius * 1.2;
+              plasma.damageRate = 0.04;
               plasmaFields.push(plasma);
 
-              // Create plasma lightning between fields
-              if (i % 3 === 0 && plasmaFields.length > 1) {
+              // Create plasma lightning effects
+              if (timing % 3 === 0) {
                 for (let j = 0; j < 5; j++) {
                   particles.push(
                     new Particle(
-                      pos.x + Math.random() * 100 - 50,
-                      pos.y + Math.random() * 50 - 25,
+                      x + Math.random() * 100 - 50,
+                      y + Math.random() * 50 - 25,
                       Math.random() * 4 + 2,
                       "#ff6600",
                       {
@@ -811,15 +778,20 @@ function triggerRandomEvent() {
                   );
                 }
               }
-            }
-          }, i * 80);
-        }
+            });
+          }
+        }, timing * 80);
+      }
+    }
 
-        // Screen shake for intensity
+    // Global effects
+    setTimeout(() => {
+      if (isGameRunning) {
+        showEventText("🔥 PLASMA INFERNO UNLEASHED 🔥");
         triggerScreenShake(0.8);
         playSound("explosion");
       }
-    }, 180 * (1000 / 60)); // 3 seconds warning
+    }, 2000);
   } // Close handlePlasmaStormEvent function
 
   function handleCrystalRainEvent() {
@@ -896,21 +868,7 @@ function triggerRandomEvent() {
     playSound("crystal");
   } // Close handleCrystalRainEvent function
 
-  function handleQuantumTunnelsEvent() {
-    eventActive.type = "quantumTunnels";
-    showEventText("Quantum Portal Pair!");
-
-    // Create only 2 portals (1 pair)
-    const x1 = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
-    const y1 = Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
-    const x2 = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
-    const y2 = Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
-
-    quantumPortals.push(new QuantumPortal(x1, y1));
-    quantumPortals.push(new QuantumPortal(x2, y2));
-
-    playSound("wormhole");
-  }
+  // handleQuantumTunnelsEvent function REMOVED - Duplicate event deleted
 
   function handleVoidRiftsEvent() {
     eventActive.type = "voidRifts";
@@ -924,7 +882,7 @@ function triggerRandomEvent() {
       warnings.push(
         new Warning(x, y, "voidrift", 180) // 3 second warning
       );
-      asteroids.push(meteor);
+
       // Create void rift after warning
       setTimeout(() => {
         if (isGameRunning) {
@@ -978,10 +936,15 @@ function triggerRandomEvent() {
     const superX = 100 + Math.random() * (canvas.width - 200);
     const superY = 100 + Math.random() * (canvas.height - 200);
 
-    // Enhanced warning with expanding circle and multiple visual indicators
-    warnings.push(
-      new Warning(superX, superY, "supernova", 180) // 3 second warning
-    );
+    // Use new universal warning system with enhanced mobile support
+    const warningSystem = spawnWithWarning("supernova", superX, superY, {
+      maxRadius: GAME_CONFIG.events.superNova.maxRadius,
+      duration: 180, // 3 second warning
+    });
+
+    warningSystem.spawn(() => {
+      superNovas.push(new SuperNova(superX, superY));
+    });
 
     // Add an expanding circular warning zone
     class SuperNovaWarning {
@@ -1187,19 +1150,41 @@ function triggerRandomEvent() {
     eventActive.type = "lightningNetwork";
     showEventText("⚡ LIGHTNING NETWORK ACTIVE!");
 
-    // Create lightning orbs in a network pattern
+    console.log("Lightning Network event triggered!", config);
+
+    // Create lightning orbs in a network pattern with warnings first
     const centerX = width / 2;
     const centerY = height / 2;
+    const count = config.count || 5;
+    const spacing = config.spacing || 150;
 
-    for (let i = 0; i < config.count; i++) {
-      const angle = (i / config.count) * Math.PI * 2;
-      const x = centerX + Math.cos(angle) * config.spacing;
-      const y = centerY + Math.sin(angle) * config.spacing;
-      
-      chainLightnings.push(new ChainLightning(x, y));
+    // DIRECT SPAWN (NO WARNING) - Testing fix for invisible lightning
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        if (isGameRunning) {
+          const angle = (i / count) * Math.PI * 2;
+          const x = centerX + Math.cos(angle) * spacing;
+          const y = centerY + Math.sin(angle) * spacing;
+
+          // SPAWN IMMEDIATELY WITHOUT WARNING
+          const lightning = new ChainLightning(x, y);
+          chainLightnings.push(lightning);
+          console.log(
+            `⚡ CHAIN LIGHTNING SPAWNED DIRECTLY at (${x.toFixed(
+              0
+            )}, ${y.toFixed(0)}), total: ${chainLightnings.length}, age: ${
+              lightning.age
+            }, lifetime: ${lightning.lifetime}`
+          );
+
+          // Play sound
+          if (typeof playSound === "function") {
+            playSound("thunder", 0.5);
+          }
+        }
+      }, i * 500); // Stagger spawn every 0.5 seconds
     }
 
-    playSound("thunder", 0.6);
     triggerScreenShake(0.4);
   }
 
@@ -1216,11 +1201,18 @@ function triggerRandomEvent() {
           const y1 = Math.random() * height;
           const x2 = Math.random() * width;
           const y2 = Math.random() * height;
-          
+
           const rift1 = new VoidRift(x1, y1);
           const rift2 = new VoidRift(x2, y2, rift1);
-          
+
           voidRifts.push(rift1, rift2);
+          console.log(
+            `🌀 VOID RIFTS SPAWNED: Rift1 (${x1.toFixed(0)}, ${y1.toFixed(
+              0
+            )}), Rift2 (${x2.toFixed(0)}, ${y2.toFixed(0)}), total: ${
+              voidRifts.length
+            }`
+          );
           playSound("wormhole", 0.4);
         }
       }, i * config.spawnDelay);
@@ -1243,10 +1235,10 @@ function triggerRandomEvent() {
     for (let i = 1; i <= gridSize; i++) {
       for (let j = 1; j <= gridSize; j++) {
         if (mineIndex >= config.mineCount) break;
-        
+
         const x = spacingX * i + (Math.random() - 0.5) * spacingX * 0.3;
         const y = spacingY * j + (Math.random() - 0.5) * spacingY * 0.3;
-        
+
         cosmicMines.push(new CosmicMine(x, y));
         mineIndex++;
       }

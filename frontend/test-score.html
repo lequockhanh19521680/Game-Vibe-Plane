@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Score Display Test</title>
+  </head>
+  <body>
+    <div id="left-game-panel">
+      <div id="score-container">
+        <div id="score-display">Score: 0</div>
+        <div id="highscore-display">High Score: 0</div>
+        <div id="survival-display">Time: 0:00</div>
+      </div>
+    </div>
+
+    <script>
+      // Test if elements can be found
+      const scoreDisplay = document.getElementById("score-display");
+      const highscoreDisplay = document.getElementById("highscore-display");
+      const survivalDisplay = document.getElementById("survival-display");
+
+      console.log("scoreDisplay found:", !!scoreDisplay);
+      console.log("highscoreDisplay found:", !!highscoreDisplay);
+      console.log("survivalDisplay found:", !!survivalDisplay);
+
+      // Test updating values
+      if (scoreDisplay) {
+        scoreDisplay.innerText = "Score: 123";
+      }
+      if (highscoreDisplay) {
+        highscoreDisplay.innerText = "High Score: 456";
+      }
+      if (survivalDisplay) {
+        survivalDisplay.innerText = "Time: 1:23";
+      }
+
+      console.log("Test updates completed");
+    </script>
+  </body>
+</html>

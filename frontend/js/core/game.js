@@ -30,32 +30,28 @@ let lastFrameTime = 0;
 let frameCount = 0;
 let fps = 0;
 
+// UI update caching to prevent flickering
+let lastDisplayedScore = -1;
+let lastDisplayedTime = "";
+let lastDisplayedSurvivalTime = "";
+
 function getFPS() {
   return fps;
 }
 
 function updateMousePosition() {
-  // Smooth mouse movement with lerp
-  if (player) {
-    const lerpFactor = GAME_CONFIG.player.mouseLerpFactor || 0.1; // Default if not defined
-    player.x += (mouse.x - player.x) * lerpFactor;
-    player.y += (mouse.y - player.y) * lerpFactor;
-
-    // Keep player within bounds
-    player.x = Math.max(
-      player.radius,
-      Math.min(width - player.radius, player.x)
-    );
-    player.y = Math.max(
-      player.radius,
-      Math.min(height - player.radius, player.y)
-    );
-  }
+  // Player movement is now handled entirely in player.update()
+  // This function is kept for compatibility but does nothing
+  // Mouse position is already updated by event listeners in main.js
 }
 
 // Make init function globally available
 window.init = function () {
   console.log("Initializing game...");
+
+  // Detect mobile and apply optimizations first
+  detectMobile();
+
   width = canvas.width = window.innerWidth;
   height = canvas.height = window.innerHeight;
   mouse = { x: width / 2, y: height * 0.8 };
@@ -82,6 +78,7 @@ window.init = function () {
   blackHoles = [];
   missiles = [];
   laserMines = [];
+  laserTurrets = [];
   crystalClusters = [];
   fragments = [];
   warnings = [];
@@ -142,6 +139,50 @@ window.animate = function () {
 
   animationFrameId = requestAnimationFrame(animate);
 
+  // If game is paused, only draw current state but don't update
+  if (window.isGamePaused && window.isGamePaused()) {
+    // Just redraw the current frame without updating game state
+    ctx.fillStyle = "#050510";
+    ctx.fillRect(0, 0, width, height);
+
+    // Draw background nebulae
+    nebulae.forEach((n) => {
+      ctx.fillStyle = n;
+      ctx.fillRect(0, 0, width, height);
+    });
+
+    // Draw all objects in their current positions
+    stars.forEach((star) => star.draw());
+    asteroids.forEach((asteroid) => asteroid.draw());
+    lasers.forEach((laser) => laser.draw());
+    blackHoles.forEach((blackHole) => blackHole.draw());
+    missiles.forEach((missile) => missile.draw());
+    laserMines.forEach((mine) => mine.draw());
+    crystalClusters.forEach((crystal) => crystal.draw());
+    fragments.forEach((fragment) => fragment.draw());
+    particles.forEach((particle) => particle.draw());
+    warnings.forEach((warning) => warning.draw());
+    energyOrbs.forEach((orb) => orb.draw());
+    plasmaFields.forEach((field) => field.draw());
+    crystalShards.forEach((shard) => shard.draw());
+    quantumPortals.forEach((portal) => portal.draw());
+    shieldGenerators.forEach((shield) => shield.draw());
+    freezeZones.forEach((zone) => zone.draw());
+    superNovas.forEach((nova) => nova.draw());
+    wormholes.forEach((wormhole) => wormhole.draw());
+    magneticStorms.forEach((storm) => storm.draw());
+    lightningStorms.forEach((storm) => storm.draw());
+    gravityWaves.forEach((wave) => wave.draw());
+    timeDistortions.forEach((distortion) => distortion.draw());
+    chainLightnings.forEach((chain) => chain.draw());
+    voidRifts.forEach((rift) => rift.draw());
+    cosmicMines.forEach((mine) => mine.draw());
+    laserTurrets.forEach((turret) => turret.draw());
+    player.draw();
+
+    return; // Don't continue with game updates
+  }
+
   // Clear canvas
   ctx.fillStyle = "#050510";
   ctx.fillRect(0, 0, width, height);
@@ -179,7 +220,25 @@ window.animate = function () {
   crystalClusters.forEach((crystal, index) =>
     updateCrystalCluster(crystal, index)
   );
-  fragments = fragments.filter((fragment) => !updateFragment(fragment));
+  // Update fragments with collision detection
+  fragments = fragments.filter((fragment) => {
+    // Check collision with player
+    if (
+      !player.shieldActive &&
+      !player.thunderShieldActive &&
+      fragment.lethal
+    ) {
+      const dist = Math.hypot(player.x - fragment.x, player.y - fragment.y);
+      if (dist < player.radius + fragment.radius) {
+        endGame("lethal fragment collision");
+        return false;
+      }
+    }
+    // Update and draw
+    const expired = fragment.update();
+    fragment.draw();
+    return !expired;
+  });
   particles = particles.filter((particle) => particle.alpha > 0);
   particles.forEach((particle) => particle.update());
   warnings = warnings.filter((warning) => warning.update());
@@ -235,14 +294,30 @@ window.animate = function () {
   // Update player last to ensure it's on top
   if (player) player.update();
 
-  // Update UI elements
-  uiElements.scoreDisplay.innerText = `Score: ${Math.floor(score)}`;
-  uiElements.timeDisplay.innerText = `Time: ${Math.floor(survivalTime / 60)}:${(
+  // Update UI elements only if values changed (prevent flickering)
+  const currentScore = Math.floor(score);
+  if (
+    uiElements &&
+    uiElements.scoreDisplay &&
+    currentScore !== lastDisplayedScore
+  ) {
+    uiElements.scoreDisplay.innerText = `Score: ${currentScore}`;
+    lastDisplayedScore = currentScore;
+  }
+
+  const currentTimeDisplay = `Time: ${Math.floor(survivalTime / 60)}:${(
     survivalTime % 60
   )
     .toString()
     .padStart(2, "0")}`;
-  uiElements.fpsDisplay.innerText = `FPS: ${Math.round(getFPS())}`;
+  if (
+    uiElements &&
+    uiElements.timeDisplay &&
+    currentTimeDisplay !== lastDisplayedTime
+  ) {
+    uiElements.timeDisplay.innerText = currentTimeDisplay;
+    lastDisplayedTime = currentTimeDisplay;
+  }
 
   nextEventScore = GAME_CONFIG.events.interval;
   eventActive = { type: null, endTime: 0 };
@@ -284,6 +359,7 @@ window.animate = function () {
   blackHoles = [];
   missiles = [];
   laserMines = [];
+  laserTurrets = [];
   crystalClusters = [];
   fragments = [];
   warnings = [];
@@ -293,7 +369,6 @@ window.animate = function () {
   quantumPortals = [];
   shieldGenerators = [];
   freezeZones = [];
-  // laserTurrets removed
   superNovas = [];
   wormholes = [];
   magneticStorms = [];
@@ -314,20 +389,54 @@ window.animate = function () {
     .fill(null)
     .map(() => createNebula());
   highScore = localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0;
-  uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
+  if (uiElements.highscoreDisplay) {
+    uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
+  }
 };
 
 // Make animate function globally available
 window.animate = function () {
   animationFrameId = requestAnimationFrame(animate);
+
+  // ENHANCED Performance optimization: FPS tracking with multiple thresholds
+  const now = performance.now();
+  if (!window.lastFrameTime) window.lastFrameTime = now;
+  const deltaTime = now - window.lastFrameTime;
+  const fps = 1000 / deltaTime;
+  window.lastFrameTime = now;
+
+  // Multi-tier performance mode
+  window.performanceMode = fps < 45;
+  window.heavyPerformanceMode = fps < 30; // NEW: Even more aggressive optimization
+
   ctx.fillStyle = "#050510";
   ctx.fillRect(0, 0, width, height);
-  nebulae.forEach((n) => {
-    ctx.fillStyle = n;
-    ctx.fillRect(0, 0, width, height);
-  });
 
-  stars.sort((a, b) => a.layer - b.layer).forEach((s) => s.update());
+  // Skip nebulae rendering in performance mode
+  if (!window.performanceMode) {
+    nebulae.forEach((n) => {
+      ctx.fillStyle = n;
+      ctx.fillRect(0, 0, width, height);
+    });
+  }
+
+  // Optimize star updates - skip more in heavy mode
+  const starUpdateFrequency = window.heavyPerformanceMode ? 10 : 5;
+  if (timers.gameFrame % starUpdateFrequency === 0) {
+    stars.sort((a, b) => a.layer - b.layer);
+  }
+  // Skip star updates entirely in heavy performance mode
+  if (!window.heavyPerformanceMode) {
+    stars.forEach((s) => s.update());
+  }
+
+  // AGGRESSIVE particle limiting based on performance
+  const maxParticles = window.heavyPerformanceMode ? 200 : 400;
+  const keepParticles = window.heavyPerformanceMode ? 150 : 250;
+  if (particles.length > maxParticles) {
+    particles = particles.slice(-keepParticles);
+  }
+
   if (!isGameRunning) {
     particles.forEach((p, i) =>
       p.alpha <= 0 ? particles.splice(i, 1) : p.update()
@@ -335,16 +444,54 @@ window.animate = function () {
     return;
   }
 
+  // Skip game logic if paused, but still render current state
+  if (window.isGamePaused && window.isGamePaused()) {
+    // Still update and draw all entities, just don't progress timers or spawn new objects
+    player && player.draw && player.draw();
+    asteroids.forEach((a) => a.draw && a.draw());
+    blackHoles.forEach((b) => b.draw && b.draw());
+    missiles.forEach((m) => m.draw && m.draw());
+    lasers.forEach((l) => l.draw && l.draw());
+    particles.forEach((p, i) =>
+      p.alpha <= 0 ? particles.splice(i, 1) : p.update()
+    );
+    warnings.forEach((w) => w.draw && w.draw());
+    fragments.forEach((f) => f.draw && f.draw());
+    crystalShards.forEach((c) => c.draw && c.draw());
+    laserMines.forEach((m) => m.draw && m.draw());
+    plasmaFields.forEach((p) => p.draw && p.draw());
+    freezeZones.forEach((f) => f.draw && f.draw());
+    superNovas.forEach((s) => s.draw && s.draw());
+    chainLightnings.forEach((c) => c.draw && c.draw());
+    voidRifts.forEach((v) => v.draw && v.draw());
+    cosmicMines.forEach((m) => m.draw && m.draw());
+
+    // Show pause indicator
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.font = "bold 48px Exo 2";
+    ctx.textAlign = "center";
+    ctx.fillText("⏸️ PAUSED", width / 2, height / 2);
+
+    return; // Exit early, don't update timers or game logic
+  }
+
   timers.difficulty++;
   timers.gameFrame++;
 
-  // Update survival time
+  // Update survival time only if changed (prevent flickering)
   survivalTime = Math.floor((Date.now() - gameStartTime) / 1000);
   const minutes = Math.floor(survivalTime / 60);
   const seconds = survivalTime % 60;
-  uiElements.survivalDisplay.innerText = `Time: ${minutes}:${seconds
+  const survivalDisplay = `Time: ${minutes}:${seconds
     .toString()
     .padStart(2, "0")}`;
+  if (
+    uiElements.survivalDisplay &&
+    survivalDisplay !== lastDisplayedSurvivalTime
+  ) {
+    uiElements.survivalDisplay.innerText = survivalDisplay;
+    lastDisplayedSurvivalTime = survivalDisplay;
+  }
 
   const distMoved = Math.hypot(mouse.x - prevMouse.x, mouse.y - prevMouse.y);
   const currentLevel = Math.floor(score / 2500) + 1; // Level tăng mỗi 2500 điểm (tăng từ 1500)
@@ -395,8 +542,12 @@ window.animate = function () {
     timers.speedScore = 0; // Reset timer
   }
 
+  // CRITICAL: Update player position based on mouse movement
+  updateMousePosition();
+
   prevMouse = { ...mouse };
-  uiElements.scoreDisplay.innerText = `Score: ${~~score}`;
+  // Score already updated in animate() function with caching
+  // Removed duplicate update to prevent flickering
   [
     particles,
     lasers,
@@ -423,25 +574,125 @@ window.animate = function () {
   );
   player.update(); // Update player last to draw over everything
 
-  // --- Filter dead entities ---
-  missiles = missiles.filter((m) => !m.isDead);
-  fragments = fragments.filter((f) => f.life > 0 && f.y < height + 50);
-  asteroids = asteroids.filter(
-    (a) => a.x > -50 && a.x < width + 50 && a.y > -50 && a.y < height + 50
+  // --- Filter dead entities and OFF-SCREEN entities to improve performance ---
+  const offScreenBuffer = 150; // Buffer zone before removing entities
+  const farOffScreenBuffer = 300; // Remove entities that are very far off-screen
+
+  missiles = missiles.filter(
+    (m) =>
+      !m.isDead &&
+      m.x > -offScreenBuffer &&
+      m.x < width + offScreenBuffer &&
+      m.y > -offScreenBuffer &&
+      m.y < height + offScreenBuffer
   );
-  blackHoles = blackHoles.filter((bh) => bh.alpha > 0);
+
+  // AGGRESSIVE fragment limiting based on performance
+  fragments = fragments.filter((f) => f.life > 0 && f.y < height + 50);
+  const maxFragments = window.heavyPerformanceMode ? 50 : 80;
+  const fragmentLimit = window.heavyPerformanceMode ? 80 : 120;
+  if (fragments.length > fragmentLimit) {
+    fragments = fragments.slice(-maxFragments);
+  }
+
+  // AGGRESSIVE asteroid limiting with dynamic cap
+  const maxAsteroids = window.heavyPerformanceMode ? 15 : 25;
+  asteroids = asteroids.filter(
+    (a) =>
+      a.x > -farOffScreenBuffer &&
+      a.x < width + farOffScreenBuffer &&
+      a.y > -farOffScreenBuffer &&
+      a.y < height + farOffScreenBuffer
+  );
+  if (asteroids.length > maxAsteroids + 5) {
+    asteroids = asteroids.slice(0, maxAsteroids);
+  }
+
+  // LIMIT missiles and lasers in heavy performance mode
+  if (window.heavyPerformanceMode) {
+    if (missiles.length > 8) missiles = missiles.slice(0, 8);
+    if (lasers.length > 6) lasers = lasers.slice(0, 6);
+  }
+
+  blackHoles = blackHoles.filter(
+    (bh) =>
+      bh.alpha > 0 &&
+      bh.x > -farOffScreenBuffer &&
+      bh.x < width + farOffScreenBuffer &&
+      bh.y > -farOffScreenBuffer &&
+      bh.y < height + farOffScreenBuffer
+  );
+
   crystalClusters = crystalClusters.filter((cc) => cc.alpha > 0);
   warnings = warnings.filter((w) => w.timer < w.duration);
   energyOrbs = energyOrbs.filter((e) => e.update() !== false);
-  plasmaFields = plasmaFields.filter((p) => p.update() !== false);
+
+  plasmaFields = plasmaFields.filter((p) => {
+    if (p.update() === false) return false;
+    // Also remove plasma fields that are far off-screen
+    return (
+      p.x > -farOffScreenBuffer &&
+      p.x < width + farOffScreenBuffer &&
+      p.y > -farOffScreenBuffer &&
+      p.y < height + farOffScreenBuffer
+    );
+  });
+
   crystalShards = crystalShards.filter((c) => c.update() !== false);
   quantumPortals = quantumPortals.filter((q) => q.update() !== false);
   shieldGenerators = shieldGenerators.filter((s) => s.update() !== false);
-  freezeZones = freezeZones.filter((f) => f.update() !== false);
-  superNovas = superNovas.filter((s) => s.update() !== false);
+
+  freezeZones = freezeZones.filter((f) => {
+    if (f.update() === false) return false;
+    return (
+      f.x > -farOffScreenBuffer &&
+      f.x < width + farOffScreenBuffer &&
+      f.y > -farOffScreenBuffer &&
+      f.y < height + farOffScreenBuffer
+    );
+  });
+
+  superNovas = superNovas.filter((s) => {
+    if (s.update() === false) return false;
+    return (
+      s.x > -farOffScreenBuffer &&
+      s.x < width + farOffScreenBuffer &&
+      s.y > -farOffScreenBuffer &&
+      s.y < height + farOffScreenBuffer
+    );
+  });
+
   wormholes = wormholes.filter((w) => w.update() !== false);
   magneticStorms = magneticStorms.filter((m) => m.update() !== false);
-  lightningStorms = lightningStorms.filter((l) => l.update() !== false);
+
+  lightningStorms = lightningStorms.filter((l) => {
+    if (l.update() === false) return false;
+    // Remove lightning storms that are far off-screen
+    return (
+      l.x > -farOffScreenBuffer &&
+      l.x < width + farOffScreenBuffer &&
+      l.y > -farOffScreenBuffer &&
+      l.y < height + farOffScreenBuffer
+    );
+  });
+
+  // Remove laser turrets that are off-screen
+  laserTurrets = laserTurrets.filter(
+    (t) =>
+      t.x > -farOffScreenBuffer &&
+      t.x < width + farOffScreenBuffer &&
+      t.y > -farOffScreenBuffer &&
+      t.y < height + farOffScreenBuffer
+  );
+
+  // Remove lasers that are far off-screen
+  lasers = lasers.filter(
+    (l) =>
+      l.x > -farOffScreenBuffer &&
+      l.x < width + farOffScreenBuffer &&
+      l.y > -farOffScreenBuffer &&
+      l.y < height + farOffScreenBuffer
+  );
 
   // --- Event System ---
   // Sự kiện xuất hiện theo frame thay vì điểm số
@@ -509,8 +760,8 @@ window.animate = function () {
     }
   }
 
-  // Function to create asteroids for mini showers
-  function createMiniShowerAsteroid(direction) {
+  // Function to create asteroids for mini showers (GLOBAL)
+  window.createMiniShowerAsteroid = function (direction) {
     const radius = 10 + Math.random() * 20;
     const speed = 3 + Math.random() * 2;
     let x, y, velX, velY;
@@ -539,7 +790,7 @@ window.animate = function () {
       ],
       { x: velX, y: velY }
     );
-  }
+  };
 
   // Function to spawn a single asteroid with configurable parameters
   function spawnAsteroid(randomPosition = false) {
@@ -559,60 +810,80 @@ window.animate = function () {
         Math.random() * GAME_CONFIG.asteroids.speedVariation +
         difficultyLevel * GAME_CONFIG.asteroids.speedIncreasePerLevel) *
       globalSpeedMultiplier;
-    // Thiết lập các mô hình rơi thiên thạch - chỉ từ trên xuống hoặc chéo một chút
+    // Thiết lập các mô hình rơi thiên thạch - ưu tiên spawn trong màn hình
     let spawnX, spawnY, velocityX, velocityY;
     const spawnPattern = Math.random();
 
-    if (spawnPattern < 0.7) {
-      // Rơi thẳng từ trên xuống (70%)
+    if (spawnPattern < 0.5) {
+      // Rơi thẳng từ trên xuống - SPAWN INSIDE SCREEN (50%)
       spawnX = Math.random() * width;
-      spawnY = -30;
+      spawnY = Math.random() < 0.7 ? -30 : Math.random() * height * 0.3; // 70% outside, 30% inside top area
       velocityX = 0; // Không có vận tốc ngang
       velocityY = asteroidSpeed;
-    } else if (spawnPattern < 0.9) {
-      // Rơi từ trên xuống với góc nghiêng nhẹ (20%)
+    } else if (spawnPattern < 0.8) {
+      // Rơi từ trên xuống với góc nghiêng nhẹ - SPAWN INSIDE (30%)
       spawnX = Math.random() * width;
-      spawnY = -30;
+      spawnY = Math.random() < 0.6 ? -30 : Math.random() * height * 0.4; // 60% outside, 40% inside
       velocityX = (Math.random() - 0.5) * asteroidSpeed * 0.3; // Góc nghiêng nhẹ
       velocityY = asteroidSpeed;
     } else {
-      // Rơi chéo từ góc trên (10%)
+      // Rơi chéo từ góc trên - spawn at edge (20%)
       const fromLeft = Math.random() < 0.5;
       spawnX = fromLeft ? -30 : width + 30;
-      spawnY = -30;
+      spawnY = Math.random() * height * 0.5; // Spawn in top half
       velocityX = fromLeft ? asteroidSpeed * 0.4 : -asteroidSpeed * 0.4;
       velocityY = asteroidSpeed * 0.8;
     }
 
-    asteroids.push(
-      new Asteroid(
-        spawnX,
-        spawnY,
-        radius,
-        GAME_CONFIG.asteroids.colors[
-          ~~(Math.random() * GAME_CONFIG.asteroids.colors.length)
-        ],
-        { x: velocityX, y: velocityY }
-      )
-    );
+    // Use warning system for larger or dangerous asteroids
+    if (radius > 25 || Math.random() < 0.3) {
+      // 30% chance or large asteroids get warnings
+      const warningSystem = spawnWithWarning("asteroid", spawnX, spawnY, {
+        radius: radius,
+      });
+
+      warningSystem.spawn(() => {
+        asteroids.push(
+          new Asteroid(
+            spawnX,
+            spawnY,
+            radius,
+            GAME_CONFIG.asteroids.colors[
+              ~~(Math.random() * GAME_CONFIG.asteroids.colors.length)
+            ],
+            { x: velocityX, y: velocityY }
+          )
+        );
+      });
+    } else {
+      // Spawn immediately for smaller asteroids
+      asteroids.push(
+        new Asteroid(
+          spawnX,
+          spawnY,
+          radius,
+          GAME_CONFIG.asteroids.colors[
+            ~~(Math.random() * GAME_CONFIG.asteroids.colors.length)
+          ],
+          { x: velocityX, y: velocityY }
+        )
+      );
+    }
   }
-  // Black hole spawning không phụ thuộc điểm số
+  // Black hole spawning với warning system
   timers.blackHole++;
   if (timers.blackHole % GAME_CONFIG.blackHoles.spawnInterval === 0) {
     const bhX = Math.random() * width * 0.8 + width * 0.1;
     const bhY = Math.random() * height * 0.8;
-    // Show warning first
-    warnings.push(
-      new Warning(bhX, bhY, "blackhole", GAME_CONFIG.blackHoles.warningDuration)
-    );
-    playSound("warning");
-    // Create black hole after warning period
-    setTimeout(() => {
-      if (isGameRunning) {
-        blackHoles.push(new BlackHole(bhX, bhY));
-        playSound("blackhole");
-      }
-    }, GAME_CONFIG.blackHoles.warningDelay);
+
+    const warningSystem = spawnWithWarning("blackhole", bhX, bhY, {
+      gravityRadius: GAME_CONFIG.blackHoles.baseGravityRadius,
+    });
+
+    warningSystem.spawn(() => {
+      blackHoles.push(new BlackHole(bhX, bhY));
+      playSound("blackhole");
+    });
   }
 
   // Missile spawning không phụ thuộc điểm số
@@ -755,7 +1026,7 @@ window.animate = function () {
     }, GAME_CONFIG.missiles.warningDelay);
   }
 
-  // Laser spawning không phụ thuộc điểm số
+  // Laser spawning với warning system
   timers.laser++;
   const laserDifficultyLevel = Math.floor(score / 2500); // Every 2500 points (increased from 1500)
   const laserInterval = Math.max(
@@ -780,24 +1051,41 @@ window.animate = function () {
                 GAME_CONFIG.lasers.targetChanceIncreasePerLevel
           );
           const shouldTarget = Math.random() < targetChance;
-          lasers.push(new Laser(shouldTarget));
+
+          // Create laser with warning system for targeted lasers
           if (shouldTarget) {
-            playSound("warning");
+            // Estimate where the laser will be
+            const laserX = Math.random() * width;
+            const laserY = Math.random() * height;
+
+            const warningSystem = spawnWithWarning("laser", laserX, laserY);
+
+            warningSystem.spawn(() => {
+              lasers.push(new Laser(shouldTarget));
+            });
+          } else {
+            // Non-targeted lasers spawn immediately
+            lasers.push(new Laser(shouldTarget));
           }
         }
       }, i * GAME_CONFIG.lasers.staggerDelay);
     }
   }
 
-  // Loại bỏ điều kiện điểm số cho laser mines
+  // Laser mines với warning system
   timers.mine++;
-  if (timers.mine % GAME_CONFIG.laserMines.spawnInterval === 0)
-    laserMines.push(
-      new LaserMine(
-        Math.random() * width * 0.8 + width * 0.1,
-        Math.random() * height * 0.6
-      )
-    );
+  if (timers.mine % GAME_CONFIG.laserMines.spawnInterval === 0) {
+    const mineX = Math.random() * width * 0.8 + width * 0.1;
+    const mineY = Math.random() * height * 0.6;
+
+    const warningSystem = spawnWithWarning("mine", mineX, mineY, {
+      explosionRadius: 100,
+    });
+
+    warningSystem.spawn(() => {
+      laserMines.push(new LaserMine(mineX, mineY));
+    });
+  }
 
   // Loại bỏ điều kiện điểm số cho crystal clusters
   timers.crystal++;
@@ -810,48 +1098,78 @@ window.animate = function () {
 
   // Player vs Obstacles
   for (const ast of asteroids) {
-    if (
-      Math.hypot(player.x - ast.x, player.y - ast.y) -
-        ast.radius -
-        player.radius <
-      1
-    ) {
+    const distance = Math.hypot(player.x - ast.x, player.y - ast.y);
+    const collisionDistance = ast.radius + player.radius + 1;
+
+    if (distance < collisionDistance) {
       if (!player.shieldActive) {
+        console.log(
+          `🔥 COLLISION DETECTED: Asteroid at (${Math.floor(
+            ast.x
+          )}, ${Math.floor(ast.y)}) with radius ${Math.floor(
+            ast.radius
+          )} hit player at (${Math.floor(player.x)}, ${Math.floor(
+            player.y
+          )}) with radius ${Math.floor(player.radius)}. Distance: ${Math.floor(
+            distance
+          )}, Required: ${Math.floor(collisionDistance)}`
+        );
         endGame("asteroid collision");
         return;
       } else {
         // Shield deflects asteroid
         const dx = ast.x - player.x;
         const dy = ast.y - player.y;
-        const distance = Math.max(Math.hypot(dx, dy), 1);
-        ast.velocity.x += (dx / distance) * 3;
-        ast.velocity.y += (dy / distance) * 3;
+        const safeDistance = Math.max(Math.hypot(dx, dy), 1);
+        ast.velocity.x += (dx / safeDistance) * 3;
+        ast.velocity.y += (dy / safeDistance) * 3;
 
         // Trigger shield hit animation
         player.shieldHit();
         triggerScreenShake(0.3); // Add small screen shake
+        console.log(
+          `🛡️ SHIELD DEFLECTED: Asteroid at (${Math.floor(ast.x)}, ${Math.floor(
+            ast.y
+          )})`
+        );
       }
     }
   }
   for (const m of missiles) {
-    if (
-      Math.hypot(player.x - m.x, player.y - m.y) - m.radius - player.radius <
-      1
-    ) {
+    const distance = Math.hypot(player.x - m.x, player.y - m.y);
+    const collisionDistance = m.radius + player.radius + 1;
+
+    if (distance < collisionDistance) {
       if (!player.shieldActive) {
+        console.log(
+          `🚀 COLLISION DETECTED: Missile at (${Math.floor(m.x)}, ${Math.floor(
+            m.y
+          )}) with radius ${Math.floor(m.radius)} hit player at (${Math.floor(
+            player.x
+          )}, ${Math.floor(player.y)}) with radius ${Math.floor(
+            player.radius
+          )}. Distance: ${Math.floor(distance)}, Required: ${Math.floor(
+            collisionDistance
+          )}`
+        );
         endGame("missile collision");
         return;
       } else {
         // Shield deflects missile
         const dx = m.x - player.x;
         const dy = m.y - player.y;
-        const distance = Math.max(Math.hypot(dx, dy), 1);
-        m.velocity.x += (dx / distance) * 4;
-        m.velocity.y += (dy / distance) * 4;
+        const safeDistance = Math.max(Math.hypot(dx, dy), 1);
+        m.velocity.x += (dx / safeDistance) * 4;
+        m.velocity.y += (dy / safeDistance) * 4;
 
         // Trigger shield hit animation
         player.shieldHit();
         triggerScreenShake(0.5); // Add moderate screen shake
+        console.log(
+          `🛡️ SHIELD DEFLECTED: Missile at (${Math.floor(m.x)}, ${Math.floor(
+            m.y
+          )})`
+        );
       }
     }
   }
@@ -922,54 +1240,127 @@ window.animate = function () {
   }
   for (const cc of crystalClusters) {
     if (cc.state === "discharging") {
-      const dist = Math.hypot(player.x - cc.x, player.y - cc.y);
-      if (Math.abs(dist - cc.dischargeRadius) < player.radius + 5) {
-        if (!player.shieldActive) {
-          endGame("crystal cluster collision");
-          return;
-        } else {
-          // Shield blocks crystal cluster energy
+      const pushRadius = cc.dischargeRadius;
+      const pushForce = 15; // Strong push force
+
+      // Push player away
+      const playerDist = Math.hypot(player.x - cc.x, player.y - cc.y);
+      if (Math.abs(playerDist - pushRadius) < player.radius + 10) {
+        const pushAngle = Math.atan2(player.y - cc.y, player.x - cc.x);
+        player.velocity.x += Math.cos(pushAngle) * pushForce;
+        player.velocity.y += Math.sin(pushAngle) * pushForce;
+
+        if (player.shieldActive) {
           player.shieldHit();
-          triggerScreenShake(0.3);
         }
+        triggerScreenShake(0.5);
       }
+
+      // Push asteroids away
+      asteroids.forEach((asteroid) => {
+        const asteroidDist = Math.hypot(asteroid.x - cc.x, asteroid.y - cc.y);
+        if (Math.abs(asteroidDist - pushRadius) < asteroid.radius + 10) {
+          const pushAngle = Math.atan2(asteroid.y - cc.y, asteroid.x - cc.x);
+          asteroid.velocity.x += Math.cos(pushAngle) * pushForce * 0.5;
+          asteroid.velocity.y += Math.sin(pushAngle) * pushForce * 0.5;
+
+          // Create push particles
+          for (let i = 0; i < 5; i++) {
+            particles.push(
+              new Particle(asteroid.x, asteroid.y, 2, "#40c4ff", {
+                x: Math.cos(pushAngle) * 3,
+                y: Math.sin(pushAngle) * 3,
+              })
+            );
+          }
+        }
+      });
+
+      // Push missiles away
+      missiles.forEach((missile) => {
+        const missileDist = Math.hypot(missile.x - cc.x, missile.y - cc.y);
+        if (Math.abs(missileDist - pushRadius) < missile.radius + 10) {
+          const pushAngle = Math.atan2(missile.y - cc.y, missile.x - cc.x);
+          missile.velocity.x += Math.cos(pushAngle) * pushForce * 0.7;
+          missile.velocity.y += Math.sin(pushAngle) * pushForce * 0.7;
+        }
+      });
+
+      // Push fragments away
+      fragments.forEach((fragment) => {
+        const fragmentDist = Math.hypot(fragment.x - cc.x, fragment.y - cc.y);
+        if (Math.abs(fragmentDist - pushRadius) < fragment.radius + 10) {
+          const pushAngle = Math.atan2(fragment.y - cc.y, fragment.x - cc.x);
+          fragment.velocity.x += Math.cos(pushAngle) * pushForce * 0.3;
+          fragment.velocity.y += Math.sin(pushAngle) * pushForce * 0.3;
+        }
+      });
     }
   }
 
-  // Fragment vs Player collisions (now just visual effects, not lethal)
+  // Fragment vs Player collisions (LETHAL FRAGMENTS CAN KILL!)
   for (let i = fragments.length - 1; i >= 0; i--) {
     const fragment = fragments[i];
-    if (
-      fragment.lethal &&
-      Math.hypot(player.x - fragment.x, player.y - fragment.y) <
-        player.radius + fragment.radius
-    ) {
-      // Create spark visual effect instead of ending game
-      for (let j = 0; j < 8; j++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 2 + Math.random() * 3;
-        particles.push(
-          new Particle(
-            player.x + Math.cos(angle) * player.radius,
-            player.y + Math.sin(angle) * player.radius,
-            Math.random() * 2 + 1,
-            "#ff6b9d",
-            {
-              x: Math.cos(angle) * speed,
-              y: Math.sin(angle) * speed,
-            }
-          )
-        );
+    const distance = Math.hypot(player.x - fragment.x, player.y - fragment.y);
+    const collisionDistance = player.radius + fragment.radius;
+
+    if (distance < collisionDistance) {
+      if (fragment.lethal) {
+        // Lethal fragments (missile fragments) kill the player
+        if (!player.shieldActive) {
+          if (window.collisionDebugMode) {
+            console.log(
+              `💀 LETHAL FRAGMENT COLLISION: Fragment at (${Math.floor(
+                fragment.x
+              )}, ${Math.floor(fragment.y)}) with radius ${Math.floor(
+                fragment.radius
+              )} hit player. Distance: ${Math.floor(
+                distance
+              )}, Required: ${Math.floor(collisionDistance)}`
+            );
+          }
+          endGame("lethal fragment collision");
+          return;
+        } else {
+          // Shield blocks lethal fragment
+          player.shieldHit();
+          triggerScreenShake(0.4);
+          fragments.splice(i, 1); // Remove the fragment
+          console.log(
+            `🛡️ SHIELD DEFLECTED: Lethal fragment at (${Math.floor(
+              fragment.x
+            )}, ${Math.floor(fragment.y)})`
+          );
+          continue;
+        }
+      } else {
+        // Non-lethal fragments (asteroid fragments) - just visual effects
+        for (let j = 0; j < 8; j++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 2 + Math.random() * 3;
+          particles.push(
+            new Particle(
+              player.x + Math.cos(angle) * player.radius,
+              player.y + Math.sin(angle) * player.radius,
+              Math.random() * 2 + 1,
+              "#ff6b9d",
+              {
+                x: Math.cos(angle) * speed,
+                y: Math.sin(angle) * speed,
+              }
+            )
+          );
+        }
+
+        // Add small visual screen shake
+        triggerScreenShake(0.3);
+
+        // Play impact sound
+        playSound("collision", 0.5);
+
+        // Remove the fragment
+        fragments.splice(i, 1);
       }
-
-      // Add small visual screen shake
-      triggerScreenShake(0.3);
-
-      // Play impact sound
-      playSound("collision", 0.5);
-
-      // Remove the fragment
-      fragments.splice(i, 1);
     }
   }
 
@@ -1176,6 +1567,151 @@ window.animate = function () {
       // Slow down player movement
       player.velocity.x *= freeze.effectStrength;
       player.velocity.y *= freeze.effectStrength;
+    }
+  }
+
+  // ChainLightnings vs Player - Can be lethal (ONLY if visible on screen)
+  for (const lightning of chainLightnings) {
+    // Check if lightning is visible on screen before checking collision
+    const isOnScreen =
+      lightning.x > -100 &&
+      lightning.x < width + 100 &&
+      lightning.y > -100 &&
+      lightning.y < height + 100;
+
+    if (!isOnScreen) continue; // Skip collision if lightning is off-screen
+
+    const dist = Math.hypot(player.x - lightning.x, player.y - lightning.y);
+    if (dist < lightning.radius + player.radius) {
+      if (!player.shieldActive) {
+        if (window.collisionDebugMode) {
+          console.log(
+            `⚡ CHAIN LIGHTNING COLLISION: Lightning at (${Math.floor(
+              lightning.x
+            )}, ${Math.floor(lightning.y)}) with radius ${Math.floor(
+              lightning.radius
+            )} hit player. Distance: ${Math.floor(
+              dist
+            )}, Required: ${Math.floor(lightning.radius + player.radius)}`
+          );
+        }
+        endGame("chain lightning collision");
+        return;
+      } else {
+        // Shield blocks lightning
+        player.shieldHit();
+        triggerScreenShake(0.5);
+        console.log(
+          `🛡️ SHIELD DEFLECTED: Chain lightning at (${Math.floor(
+            lightning.x
+          )}, ${Math.floor(lightning.y)})`
+        );
+      }
+    }
+  }
+
+  // VoidRifts vs Player - Can teleport or damage
+  for (const rift of voidRifts) {
+    // CRITICAL: Only check collision if void rift is visible on screen
+    const buffer = 100;
+    const isRiftOnScreen =
+      rift.x > -buffer &&
+      rift.x < canvas.width + buffer &&
+      rift.y > -buffer &&
+      rift.y < canvas.height + buffer;
+
+    if (!isRiftOnScreen) {
+      continue; // Skip off-screen void rifts
+    }
+
+    const dist = Math.hypot(player.x - rift.x, player.y - rift.y);
+    if (dist < rift.radius + player.radius) {
+      if (!player.shieldActive) {
+        if (window.collisionDebugMode) {
+          console.log(
+            `🌀 VOID RIFT COLLISION: Rift at (${Math.floor(
+              rift.x
+            )}, ${Math.floor(rift.y)}) with radius ${Math.floor(
+              rift.radius
+            )} hit player. Distance: ${Math.floor(
+              dist
+            )}, Required: ${Math.floor(rift.radius + player.radius)}`
+          );
+        }
+        endGame("void rift collision");
+        return;
+      } else {
+        // Shield blocks void rift
+        player.shieldHit();
+        triggerScreenShake(0.6);
+        console.log(
+          `🛡️ SHIELD DEFLECTED: Void rift at (${Math.floor(
+            rift.x
+          )}, ${Math.floor(rift.y)})`
+        );
+      }
+    }
+  }
+
+  // CosmicMines vs Player - Explosive damage
+  for (const mine of cosmicMines) {
+    const dist = Math.hypot(player.x - mine.x, player.y - mine.y);
+    if (dist < mine.triggerRadius + player.radius && mine.armed) {
+      if (!player.shieldActive) {
+        if (window.collisionDebugMode) {
+          console.log(
+            `💣 COSMIC MINE COLLISION: Mine at (${Math.floor(
+              mine.x
+            )}, ${Math.floor(mine.y)}) with trigger radius ${Math.floor(
+              mine.triggerRadius
+            )} hit player. Distance: ${Math.floor(
+              dist
+            )}, Required: ${Math.floor(mine.triggerRadius + player.radius)}`
+          );
+        }
+        endGame("cosmic mine collision");
+        return;
+      } else {
+        // Shield blocks mine explosion
+        player.shieldHit();
+        triggerScreenShake(0.8);
+        console.log(
+          `🛡️ SHIELD DEFLECTED: Cosmic mine explosion at (${Math.floor(
+            mine.x
+          )}, ${Math.floor(mine.y)})`
+        );
+      }
+    }
+  }
+
+  // PlasmaFields vs Player - Can be damaging
+  for (const plasma of plasmaFields) {
+    const dist = Math.hypot(player.x - plasma.x, player.y - plasma.y);
+    if (dist < plasma.radius + player.radius) {
+      if (!player.shieldActive) {
+        if (window.collisionDebugMode) {
+          console.log(
+            `🔥 PLASMA FIELD COLLISION: Plasma at (${Math.floor(
+              plasma.x
+            )}, ${Math.floor(plasma.y)}) with radius ${Math.floor(
+              plasma.radius
+            )} hit player. Distance: ${Math.floor(
+              dist
+            )}, Required: ${Math.floor(plasma.radius + player.radius)}`
+          );
+        }
+        endGame("plasma field collision");
+        return;
+      } else {
+        // Shield blocks plasma
+        player.shieldHit();
+        triggerScreenShake(0.4);
+        console.log(
+          `🛡️ SHIELD DEFLECTED: Plasma field at (${Math.floor(
+            plasma.x
+          )}, ${Math.floor(plasma.y)})`
+        );
+      }
     }
   }
 

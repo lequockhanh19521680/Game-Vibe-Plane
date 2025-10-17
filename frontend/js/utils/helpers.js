@@ -6,6 +6,165 @@ function triggerScreenShake(intensity) {
   );
 }
 
+// Universal Warning System - Tạo cảnh báo cho bất kỳ object nào
+function createUniversalWarning(
+  x,
+  y,
+  type,
+  effectRadius = null,
+  customDelay = null
+) {
+  if (!GAME_CONFIG.ui.warning.universal.enabled) return null;
+
+  const duration = GAME_CONFIG.ui.warning.universal.duration;
+  const delay = customDelay || GAME_CONFIG.ui.warning.universal.delay;
+
+  // Tạo warning với thông tin về vùng ảnh hưởng
+  const warning = new Warning(x, y, type, duration, 0, effectRadius);
+  warnings.push(warning);
+
+  // Phát âm thanh cảnh báo
+  playSound("warning");
+
+  return {
+    warning: warning,
+    delay: delay,
+    remove: () => {
+      const index = warnings.indexOf(warning);
+      if (index > -1) warnings.splice(index, 1);
+    },
+  };
+}
+
+// Mobile detection and adjustment functions
+function detectMobile() {
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+  const isSmallScreen = window.innerWidth <= 768 || window.innerHeight <= 768;
+
+  GAME_CONFIG.ui.mobile.detected = isMobile || isSmallScreen;
+
+  if (GAME_CONFIG.ui.mobile.detected) {
+    console.log("Mobile device detected, applying mobile optimizations");
+    applyMobileOptimizations();
+  }
+
+  return GAME_CONFIG.ui.mobile.detected;
+}
+
+function applyMobileOptimizations() {
+  // Scale down various game elements for mobile
+  const mobile = GAME_CONFIG.ui.mobile;
+
+  // Adjust player size
+  GAME_CONFIG.player.radius *= mobile.objects.playerSizeMultiplier;
+
+  // Adjust asteroid sizes
+  GAME_CONFIG.asteroids.minRadius *= mobile.objects.asteroidSizeMultiplier;
+  GAME_CONFIG.asteroids.maxRadius *= mobile.objects.asteroidSizeMultiplier;
+
+  // Adjust missile size
+  GAME_CONFIG.missiles.radius *= mobile.objects.missileSizeMultiplier;
+
+  // Adjust black hole sizes
+  GAME_CONFIG.blackHoles.baseRadius *= mobile.objects.blackHoleSizeMultiplier;
+  GAME_CONFIG.blackHoles.baseMaxRadius *=
+    mobile.objects.blackHoleSizeMultiplier;
+  GAME_CONFIG.blackHoles.baseGravityRadius *=
+    mobile.objects.effectRadiusMultiplier;
+
+  // Adjust laser hit detection
+  GAME_CONFIG.lasers.playerHitRadius *= mobile.objects.laserWidthMultiplier;
+
+  // Adjust various effect radii
+  GAME_CONFIG.newObjects.freezeZone.radius *=
+    mobile.objects.effectRadiusMultiplier;
+  GAME_CONFIG.newObjects.magneticField.radius *=
+    mobile.objects.effectRadiusMultiplier;
+  GAME_CONFIG.newObjects.gravityWave.radius *=
+    mobile.objects.effectRadiusMultiplier;
+
+  // Adjust UI text sizes
+  document.documentElement.style.setProperty(
+    "--mobile-font-scale",
+    mobile.text.baseFontSizeMultiplier
+  );
+}
+
+// Enhanced spawn function with warning system
+function spawnWithWarning(objectType, x, y, options = {}) {
+  let effectRadius = null;
+  let warningType = objectType;
+  let delay = GAME_CONFIG.ui.warning.universal.delay;
+
+  // Determine effect radius and warning properties based on object type
+  switch (objectType) {
+    case "asteroid":
+      effectRadius = options.radius || GAME_CONFIG.asteroids.maxRadius;
+      break;
+    case "blackhole":
+      effectRadius =
+        options.gravityRadius || GAME_CONFIG.blackHoles.baseGravityRadius;
+      delay = GAME_CONFIG.blackHoles.warningDelay;
+      break;
+    case "missile":
+      effectRadius = options.radius || GAME_CONFIG.missiles.radius;
+      delay = GAME_CONFIG.missiles.warningDelay;
+      break;
+    case "laser":
+      warningType = "laser";
+      delay = GAME_CONFIG.lasers.warningTime * (1000 / 60);
+      break;
+    case "mine":
+      effectRadius = options.explosionRadius || 100;
+      break;
+    case "plasma":
+      effectRadius = options.radius || 60;
+      break;
+    case "freeze":
+      effectRadius = options.radius || GAME_CONFIG.newObjects.freezeZone.radius;
+      break;
+    case "magnetic":
+      effectRadius =
+        options.radius || GAME_CONFIG.newObjects.magneticField.radius;
+      break;
+    case "lightning":
+      effectRadius = options.radius || 100;
+      break;
+    case "gravity":
+      effectRadius =
+        options.maxRadius || GAME_CONFIG.newObjects.gravityWave.maxRadius;
+      break;
+    case "time":
+      effectRadius =
+        options.radius || GAME_CONFIG.newObjects.timeDistortion.radius;
+      break;
+  }
+
+  // Create warning
+  const warningData = createUniversalWarning(
+    x,
+    y,
+    warningType,
+    effectRadius,
+    delay
+  );
+
+  return {
+    warningData: warningData,
+    spawn: (createObjectCallback) => {
+      setTimeout(() => {
+        if (isGameRunning && warningData) {
+          warningData.remove();
+          createObjectCallback();
+        }
+      }, delay);
+    },
+  };
+}
+
 function triggerAsteroidCircle() {
   const config = GAME_CONFIG.events.asteroidCircle;
 

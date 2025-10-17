@@ -1,14 +1,22 @@
 // Warning indicators
 
 class Warning extends Entity {
-  constructor(x, y, type, duration = 120, angle = 0) {
+  constructor(x, y, type, duration = 120, angle = 0, effectRadius = null) {
     super(x, y);
-    this.type = type; // 'blackhole' or 'missile'
+    this.type = type; // 'blackhole', 'missile', 'asteroid', 'laser', 'plasma', etc.
     this.duration = duration;
     this.timer = 0;
     this.radius = GAME_CONFIG.ui.warning.radius;
     this.alpha = 0;
-    this.angle = angle; // Direction angle for directional warnings (used for missile warnings)
+    this.angle = angle; // Direction angle for directional warnings
+    this.effectRadius = effectRadius; // Vùng ảnh hưởng thực tế của object
+
+    // Mobile adjustments
+    if (GAME_CONFIG.ui.mobile.detected) {
+      this.radius *= GAME_CONFIG.ui.warning.universal.mobile.radiusMultiplier;
+      this.duration *=
+        GAME_CONFIG.ui.warning.universal.mobile.durationMultiplier;
+    }
   }
 
   draw() {
@@ -16,21 +24,42 @@ class Warning extends Entity {
     ctx.globalAlpha = this.alpha;
     ctx.translate(this.x, this.y);
 
+    // Mobile pulse speed adjustment
+    let pulseSpeed = GAME_CONFIG.ui.warning.pulseSpeed;
+    if (GAME_CONFIG.ui.mobile.detected) {
+      pulseSpeed *=
+        GAME_CONFIG.ui.warning.universal.mobile.pulseSpeedMultiplier;
+    }
+
     // Pulsing warning circle
-    const pulse =
-      Math.sin(this.timer * GAME_CONFIG.ui.warning.pulseSpeed) * 0.5 + 0.5;
+    const pulse = Math.sin(this.timer * pulseSpeed) * 0.5 + 0.5;
     const currentRadius =
       this.radius + pulse * GAME_CONFIG.ui.warning.pulseIntensity;
+
+    // Draw effect radius if provided (vùng ảnh hưởng thực tế)
+    if (this.effectRadius && GAME_CONFIG.ui.warning.universal.showRadius) {
+      ctx.beginPath();
+      ctx.arc(0, 0, this.effectRadius, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 10]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
 
     ctx.beginPath();
     ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 
-    // Different colors for different warning types
+    // Expanded warning types for all game objects
     let warningColor, warningSymbol;
     switch (this.type) {
+      case "asteroid":
+        warningColor = "#ffbb33"; // Orange for asteroids
+        warningSymbol = "☄️";
+        break;
       case "blackhole":
         warningColor = "#aa66cc"; // Purple for blackholes
-        warningSymbol = "!";
+        warningSymbol = "🕳️";
         break;
       case "voidrift":
         warningColor = "#3d2963"; // Dark purple for void rifts
@@ -44,13 +73,41 @@ class Warning extends Entity {
         warningColor = "#ff6600"; // Orange for plasma
         warningSymbol = "🔥";
         break;
+      case "laser":
+        warningColor = "#00ffff"; // Cyan for lasers
+        warningSymbol = "⚡";
+        break;
+      case "mine":
+        warningColor = "#ff4444"; // Red for mines
+        warningSymbol = "💣";
+        break;
+      case "freeze":
+        warningColor = "#81d4fa"; // Light blue for freeze
+        warningSymbol = "❄️";
+        break;
+      case "magnetic":
+        warningColor = "#e91e63"; // Pink for magnetic
+        warningSymbol = "🧲";
+        break;
+      case "lightning":
+        warningColor = "#ffeb3b"; // Yellow for lightning
+        warningSymbol = "⚡";
+        break;
+      case "gravity":
+        warningColor = "#7c4dff"; // Purple for gravity
+        warningSymbol = "🌀";
+        break;
+      case "time":
+        warningColor = "#00e5ff"; // Cyan for time
+        warningSymbol = "⏰";
+        break;
       case "missile":
         warningColor = "#f48fb1"; // Pink for missiles
         warningSymbol = ""; // No symbol for missile, we'll draw an arrow
         break;
       default:
         warningColor = "#f48fb1"; // Pink for other warnings
-        warningSymbol = "!";
+        warningSymbol = "⚠️";
     }
 
     ctx.strokeStyle = warningColor;

@@ -60,6 +60,34 @@ class Fragment {
       (Math.random() - 0.5) * GAME_CONFIG.fragments.rotationSpeed;
     this.lethal = false; // Regular fragments are not lethal
   }
+
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+    ctx.beginPath();
+    ctx.rect(-this.radius / 2, -this.radius / 2, this.radius, this.radius);
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 5;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  update() {
+    this.x += this.velocity.x;
+    this.y += this.velocity.y;
+    this.velocity.y += GAME_CONFIG.fragments.gravity;
+    this.velocity.x *= GAME_CONFIG.fragments.airResistance;
+    this.velocity.y *= GAME_CONFIG.fragments.airResistance;
+    this.rotation += this.rotationSpeed;
+
+    this.life--;
+    this.alpha = Math.max(0, this.life / 120);
+
+    return this.life <= 0;
+  }
 }
 
 class MissileFragment {
@@ -116,34 +144,6 @@ class MissileFragment {
     this.alpha = Math.max(0, this.life / 120);
 
     return this.life <= 0;
-  }
-
-  draw() {
-    ctx.save();
-    ctx.globalAlpha = this.alpha;
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.rotation);
-    ctx.beginPath();
-    ctx.rect(-this.radius / 2, -this.radius / 2, this.radius, this.radius);
-    ctx.fillStyle = this.color;
-    ctx.shadowColor = this.color;
-    ctx.shadowBlur = 5;
-    ctx.fill();
-    ctx.restore();
-  }
-
-  update() {
-    this.x += this.velocity.x;
-    this.y += this.velocity.y;
-    this.velocity.y += GAME_CONFIG.fragments.gravity;
-    this.velocity.x *= GAME_CONFIG.fragments.airResistance;
-    this.velocity.y *= GAME_CONFIG.fragments.airResistance;
-    this.rotation += this.rotationSpeed;
-
-    this.life--;
-    this.alpha = Math.max(0, this.life / 150);
-
-    this.draw();
   }
 }
 

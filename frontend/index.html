@@ -22,10 +22,33 @@
 
     <div id="ui-container">
       <!-- In-game UI elements -->
-      <div id="score-container">
-        <div id="score-display">Score: 0</div>
-        <div id="highscore-display">High Score: 0</div>
-        <div id="survival-display">Time: 0:00</div>
+      <!-- Left Panel: Controls & Stats -->
+      <div id="left-game-panel">
+        <button id="pause-button" class="game-ui-button">
+          <span>⏸️</span>
+          <span>Pause</span>
+        </button>
+        <div id="score-container">
+          <div id="score-display">Score: 0</div>
+          <div id="highscore-display">High Score: 0</div>
+          <div id="survival-display">Time: 0:00</div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Live Leaderboard -->
+      <div id="right-game-panel">
+        <div id="live-leaderboard">
+          <div class="leaderboard-header">
+            <span>🏆</span>
+            <span>Live Leaderboard</span>
+          </div>
+          <div id="leaderboard-connection-status" class="connection-status">
+            Connecting...
+          </div>
+          <div id="leaderboard-content">
+            <div class="leaderboard-loading">Loading scores...</div>
+          </div>
+        </div>
       </div>
 
       <div id="event-text"></div>
@@ -39,10 +62,21 @@
 
         <div id="menu-content" class="menu-section">
           <div id="main-menu-screen" class="menu-panel active">
-            <p>
+            <p class="menu-description">
               Move to score points. Avoid asteroids, black holes & missiles.
               Survive as long as possible!
             </p>
+            <!-- Personal Best Stats -->
+            <div id="personal-best-stats">
+              <div class="stat-item">
+                <span class="stat-label">Highest Score:</span>
+                <span id="personal-best-score" class="stat-value">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Best Time:</span>
+                <span id="personal-best-time" class="stat-value">0:00</span>
+              </div>
+            </div>
             <div class="username-input-container">
               <input
                 type="text"
@@ -51,7 +85,6 @@
                 placeholder="Enter username (optional)"
                 autocomplete="off"
               />
-              <p class="username-hint">Leave empty to play as "Me"</p>
             </div>
             <div class="button-container vertical">
               <button id="start-button" class="menu-button primary">
@@ -65,15 +98,102 @@
           </div>
 
           <div id="leaderboard-screen" class="menu-panel">
-            <h3>Leaderboard</h3>
-            <div id="leaderboard-content">
-              <div id="leaderboard-list">
-                <!-- Leaderboard entries will be added here dynamically -->
-                <p class="leaderboard-empty">
-                  No high scores yet. Be the first!
-                </p>
+            <h3>📊 Dashboard</h3>
+
+            <!-- Tab Navigation -->
+            <div class="dashboard-tabs">
+              <button class="dashboard-tab active" data-tab="personal">
+                👤 Personal
+              </button>
+              <button class="dashboard-tab" data-tab="global">🌍 Global</button>
+              <button class="dashboard-tab" data-tab="analytics">
+                💀 Death Stats
+              </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="dashboard-content">
+              <!-- Personal Stats Tab -->
+              <div id="personal-tab" class="dashboard-tab-content active">
+                <div class="stats-grid">
+                  <div class="stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-label">High Score</div>
+                    <div class="stat-value" id="dash-high-score">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-label">Best Time</div>
+                    <div class="stat-value" id="dash-best-time">0:00</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-icon">🎮</div>
+                    <div class="stat-label">Games Played</div>
+                    <div class="stat-value" id="dash-games-played">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-icon">💀</div>
+                    <div class="stat-label">Total Deaths</div>
+                    <div class="stat-value" id="dash-total-deaths">0</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Global Leaderboard Tab -->
+              <div id="global-tab" class="dashboard-tab-content">
+                <div class="leaderboard-filters">
+                  <button class="filter-btn active" data-filter="all">
+                    🌎 All Countries
+                  </button>
+                  <button class="filter-btn" data-filter="country">
+                    🇻🇳 Your Country
+                  </button>
+                </div>
+                <div id="leaderboard-content">
+                  <div id="leaderboard-list">
+                    <!-- Leaderboard entries will be added here dynamically -->
+                    <p class="leaderboard-empty">
+                      No high scores yet. Be the first!
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Death Analytics Tab -->
+              <div id="analytics-tab" class="dashboard-tab-content">
+                <h4 style="color: var(--primary-color); margin-bottom: 1rem">
+                  Most Common Deaths
+                </h4>
+                <div id="death-stats-container">
+                  <div class="death-stat-item">
+                    <span class="death-icon">☄️</span>
+                    <span class="death-cause">Asteroid</span>
+                    <span class="death-count" id="death-asteroid">0</span>
+                  </div>
+                  <div class="death-stat-item">
+                    <span class="death-icon">🕳️</span>
+                    <span class="death-cause">Black Hole</span>
+                    <span class="death-count" id="death-blackhole">0</span>
+                  </div>
+                  <div class="death-stat-item">
+                    <span class="death-icon">🚀</span>
+                    <span class="death-cause">Missile</span>
+                    <span class="death-count" id="death-missile">0</span>
+                  </div>
+                  <div class="death-stat-item">
+                    <span class="death-icon">⚡</span>
+                    <span class="death-cause">Lightning</span>
+                    <span class="death-count" id="death-lightning">0</span>
+                  </div>
+                  <div class="death-stat-item">
+                    <span class="death-icon">🔥</span>
+                    <span class="death-cause">Other</span>
+                    <span class="death-count" id="death-other">0</span>
+                  </div>
+                </div>
               </div>
             </div>
+
             <button id="back-from-leaderboard" class="menu-button">
               Back to Menu
             </button>
@@ -115,35 +235,26 @@
         </div>
       </div>
 
-      <!-- High Score Dialog -->
-      <div
-        id="high-score-dialog-overlay"
-        class="dialog-overlay"
-        style="display: none"
-      ></div>
-      <div
-        id="high-score-dialog"
-        class="high-score-dialog"
-        style="display: none"
-      >
-        <h3>New High Score!</h3>
-        <p>
-          Congratulations! You've achieved a new high score of
-          <span id="dialog-score">0</span>!
-        </p>
-        <p>Enter your name for the leaderboard:</p>
-        <input
-          type="text"
-          id="player-name-input"
-          maxlength="15"
-          placeholder="Enter your name"
-          autocomplete="off"
-        />
-        <div class="button-container">
-          <button id="save-score-button">Save Score</button>
+      <!-- Pause Menu -->
+      <div id="pause-menu" class="pause-overlay" style="display: none">
+        <div class="pause-content">
+          <h2>Game Paused</h2>
+          <div class="button-container">
+            <button id="resume-button" class="menu-button primary">
+              Resume
+            </button>
+            <button id="pause-main-menu-button" class="menu-button">
+              Main Menu
+            </button>
+          </div>
         </div>
       </div>
+
+      <!-- High Score Dialog REMOVED - Using direct save instead -->
     </div>
+
+    <!-- Load mobile optimizer first (before game config) -->
+    <script src="js/utils/mobileOptimizer.js"></script>
 
     <!-- Load game configuration -->
     <script src="gameConfig.js"></script>
@@ -182,6 +293,7 @@
     <!-- Load UI system -->
     <script src="js/ui/common.js"></script>
     <script src="js/ui/menuSystem.js"></script>
+    <script src="js/ui/dashboard.js"></script>
     <script src="js/ui/initUI.js"></script>
 
     <!-- Load game logic -->

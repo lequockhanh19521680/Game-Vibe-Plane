@@ -482,8 +482,10 @@ class Missile {
   }
   draw() {
     this.trail.forEach((p) => {
+      // Ensure radius is never negative
+      const radius = Math.max(0.1, p.r || 0.1);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(244, 143, 177, ${p.a})`;
       ctx.fill();
     });
@@ -576,9 +578,9 @@ class Missile {
     this.trail.push({ x: this.x, y: this.y, r: this.radius / 2, a: 1 });
     this.trail.forEach((p) => {
       p.a -= 0.05;
-      p.r -= 0.05;
+      p.r = Math.max(0.1, p.r - 0.05); // Ensure radius never goes negative
     });
-    this.trail = this.trail.filter((p) => p.a > 0);
+    this.trail = this.trail.filter((p) => p.a > 0 && p.r > 0);
     this.draw();
   }
   explode(isImpact = false) {

@@ -67,7 +67,7 @@ function startBackgroundMusic(isGameRunning) {
   let intensityLevel = isGameRunning ? 1.0 : 0.7; // Dynamic intensity based on game state
 
   backgroundMusicInterval = setInterval(() => {
-    if (audioContext && audioContext.state === "running") {
+    if (audioContext && audioContext.state === "running" && !musicPaused) {
       // Get current note from pattern
       const noteIndex = patterns[currentPattern][patternStep];
       const frequency = baseFrequencies[noteIndex % baseFrequencies.length];
@@ -166,9 +166,21 @@ function startBackgroundMusic(isGameRunning) {
   }, config.interval);
 }
 
+// Add pause/resume functionality
+let musicPaused = false;
+
+function pauseBackgroundMusic() {
+  musicPaused = true;
+}
+
+function resumeBackgroundMusic() {
+  musicPaused = false;
+}
+
 function stopBackgroundMusic() {
   if (backgroundMusicInterval) {
     clearInterval(backgroundMusicInterval);
     backgroundMusicInterval = null;
   }
+  musicPaused = false;
 }

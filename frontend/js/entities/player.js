@@ -27,10 +27,13 @@ class Player {
   }
   draw() {
     this.trail.forEach((part) => {
-      ctx.beginPath();
-      ctx.arc(part.x, part.y, part.radius, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(0, 255, 255, ${part.alpha})`;
-      ctx.fill();
+      // Safety check: only draw if radius is positive
+      if (part.radius > 0) {
+        ctx.beginPath();
+        ctx.arc(part.x, part.y, part.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(0, 255, 255, ${part.alpha})`;
+        ctx.fill();
+      }
     });
     ctx.save();
     ctx.translate(this.x, this.y);
@@ -267,7 +270,10 @@ class Player {
     for (let i = this.trail.length - 1; i >= 0; i--) {
       this.trail[i].alpha -= GAME_CONFIG.player.trailFadeSpeed;
       this.trail[i].radius -= 0.1;
-      if (this.trail[i].alpha <= 0) this.trail.splice(i, 1);
+      // Remove trail parts with negative or zero radius to prevent arc() errors
+      if (this.trail[i].alpha <= 0 || this.trail[i].radius <= 0) {
+        this.trail.splice(i, 1);
+      }
     }
 
     // Update regular shield

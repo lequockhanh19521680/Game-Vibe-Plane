@@ -19,49 +19,49 @@ const GAME_CONFIG = {
   },
 
   // =============================================================================
-  // DIFFICULTY PROGRESSION - Hệ thống khó dần
+  // DIFFICULTY PROGRESSION - Hệ thống khó dần (PC MODE - EXTREMELY HARD START)
   // =============================================================================
   difficulty: {
-    baseSpawnInterval: 85, // Thời gian spawn ban đầu - tăng lại lên 85 để thiên thạch xuất hiện ít hơn
-    minSpawnInterval: 45, // Thời gian spawn tối thiểu - tăng lên 45 để thiên thạch xuất hiện thưa hơn
-    spawnDecreaseStep: 0.6, // Giảm spawn interval mỗi lần - giảm xuống 0.6 để độ khó tăng chậm hơn
+    baseSpawnInterval: 40, // GIẢM XUỐNG 40 - Spawn CỰC NHANH ngay từ đầu
+    minSpawnInterval: 25, // GIẢM XUỐNG 25 - Cho phép spawn siêu nhanh
+    spawnDecreaseStep: 1.0, // TĂNG LÊN 1.0 - Độ khó tăng CỰC NHANH
 
-    baseSpeed: 0.9, // Tốc độ cơ bản - giảm xuống 0.9 để đầu game dễ hơn
-    speedIncreaseStep: 0.015, // Tăng tốc độ mỗi level - giảm xuống 0.015 để độ khó tăng chậm hơn
-    microSpeedIncrease: 0.002, // Tăng tốc độ nhỏ liên tục - giảm xuống 0.002 để độ khó tăng chậm hơn
+    baseSpeed: 1.3, // TĂNG LÊN 1.3 - Objects bay CỰC NHANH ngay từ đầu
+    speedIncreaseStep: 0.025, // TĂNG LÊN 0.025 - Tốc độ tăng rất nhanh
+    microSpeedIncrease: 0.004, // TĂNG LÊN 0.004 - Tăng tốc liên tục nhanh hơn
 
     levelUpInterval: 30, // Giây để lên level - giữ nguyên
-    microProgressInterval: 2000, // Frame để tăng khó nhỏ - tăng lên 2000 để độ khó tăng chậm hơn nhiều
+    microProgressInterval: 1200, // GIẢM XUỐNG 1200 - Độ khó tăng CỰC NHANH
   },
 
   // =============================================================================
-  // ASTEROID SETTINGS - Cài đặt thiên thạch
+  // ASTEROID SETTINGS - Cài đặt thiên thạch (PC MODE - EXTREME)
   // =============================================================================
   asteroids: {
-    minRadius: 12, // Kích thước tối thiểu - giảm xuống để dễ né hơn
-    maxRadius: 35, // Kích thước tối đa - giảm xuống để dễ né hơn
-    baseSpeed: 2.4, // Tốc độ cơ bản - giảm mạnh từ 3.8 xuống 2.4 để đầu game dễ hơn nhiều
-    speedVariation: 1.4, // Biến thiên tốc độ - giảm xuống để tốc độ ổn định và dễ dự đoán hơn
-    speedIncreasePerLevel: 0.05, // Tăng tốc độ mỗi level - giảm xuống 0.05 để độ khó tăng chậm hơn nữa
+    minRadius: 18, // TĂNG LÊN 18 - Thiên thạch CỰC TO, rất khó né
+    maxRadius: 48, // TĂNG LÊN 48 - Kích thước max CỰC LỚN
+    baseSpeed: 3.8, // TĂNG LÊN 3.8 - Tốc độ CỰC NHANH ngay từ đầu
+    speedVariation: 2.5, // TĂNG LÊN 2.5 - Biến thiên CỰC LỚN, cực khó đoán
+    speedIncreasePerLevel: 0.1, // TĂNG LÊN 0.1 - Tăng tốc rất nhanh
     fragmentSpeed: 0.99, // Tốc độ giảm của mảnh vỡ - giữ nguyên
     colors: ["#ff4444", "#ffbb33", "#99cc00"], // Màu sắc - giữ nguyên
 
-    // Spawn patterns - Thiên thạch rơi từ trên xuống
+    // Spawn patterns - CỰC KHÓ - Rất nhiều góc độ ngẫu nhiên
     spawnPatterns: {
-      topDown: 0.8, // 80% - Tăng tỉ lệ rơi thẳng từ trên xuống để dễ né hơn
-      slightAngle: 0.15, // 15% - Góc nghiêng nhẹ
-      diagonal: 0.05, // 5% - Giảm tỉ lệ rơi từ góc vì khó né hơn
+      topDown: 0.35, // 35% - GIẢM thêm để có nhiều góc độ khó đoán
+      slightAngle: 0.35, // 35% - TĂNG góc nghiêng
+      diagonal: 0.3, // 30% - TĂNG MẠNH rơi từ góc, CỰC KHÓ NÉ
     },
   },
 
   // =============================================================================
-  // BLACK HOLE SETTINGS - Cài đặt hố đen
+  // BLACK HOLE SETTINGS - Cài đặt hố đen (PC MODE - BRUTAL)
   // =============================================================================
   blackHoles: {
-    spawnScore: 400, // Điểm bắt đầu xuất hiện - tăng lên để xuất hiện muộn hơn
-    spawnInterval: 900, // Khoảng cách spawn - tăng lên để hố đen xuất hiện ít hơn
-    warningDuration: 180, // Thời gian cảnh báo - tăng lên 3 giây để dễ chuẩn bị
-    warningDelay: 3000, // Delay sau cảnh báo - tăng lên 3 giây để có thêm thời gian chuẩn bị
+    spawnScore: 150, // GIẢM XUỐNG 150 - Xuất hiện CỰC SỚM
+    spawnInterval: 550, // GIẢM XUỐNG 550 - Xuất hiện CỰC THƯỜNG XUYÊN
+    warningDuration: 100, // GIẢM XUỐNG 100 - Ít thời gian chuẩn bị
+    warningDelay: 1500, // GIẢM XUỐNG 1.5 giây - Ít thời gian phản ứng
 
     baseRadius: 8, // Bán kính ban đầu - giảm xuống để dễ tránh hơn
     baseMaxRadius: 45, // Bán kính tối đa ban đầu - giảm xuống để dễ tránh hơn
@@ -84,20 +84,20 @@ const GAME_CONFIG = {
   },
 
   // =============================================================================
-  // MISSILE SETTINGS - Cài đặt tên lửa
+  // MISSILE SETTINGS - Cài đặt tên lửa (PC MODE - DEADLY)
   // =============================================================================
   missiles: {
-    spawnScore: 600, // Điểm bắt đầu xuất hiện - tăng lên để xuất hiện muộn hơn
-    spawnInterval: 650, // Khoảng cách spawn - tăng lên để tên lửa xuất hiện ít hơn
-    warningDuration: 150, // Thời gian cảnh báo - tăng lên để dễ chuẩn bị hơn
-    warningDelay: 2500, // Delay sau cảnh báo - tăng lên để có nhiều thời gian chuẩn bị hơn
+    spawnScore: 250, // GIẢM XUỐNG 250 - Xuất hiện CỰC SỚM
+    spawnInterval: 400, // GIẢM XUỐNG 400 - Xuất hiện CỰC THƯỜNG XUYÊN
+    warningDuration: 80, // GIẢM XUỐNG 80 - Rất ít thời gian cảnh báo
+    warningDelay: 1200, // GIẢM XUỐNG 1.2 giây - Rất ít thời gian chuẩn bị
 
-    radius: 5, // Kích thước - giảm xuống để dễ né hơn
-    baseSpeed: 0.2, // Tốc độ cơ bản - giảm xuống để dễ né hơn
-    speedIncreasePerLevel: 0.01, // Tăng tốc độ mỗi level - giảm để độ khó tăng chậm hơn
+    radius: 7, // TĂNG LÊN 7 - CỰC KHÓ NÉ
+    baseSpeed: 0.35, // TĂNG LÊN 0.35 - CỰC NHANH
+    speedIncreasePerLevel: 0.018, // TĂNG LÊN 0.018 - Tăng tốc rất nhanh
 
-    baseTurnSpeed: 0.025, // Tốc độ rẽ cơ bản - giảm để dễ né tránh hơn
-    turnSpeedIncreasePerLevel: 0.005, // Tăng tốc độ rẽ mỗi level - giảm để độ khó tăng chậm hơn
+    baseTurnSpeed: 0.04, // TĂNG LÊN 0.04 - Rẽ CỰC NHANH, gần như không thoát được
+    turnSpeedIncreasePerLevel: 0.01, // TĂNG LÊN 0.01 - Tăng độ rẽ rất nhanh
 
     speedUpTime: 450, // Thời gian để tăng tốc - tăng lên để tên lửa cần nhiều thời gian hơn để tăng tốc
     speedUpMultiplier: 1.5, // Hệ số tăng tốc - giảm xuống để tên lửa không quá nhanh
@@ -472,7 +472,7 @@ const GAME_CONFIG = {
     },
 
     // === NEW CREATIVE EVENTS ===
-    
+
     gravityWaveCascade: {
       count: 4, // Số sóng trọng lực
       delay: 800, // Delay giữa các sóng (ms)
@@ -554,7 +554,7 @@ const GAME_CONFIG = {
     },
 
     // === NEW CREATIVE OBJECTS ===
-    
+
     gravityWave: {
       radius: 30, // Bán kính ban đầu của sóng
       maxRadius: 400, // Bán kính tối đa
@@ -576,24 +576,24 @@ const GAME_CONFIG = {
     },
 
     chainLightning: {
-      radius: 20, // Bán kính quả cầu
-      chainRange: 150, // Khoảng cách chain tối đa
+      radius: 25, // Bán kính quả cầu (TĂNG để dễ nhìn)
+      chainRange: 200, // Khoảng cách chain tối đa (TĂNG để player thấy sớm)
       maxChains: 5, // Số chain tối đa
       damage: 0.5, // Sát thương mỗi chain
       chainInterval: 30, // Khoảng cách giữa các lần chain (frames)
       lifetime: 400, // Tuổi thọ (frames)
       color: "#ffeb3b", // Màu vàng
-      glowIntensity: 20, // Độ sáng
+      glowIntensity: 30, // Độ sáng (TĂNG để chains sáng hơn)
     },
 
     voidRift: {
-      radius: 40, // Bán kính rift
-      pullRadius: 120, // Bán kính hút
+      radius: 50, // Bán kính rift (TĂNG để dễ nhìn)
+      pullRadius: 150, // Bán kính hút (TĂNG để warning sớm hơn)
       pullStrength: 0.15, // Lực hút
       teleportChance: 0.7, // Xác suất teleport (70%)
       lifetime: 350, // Tuổi thọ (frames)
-      color: "#1a0033", // Màu tím đen
-      edgeColor: "#9c27b0", // Màu viền tím
+      color: "#4a148c", // Màu tím ĐẬM HƠN (thay vì đen)
+      edgeColor: "#e91e63", // Màu viền hồng SÁNG (thay vì tím nhạt)
       rotationSpeed: 0.05, // Tốc độ xoay
     },
 
@@ -736,16 +736,55 @@ const GAME_CONFIG = {
   // =============================================================================
   ui: {
     eventText: {
-      duration: 3000, // Tăng thời gian hiển thị từ 2000 lên 3000ms
-      fontSize: "3rem", // Tăng kích thước font từ 2.5rem lên 3rem để dễ nhìn hơn
+      duration: 2500, // Giảm thời gian hiển thị để không che khuất gameplay quá lâu
+      fontSize: "clamp(1.2rem, 3vw, 2.5rem)", // Responsive font size, nhỏ hơn trên mobile
     },
-
     warning: {
       radius: 30, // Bán kính cảnh báo
       pulseIntensity: 15, // Cường độ pulse
       pulseSpeed: 0.3, // Tốc độ pulse
       fadeInTime: 20, // Thời gian fade in (frame)
       fadeOutTime: 20, // Thời gian fade out (frame)
+
+      // Universal warning system for all objects
+      universal: {
+        enabled: true, // Bật hệ thống cảnh báo toàn diện
+        duration: 120, // 2 giây cảnh báo (60fps * 2)
+        delay: 2000, // 2 giây delay sau cảnh báo (ms)
+        showRadius: true, // Hiển thị vùng ảnh hưởng trong warning
+
+        // Mobile-specific warning adjustments
+        mobile: {
+          radiusMultiplier: 1.5, // Tăng kích thước warning 1.5 lần trên mobile
+          pulseSpeedMultiplier: 1.2, // Tăng tốc độ pulse trên mobile
+          durationMultiplier: 1.3, // Tăng thời gian warning trên mobile
+        },
+      },
+    },
+
+    // Mobile responsiveness settings
+    mobile: {
+      detected: false, // Will be set by detection script
+      scaleFactor: 0.7, // Scale down UI elements for mobile
+      minTouchSize: 44, // Minimum touch target size (pixels)
+      safeAreaPadding: 20, // Padding from screen edges
+
+      // Object size adjustments for mobile
+      objects: {
+        asteroidSizeMultiplier: 0.8, // Giảm kích thước asteroid 20%
+        playerSizeMultiplier: 0.9, // Giảm kích thước player 10%
+        missileSizeMultiplier: 0.7, // Giảm kích thước missile 30%
+        blackHoleSizeMultiplier: 0.8, // Giảm kích thước black hole 20%
+        laserWidthMultiplier: 0.6, // Giảm độ rộng laser 40%
+        effectRadiusMultiplier: 0.75, // Giảm vùng ảnh hưởng các hiệu ứng 25%
+      },
+
+      // Text and font adjustments
+      text: {
+        baseFontSizeMultiplier: 0.8, // Giảm font size 20%
+        eventTextSizeMultiplier: 0.7, // Giảm event text size 30%
+        scoreFontSizeMultiplier: 0.75, // Giảm score font size 25%
+      },
     },
   },
 
