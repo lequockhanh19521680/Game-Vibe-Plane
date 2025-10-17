@@ -256,53 +256,56 @@ class MagneticStorm {
   }
 
   checkPlayerLightningCollision(bolt) {
-    if (!player.shieldActive) {
-      // Lightning can be blocked by shield
-      // Calculate distance from player to each segment
-      let playerHit = false;
+    // Lightning can be blocked by shield or thunder shield
+    let playerHit = false;
 
-      // Check if player is near the lightning path
-      const start = { x: bolt.startX, y: bolt.startY };
+    // Check if player is near the lightning path
+    const start = { x: bolt.startX, y: bolt.startY };
 
-      // Check each segment
-      for (let i = 0; i < bolt.segments.length; i++) {
-        const seg1 = i === 0 ? start : bolt.segments[i - 1];
-        const seg2 = bolt.segments[i];
+    // Check each segment
+    for (let i = 0; i < bolt.segments.length; i++) {
+      const seg1 = i === 0 ? start : bolt.segments[i - 1];
+      const seg2 = bolt.segments[i];
 
-        const dist = this.distanceToLineSegment(
-          player.x,
-          player.y,
-          seg1.x,
-          seg1.y,
-          seg2.x,
-          seg2.y
-        );
+      const dist = this.distanceToLineSegment(
+        player.x,
+        player.y,
+        seg1.x,
+        seg1.y,
+        seg2.x,
+        seg2.y
+      );
 
-        if (dist < player.radius + 10) {
-          // 10px buffer for lightning thickness
-          playerHit = true;
-          break;
-        }
+      if (dist < player.radius + 10) {
+        // 10px buffer for lightning thickness
+        playerHit = true;
+        break;
       }
+    }
 
-      // Check last segment to end point
-      if (!playerHit) {
-        const lastSeg = bolt.segments[bolt.segments.length - 1];
-        const dist = this.distanceToLineSegment(
-          player.x,
-          player.y,
-          lastSeg.x,
-          lastSeg.y,
-          bolt.endX,
-          bolt.endY
-        );
+    // Check last segment to end point
+    if (!playerHit) {
+      const lastSeg = bolt.segments[bolt.segments.length - 1];
+      const dist = this.distanceToLineSegment(
+        player.x,
+        player.y,
+        lastSeg.x,
+        lastSeg.y,
+        bolt.endX,
+        bolt.endY
+      );
 
-        if (dist < player.radius + 10) {
-          playerHit = true;
-        }
+      if (dist < player.radius + 10) {
+        playerHit = true;
       }
+    }
 
-      if (playerHit) {
+    if (playerHit) {
+      if (player.shieldActive || player.thunderShieldActive) {
+        player.activateThunderShield();
+        playSound("shield");
+        triggerScreenShake(0.3);
+      } else {
         endGame("lightning strike");
       }
     }
@@ -394,4 +397,3 @@ class MagneticStorm {
     });
   }
 }
-

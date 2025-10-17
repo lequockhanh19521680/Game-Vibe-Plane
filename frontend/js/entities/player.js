@@ -240,17 +240,14 @@ class Player {
     ctx.restore();
   }
   update() {
-    // Apply velocity from external forces like gravity
-    this.x += this.velocity.x;
-    this.y += this.velocity.y;
-    // Dampen velocity over time (friction)
-    this.velocity.x *= GAME_CONFIG.player.friction;
-    this.velocity.y *= GAME_CONFIG.player.friction;
-
-    // Responsive but smooth controls for precision feel
+    // Restore direct lerp movement towards mouse
     const ease = GAME_CONFIG.player.responsiveness;
     this.x += (mouse.x - this.x) * ease;
     this.y += (mouse.y - this.y) * ease;
+    // Rotate player to face mouse
+    const dx = mouse.x - this.x;
+    const dy = mouse.y - this.y;
+    this.angle = Math.atan2(dy, dx);
 
     // Keep player within screen bounds
     this.x = Math.max(this.radius, Math.min(width - this.radius, this.x));

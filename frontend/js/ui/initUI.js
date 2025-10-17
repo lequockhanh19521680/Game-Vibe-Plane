@@ -29,9 +29,10 @@ function initializeUI() {
     uiElements.mainMenuScreen.classList.add("active");
   }
 
-  // Hide in-game UI
+  // Always show in-game UI (scoreContainer)
   if (uiElements.scoreContainer) {
-    uiElements.scoreContainer.style.opacity = "0";
+    uiElements.scoreContainer.style.opacity = "1";
+    uiElements.scoreContainer.style.display = "block";
   }
 
   // Hide game over screen

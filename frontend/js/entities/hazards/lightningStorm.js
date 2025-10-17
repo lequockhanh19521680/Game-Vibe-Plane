@@ -199,8 +199,17 @@ class LightningStorm {
 
         if (dist < 25) {
           // Lightning collision radius
-          this.activateSpeedBoost();
-          return;
+          if (!player.shieldActive && !player.thunderShieldActive) {
+            // No shield - lightning kills player
+            endGame("lightning strike");
+            return;
+          } else {
+            // Shield active - lightning activates thunder shield!
+            player.activateThunderShield();
+            playSound("shield");
+            triggerScreenShake(0.3);
+            return;
+          }
         }
       }
     });
@@ -238,4 +247,3 @@ class LightningStorm {
     globalSpeedMultiplier *= 0.8;
   }
 }
-

@@ -9,7 +9,7 @@ const GAME_CONFIG = {
   // PLAYER SETTINGS - Cài đặt người chơi
   // =============================================================================
   player: {
-    radius: 15, // Kích thước player - giữ nguyên
+    radius: 20, // Kích thước player - TĂNG từ 15 lên 20 cho PC
     responsiveness: 0.15, // Độ nhạy điều khiển - tăng lên để dễ điều khiển hơn
     friction: 0.94, // Ma sát tự nhiên - tăng lên để giữ tốc độ di chuyển ổn định hơn
     trailLength: 20, // Độ dài vệt khói
@@ -38,8 +38,8 @@ const GAME_CONFIG = {
   // ASTEROID SETTINGS - Cài đặt thiên thạch (PC MODE - EXTREME)
   // =============================================================================
   asteroids: {
-    minRadius: 18, // TĂNG LÊN 18 - Thiên thạch CỰC TO, rất khó né
-    maxRadius: 48, // TĂNG LÊN 48 - Kích thước max CỰC LỚN
+    minRadius: 24, // TĂNG từ 18 lên 24 - Thiên thạch to hơn, dễ thấy
+    maxRadius: 60, // TĂNG từ 48 lên 60 - Kích thước max lớn hơn
     baseSpeed: 3.8, // TĂNG LÊN 3.8 - Tốc độ CỰC NHANH ngay từ đầu
     speedVariation: 2.5, // TĂNG LÊN 2.5 - Biến thiên CỰC LỚN, cực khó đoán
     speedIncreasePerLevel: 0.1, // TĂNG LÊN 0.1 - Tăng tốc rất nhanh
@@ -92,7 +92,7 @@ const GAME_CONFIG = {
     warningDuration: 80, // GIẢM XUỐNG 80 - Rất ít thời gian cảnh báo
     warningDelay: 1200, // GIẢM XUỐNG 1.2 giây - Rất ít thời gian chuẩn bị
 
-    radius: 7, // TĂNG LÊN 7 - CỰC KHÓ NÉ
+    radius: 13, // GIẢM từ 18 xuống 13 - Nhỏ hơn, dễ né hơn
     baseSpeed: 0.35, // TĂNG LÊN 0.35 - CỰC NHANH
     speedIncreasePerLevel: 0.018, // TĂNG LÊN 0.018 - Tăng tốc rất nhanh
 
@@ -156,8 +156,8 @@ const GAME_CONFIG = {
 
     // Missile fragment settings
     missileFragments: {
-      minRadius: 3, // Kích thước tối thiểu mảnh tên lửa
-      maxRadius: 6, // Kích thước tối đa mảnh tên lửa
+      minRadius: 12, // Kích thước tối thiểu mảnh tên lửa - tăng từ 3 lên 12 (2/3 kích thước tên lửa chính)
+      maxRadius: 15, // Kích thước tối đa mảnh tên lửa - tăng từ 6 lên 15 (gần bằng tên lửa chính)
       minLife: 80, // Tuổi thọ tối thiểu
       maxLife: 120, // Tuổi thọ tối đa
       color: "#f48fb1", // Màu sắc mảnh tên lửa
@@ -797,7 +797,7 @@ const GAME_CONFIG = {
     speedMinThreshold: 2, // Giảm ngưỡng tốc độ tối thiểu xuống 2 để dễ đạt điểm
     speedScoreInterval: 20, // Giảm xuống 20 frames để điểm tăng nhanh hơn
     asteroidDestroy: 25, // Tăng điểm phá hủy thiên thạch lên 25
-    survivalBonus: 1, // Thêm 1 điểm mỗi giây sống sót để đảm bảo điểm tăng đều
+    survivalBonus: 5, // TĂNG từ 1 lên 5 - 5 điểm mỗi giây sống sót
 
     // Bỏ ngưỡng cho movement (tăng điểm ngay từ đầu, không cần di chuyển nhiều)
     baseMovementThreshold: 0, // Không còn ngưỡng pixel tối thiểu

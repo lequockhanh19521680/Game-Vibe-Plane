@@ -42,9 +42,8 @@ function detectMobile() {
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
       navigator.userAgent
     );
-  const isSmallScreen = window.innerWidth <= 768 || window.innerHeight <= 768;
-
-  GAME_CONFIG.ui.mobile.detected = isMobile || isSmallScreen;
+  // Only treat as mobile if true mobile device, not just small screen
+  GAME_CONFIG.ui.mobile.detected = isMobile;
 
   if (GAME_CONFIG.ui.mobile.detected) {
     console.log("Mobile device detected, applying mobile optimizations");

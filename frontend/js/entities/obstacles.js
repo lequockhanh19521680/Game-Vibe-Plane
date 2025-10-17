@@ -466,6 +466,16 @@ class Missile {
       this.fromLeft = this.x < width / 2;
     }
     this.radius = GAME_CONFIG.missiles.radius;
+
+    // DEBUG: Log missile creation with suspicious radius
+    if (this.radius !== 18) {
+      console.warn(
+        `⚠️ MISSILE CREATED WITH WRONG RADIUS: ${this.radius}, expected=18`
+      );
+      console.log("Config value:", GAME_CONFIG.missiles.radius);
+      console.trace("Creation stack trace");
+    }
+
     const difficultyLevel = Math.floor(score / 1500); // Every 1500 points (reduced from 3000)
     this.speed =
       (GAME_CONFIG.missiles.baseSpeed +

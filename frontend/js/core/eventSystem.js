@@ -90,7 +90,6 @@ function triggerRandomEvent() {
 
     // COLLECTIBLES - Good for player (INCREASED weights)
     { type: "crystalRain", weight: 25 }, // Power-ups
-    { type: "lightningStorm", weight: 20 }, // Thunder shield opportunity
 
     // MODERATE THREATS
     { type: "freezeZone", weight: 15 }, // Slow zones
@@ -100,7 +99,6 @@ function triggerRandomEvent() {
     // ADVANCED THREATS (Lower weights = rarer)
     { type: "plasmaStorm", weight: 10 }, // Plasma fields
     { type: "superNova", weight: 8 }, // Big explosion
-    { type: "lightningNetwork", weight: 10 }, // Chain lightning
     { type: "gravityWaveCascade", weight: 8 }, // Gravity waves
   ];
 

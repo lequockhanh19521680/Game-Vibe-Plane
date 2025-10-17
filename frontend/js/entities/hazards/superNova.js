@@ -4,7 +4,7 @@ class SuperNova {
     this.y = y || canvas.height / 2;
     this.radius = 10;
     this.maxRadius = 300;
-    this.expansionSpeed = 8;
+    this.expansionSpeed = 11; // Faster expansion for more impact
     this.age = 0;
     this.lifetime = 120; // 2 seconds
     this.intensity = 1;
@@ -68,22 +68,24 @@ class SuperNova {
 
   update() {
     this.age++;
-
-    // Expand the supernova
-    if (this.radius < this.maxRadius) {
-      this.radius += this.expansionSpeed;
-
-      // Clear objects continuously as the shockwave expands
+    // Only allow one explosion per SuperNova
+    if (
+      !this.hasExploded &&
+      this.radius + this.expansionSpeed >= this.maxRadius
+    ) {
+      this.radius = this.maxRadius;
       this.clearObjects();
-
+      this.hasExploded = true;
+    } else if (this.radius < this.maxRadius) {
+      this.radius += this.expansionSpeed;
+      this.clearObjects();
       // Add explosive particles for visual effect
       if (this.age % 2 === 0) {
-        const particleCount = 4 + Math.floor(this.radius / 30); // Thêm nhiều hạt hơn khi supernova mở rộng
+        const particleCount = 4 + Math.floor(this.radius / 30);
         for (let i = 0; i < particleCount; i++) {
           const angle = Math.random() * Math.PI * 2;
-          // Tạo hạt ở vòng sóng mở rộng
           const dist = this.radius - 20 + Math.random() * 40;
-          const colors = ["#ffeb3b", "#ff9800", "#ff5722", "#ffffff"]; // Nhiều màu sắc hơn
+          const colors = ["#ffeb3b", "#ff9800", "#ff5722", "#ffffff"];
           particles.push(
             new Particle(
               this.x + Math.cos(angle) * dist,
@@ -99,13 +101,11 @@ class SuperNova {
         }
       }
     }
-
-    // Add screen shake effect while expanding - tăng cường độ khi mở rộng
+    // Add screen shake effect while expanding
     if (this.age % 10 === 0 && this.radius < this.maxRadius) {
       const intensity = 0.3 + (this.radius / this.maxRadius) * 0.5;
       triggerScreenShake(intensity);
     }
-
     this.draw();
     return this.age < this.lifetime;
   }
