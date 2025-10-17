@@ -89,8 +89,7 @@ function init() {
   nebulae = Array(GAME_CONFIG.visual.nebula.count)
     .fill(null)
     .map(() => createNebula());
-  highScore =
-    localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0;
+  highScore = localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0;
   uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
 }
 
@@ -104,12 +103,10 @@ function animate() {
   });
 
   stars.sort((a, b) => a.layer - b.layer).forEach((s) => s.update());
-  if (!isGameRunning) {
-    particles.forEach((p, i) =>
-      p.alpha <= 0 ? particles.splice(i, 1) : p.update()
-    );
-    return;
-  }
+
+  // Logic game over đã được chuyển sang hàm endGame trong main.js
+  // Hàm animate sẽ dừng hoàn toàn khi game over.
+  // Khối if (!isGameRunning) đã được loại bỏ để tránh xóa màn hình.
 
   timers.difficulty++;
 
@@ -121,10 +118,7 @@ function animate() {
     .toString()
     .padStart(2, "0")}`;
 
-  const distMoved = Math.hypot(
-    mouse.x - prevMouse.x,
-    mouse.y - prevMouse.y
-  );
+  const distMoved = Math.hypot(mouse.x - prevMouse.x, mouse.y - prevMouse.y);
   // Dynamic movement threshold - giảm dần theo level (dựa trên điểm số)
   const currentLevel = Math.floor(score / 3000) + 1; // Level tăng mỗi 3000 điểm
   const dynamicThreshold = Math.max(
@@ -197,14 +191,12 @@ function animate() {
   }
   if (eventActive.type && timers.difficulty > eventActive.endTime) {
     if (eventActive.type === "speedZone")
-      globalSpeedMultiplier /=
-        GAME_CONFIG.events.speedZone.speedMultiplier;
+      globalSpeedMultiplier /= GAME_CONFIG.events.speedZone.speedMultiplier;
     eventActive.type = null;
   }
 
   let currentSpawnInterval =
-    eventActive.type === "denseField" &&
-    timers.difficulty < eventActive.endTime
+    eventActive.type === "denseField" && timers.difficulty < eventActive.endTime
       ? GAME_CONFIG.events.denseField.spawnInterval
       : spawnInterval;
 
@@ -221,8 +213,7 @@ function animate() {
             0.6
         : GAME_CONFIG.asteroids.minRadius +
           Math.random() *
-            (GAME_CONFIG.asteroids.maxRadius -
-              GAME_CONFIG.asteroids.minRadius);
+            (GAME_CONFIG.asteroids.maxRadius - GAME_CONFIG.asteroids.minRadius);
     const asteroidSpeed =
       (GAME_CONFIG.asteroids.baseSpeed +
         Math.random() * GAME_CONFIG.asteroids.speedVariation +
@@ -325,8 +316,7 @@ function animate() {
       // Multiple lasers for higher intensity
       const laserCount = Math.min(
         GAME_CONFIG.lasers.maxConcurrent,
-        1 +
-          Math.floor(difficultyLevel / GAME_CONFIG.lasers.lasersPerLevel)
+        1 + Math.floor(difficultyLevel / GAME_CONFIG.lasers.lasersPerLevel)
       );
 
       for (let i = 0; i < laserCount; i++) {
@@ -362,10 +352,7 @@ function animate() {
     timers.crystal++;
     if (timers.crystal % 800 === 0)
       crystalClusters.push(
-        new CrystalCluster(
-          Math.random() * width,
-          Math.random() * height * 0.7
-        )
+        new CrystalCluster(Math.random() * width, Math.random() * height * 0.7)
       );
   }
 
@@ -394,9 +381,7 @@ function animate() {
   }
   for (const m of missiles) {
     if (
-      Math.hypot(player.x - m.x, player.y - m.y) -
-        m.radius -
-        player.radius <
+      Math.hypot(player.x - m.x, player.y - m.y) - m.radius - player.radius <
       1
     ) {
       if (!player.shieldActive) {
@@ -415,8 +400,7 @@ function animate() {
 
   // Lasers vs Player
   for (const laser of lasers) {
-    if (laser.timer > laser.maxTime + GAME_CONFIG.lasers.beamDuration)
-      continue;
+    if (laser.timer > laser.maxTime + GAME_CONFIG.lasers.beamDuration) continue;
     if (laser.fired) {
       const dx = Math.cos(laser.angle);
       const dy = Math.sin(laser.angle);
@@ -525,17 +509,9 @@ function animate() {
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const f = fragments[i];
       const a = asteroids[j];
-      if (
-        f &&
-        a &&
-        Math.hypot(f.x - a.x, f.y - a.y) < f.radius + a.radius
-      ) {
+      if (f && a && Math.hypot(f.x - a.x, f.y - a.y) < f.radius + a.radius) {
         // Create explosion particles
-        for (
-          let k = 0;
-          k < GAME_CONFIG.fragments.explosionParticles;
-          k++
-        ) {
+        for (let k = 0; k < GAME_CONFIG.fragments.explosionParticles; k++) {
           particles.push(
             new Particle(a.x, a.y, Math.random() * 2 + 1, a.color, {
               x:
@@ -562,16 +538,11 @@ function animate() {
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const m = missiles[i];
       const a = asteroids[j];
-      if (
-        m &&
-        a &&
-        Math.hypot(m.x - a.x, m.y - a.y) < m.radius + a.radius
-      ) {
+      if (m && a && Math.hypot(m.x - a.x, m.y - a.y) < m.radius + a.radius) {
         // Tạo missile fragments khi tên lửa va chạm thiên thạch
         const fragmentCount = GAME_CONFIG.missiles.fragmentCountOnImpact;
         for (let k = 0; k < fragmentCount; k++) {
-          const angle =
-            (Math.PI * 2 * k) / fragmentCount + Math.random() * 0.5;
+          const angle = (Math.PI * 2 * k) / fragmentCount + Math.random() * 0.5;
           const speed =
             GAME_CONFIG.fragments.missileFragments.speed *
             (0.5 + Math.random() * 0.5);
@@ -596,16 +567,11 @@ function animate() {
       return;
     }
     for (let j = asteroids.length - 1; j >= 0; j--) {
-      if (
-        Math.hypot(asteroids[j].x - bh.x, asteroids[j].y - bh.y) <
-        bh.radius
-      )
+      if (Math.hypot(asteroids[j].x - bh.x, asteroids[j].y - bh.y) < bh.radius)
         asteroids.splice(j, 1);
     }
     for (let j = missiles.length - 1; j >= 0; j--) {
-      if (
-        Math.hypot(missiles[j].x - bh.x, missiles[j].y - bh.y) < bh.radius
-      )
+      if (Math.hypot(missiles[j].x - bh.x, missiles[j].y - bh.y) < bh.radius)
         missiles[j].isDead = true;
     }
   }
@@ -780,10 +746,7 @@ function animate() {
   for (const plasma of plasmaFields) {
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const asteroid = asteroids[j];
-      const dist = Math.hypot(
-        plasma.x - asteroid.x,
-        plasma.y - asteroid.y
-      );
+      const dist = Math.hypot(plasma.x - asteroid.x, plasma.y - asteroid.y);
       if (dist < plasma.radius + asteroid.radius) {
         // Plasma melts asteroid gradually
         asteroid.radius -= 0.5;
@@ -799,10 +762,7 @@ function animate() {
   for (const crystal of crystalShards) {
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const asteroid = asteroids[j];
-      const dist = Math.hypot(
-        crystal.x - asteroid.x,
-        crystal.y - asteroid.y
-      );
+      const dist = Math.hypot(crystal.x - asteroid.x, crystal.y - asteroid.y);
       if (dist < crystal.size + asteroid.radius) {
         // Crystal deflects asteroid
         asteroid.velocity.x *= -0.8;
@@ -847,12 +807,10 @@ function animate() {
 
     // Progressive difficulty scaling
     globalSpeedMultiplier +=
-      GAME_CONFIG.difficulty.speedIncreaseStep *
-      (1 + difficultyLevel * 0.1);
+      GAME_CONFIG.difficulty.speedIncreaseStep * (1 + difficultyLevel * 0.1);
     if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval) {
       spawnInterval -=
-        GAME_CONFIG.difficulty.spawnDecreaseStep *
-        (1 + difficultyLevel * 0.05);
+        GAME_CONFIG.difficulty.spawnDecreaseStep * (1 + difficultyLevel * 0.05);
     }
 
     // Unlock more dangerous events at higher levels
@@ -884,10 +842,7 @@ function animate() {
   }
 
   // Micro-progression for continuous challenge
-  if (
-    timers.difficulty % GAME_CONFIG.difficulty.microProgressInterval ===
-    0
-  ) {
+  if (timers.difficulty % GAME_CONFIG.difficulty.microProgressInterval === 0) {
     if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval + 3)
       spawnInterval -= 1;
     globalSpeedMultiplier +=
@@ -964,9 +919,7 @@ function triggerRandomEvent() {
               spawnY,
               radius,
               GAME_CONFIG.asteroids.colors[
-                Math.floor(
-                  Math.random() * GAME_CONFIG.asteroids.colors.length
-                )
+                Math.floor(Math.random() * GAME_CONFIG.asteroids.colors.length)
               ],
               { x: (Math.random() - 0.5) * 2, y: speed }
             )
@@ -978,8 +931,7 @@ function triggerRandomEvent() {
       break;
     case "speedZone":
       eventActive.type = "speedZone";
-      globalSpeedMultiplier *=
-        GAME_CONFIG.events.speedZone.speedMultiplier;
+      globalSpeedMultiplier *= GAME_CONFIG.events.speedZone.speedMultiplier;
       showEventText("Difficulty Spike!");
       break;
     case "instantMissiles":
@@ -1078,10 +1030,8 @@ function triggerRandomEvent() {
             for (const missile of this.missileData) {
               // Calculate projected path
               const pathLength = 200;
-              const endX =
-                missile.x + Math.cos(missile.angle) * pathLength;
-              const endY =
-                missile.y + Math.sin(missile.angle) * pathLength;
+              const endX = missile.x + Math.cos(missile.angle) * pathLength;
+              const endY = missile.y + Math.sin(missile.angle) * pathLength;
 
               // Draw trajectory line
               ctx.beginPath();
@@ -1294,10 +1244,8 @@ function triggerRandomEvent() {
       for (let i = 0; i < GAME_CONFIG.events.wormholePortal.count; i++) {
         setTimeout(() => {
           // Create wormhole that shoots asteroids
-          const x =
-            Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
-          const y =
-            Math.random() * canvas.height * 0.6 + canvas.height * 0.2;
+          const x = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
+          const y = Math.random() * canvas.height * 0.6 + canvas.height * 0.2;
           wormholes.push(new Wormhole(x, y));
         }, i * 1000); // Spawn wormholes with 1 second delay
       }
@@ -1412,10 +1360,7 @@ function triggerRandomEvent() {
                 0,
                 `rgba(255, 80, 0, ${0.3 + pulseIntensity * 0.2})`
               );
-              gradient.addColorStop(
-                0.7,
-                `rgba(255, 50, 0, ${0.2 * alpha})`
-              );
+              gradient.addColorStop(0.7, `rgba(255, 50, 0, ${0.2 * alpha})`);
               gradient.addColorStop(1, "rgba(255, 0, 0, 0)");
               ctx.fillStyle = gradient;
               ctx.fill();
@@ -1514,11 +1459,7 @@ function triggerRandomEvent() {
         const clusterX = (canvas.width / 5) * (cluster + 1);
         const clusterY = Math.random() * canvas.height * 0.3;
 
-        for (
-          let i = 0;
-          i < GAME_CONFIG.events.crystalRain.count / 4;
-          i++
-        ) {
+        for (let i = 0; i < GAME_CONFIG.events.crystalRain.count / 4; i++) {
           setTimeout(() => {
             // Create crystals in cluster formation
             const x = clusterX + (Math.random() - 0.5) * 150;
@@ -1573,10 +1514,8 @@ function triggerRandomEvent() {
           const centerY = canvas.height / 2;
           const angle = Math.atan2(centerY - y, centerX - x);
 
-          crystal.velocity.x =
-            Math.cos(angle) * (0.8 + Math.random() * 0.6);
-          crystal.velocity.y =
-            Math.sin(angle) * (0.8 + Math.random() * 0.6);
+          crystal.velocity.x = Math.cos(angle) * (0.8 + Math.random() * 0.6);
+          crystal.velocity.y = Math.sin(angle) * (0.8 + Math.random() * 0.6);
 
           crystalShards.push(crystal);
         }, Math.random() * 3000);
@@ -1591,11 +1530,9 @@ function triggerRandomEvent() {
 
       // Create only 2 portals (1 pair)
       const x1 = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
-      const y1 =
-        Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
+      const y1 = Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
       const x2 = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
-      const y2 =
-        Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
+      const y2 = Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
 
       quantumPortals.push(new QuantumPortal(x1, y1));
       quantumPortals.push(new QuantumPortal(x2, y2));
@@ -1629,18 +1566,13 @@ function triggerRandomEvent() {
           this.warningDelay = duration * 0.7; // 70% time for warning, 30% for impact
 
           // Pre-calculate meteor positions
-          for (
-            let i = 0;
-            i < GAME_CONFIG.events.meteorBombardment.count;
-            i++
-          ) {
+          for (let i = 0; i < GAME_CONFIG.events.meteorBombardment.count; i++) {
             this.positions.push({
               x: Math.random() * canvas.width,
               y: -30,
               impactY: Math.random() * (canvas.height - 100) + 50,
               timing:
-                (i * GAME_CONFIG.events.meteorBombardment.delay) /
-                (1000 / 60), // Convert ms to frames
+                (i * GAME_CONFIG.events.meteorBombardment.delay) / (1000 / 60), // Convert ms to frames
             });
           }
         }
@@ -1664,8 +1596,7 @@ function triggerRandomEvent() {
               }
 
               // Calculate warning line intensity
-              const pulseIntensity =
-                Math.sin(this.timer * 0.2) * 0.5 + 0.5;
+              const pulseIntensity = Math.sin(this.timer * 0.2) * 0.5 + 0.5;
 
               // Draw meteor trajectory
               ctx.globalAlpha = alpha * 0.6;
@@ -1724,11 +1655,7 @@ function triggerRandomEvent() {
         if (isGameRunning) {
           showEventText("☄️ METEOR BOMBARDMENT STARTED ☄️");
 
-          for (
-            let i = 0;
-            i < GAME_CONFIG.events.meteorBombardment.count;
-            i++
-          ) {
+          for (let i = 0; i < GAME_CONFIG.events.meteorBombardment.count; i++) {
             setTimeout(() => {
               // Use the same positions as in the warning
               const position = meteorWarning.positions[i];
@@ -1755,8 +1682,7 @@ function triggerRandomEvent() {
 
       for (let i = 0; i < GAME_CONFIG.events.voidRifts.count; i++) {
         const x = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
-        const y =
-          Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
+        const y = Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
 
         // Show warning first
         warnings.push(
@@ -1812,8 +1738,7 @@ function triggerRandomEvent() {
           if (this.timer < this.duration * 0.2) {
             this.alpha = this.timer / (this.duration * 0.2); // Fade in
           } else if (this.timer > this.duration * 0.7) {
-            this.alpha =
-              (this.duration - this.timer) / (this.duration * 0.3); // Fade out
+            this.alpha = (this.duration - this.timer) / (this.duration * 0.3); // Fade out
           } else {
             this.alpha = 1;
           }
@@ -1896,12 +1821,7 @@ function triggerRandomEvent() {
       }
 
       // Add the enhanced SuperNova warning
-      const superNovaWarning = new SuperNovaWarning(
-        superX,
-        superY,
-        300,
-        180
-      );
+      const superNovaWarning = new SuperNovaWarning(superX, superY, 300, 180);
       warnings.push(superNovaWarning);
 
       playSound("warning");
@@ -1929,16 +1849,10 @@ function triggerRandomEvent() {
             const angle = (i / 24) * Math.PI * 2;
             const speed = 5 + Math.random() * 10;
             particles.push(
-              new Particle(
-                superX,
-                superY,
-                Math.random() * 4 + 2,
-                "#ffffff",
-                {
-                  x: Math.cos(angle) * speed,
-                  y: Math.sin(angle) * speed,
-                }
-              )
+              new Particle(superX, superY, Math.random() * 4 + 2, "#ffffff", {
+                x: Math.cos(angle) * speed,
+                y: Math.sin(angle) * speed,
+              })
             );
           }
 
@@ -1963,4 +1877,3 @@ function triggerRandomEvent() {
       break;
   }
 }
-
