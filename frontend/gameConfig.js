@@ -419,7 +419,7 @@ const GAME_CONFIG = {
     },
 
     crystalRain: {
-      count: 32, // Số crystal shard (tăng để có nhiều cluster)
+      count: 5, // Số crystal shard (tăng để có nhiều cluster)
       delay: 80, // Delay giữa các crystal (chậm hơn để tạo formation)
       clusterSize: 8, // Số crystal mỗi cluster
       driftSpeed: 1.2, // Tốc độ trôi dạt
