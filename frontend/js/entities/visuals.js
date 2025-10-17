@@ -1,20 +1,4 @@
 // Visual effects classes - particles, fragments, stars
-// Make sure we have access to the global context
-// This is a safer approach since we're using the global ctx
-(function () {
-  // Wait for document to be fully loaded and ctx to be defined
-  function checkCtx() {
-    if (typeof ctx === "undefined") {
-      console.log("Waiting for ctx to be defined...");
-      setTimeout(checkCtx, 100);
-    } else {
-      console.log("Canvas context is available in visuals.js");
-    }
-  }
-
-  // Start checking for ctx
-  checkCtx();
-})();
 
 class Particle extends ColoredEntity {
   constructor(x, y, radius, color, velocity) {
@@ -47,7 +31,8 @@ class Fragment {
     this.radius =
       GAME_CONFIG.fragments.minRadius +
       Math.random() *
-        (GAME_CONFIG.fragments.maxRadius - GAME_CONFIG.fragments.minRadius);
+        (GAME_CONFIG.fragments.maxRadius -
+          GAME_CONFIG.fragments.minRadius);
     this.velocity = velocity;
     this.color = GAME_CONFIG.fragments.color;
     this.life =
@@ -59,34 +44,6 @@ class Fragment {
     this.rotationSpeed =
       (Math.random() - 0.5) * GAME_CONFIG.fragments.rotationSpeed;
     this.lethal = false; // Regular fragments are not lethal
-  }
-
-  draw() {
-    ctx.save();
-    ctx.globalAlpha = this.alpha;
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.rotation);
-    ctx.beginPath();
-    ctx.rect(-this.radius / 2, -this.radius / 2, this.radius, this.radius);
-    ctx.fillStyle = this.color;
-    ctx.shadowColor = this.color;
-    ctx.shadowBlur = 5;
-    ctx.fill();
-    ctx.restore();
-  }
-
-  update() {
-    this.x += this.velocity.x;
-    this.y += this.velocity.y;
-    this.velocity.y += GAME_CONFIG.fragments.gravity;
-    this.velocity.x *= GAME_CONFIG.fragments.airResistance;
-    this.velocity.y *= GAME_CONFIG.fragments.airResistance;
-    this.rotation += this.rotationSpeed;
-
-    this.life--;
-    this.alpha = Math.max(0, this.life / 120);
-
-    return this.life <= 0;
   }
 }
 
@@ -118,7 +75,12 @@ class MissileFragment {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rotation);
     ctx.beginPath();
-    ctx.rect(-this.radius / 2, -this.radius / 2, this.radius, this.radius);
+    ctx.rect(
+      -this.radius / 2,
+      -this.radius / 2,
+      this.radius,
+      this.radius
+    );
     ctx.fillStyle = this.color;
     ctx.shadowColor = this.color;
     ctx.shadowBlur = 8;
@@ -144,6 +106,39 @@ class MissileFragment {
     this.alpha = Math.max(0, this.life / 120);
 
     return this.life <= 0;
+  }
+
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+    ctx.beginPath();
+    ctx.rect(
+      -this.radius / 2,
+      -this.radius / 2,
+      this.radius,
+      this.radius
+    );
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 5;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  update() {
+    this.x += this.velocity.x;
+    this.y += this.velocity.y;
+    this.velocity.y += GAME_CONFIG.fragments.gravity;
+    this.velocity.x *= GAME_CONFIG.fragments.airResistance;
+    this.velocity.y *= GAME_CONFIG.fragments.airResistance;
+    this.rotation += this.rotationSpeed;
+
+    this.life--;
+    this.alpha = Math.max(0, this.life / 150);
+
+    this.draw();
   }
 }
 

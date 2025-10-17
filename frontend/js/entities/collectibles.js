@@ -25,7 +25,14 @@ class EnergyOrb {
     const currentRadius = this.radius * pulse;
 
     // Outer glow
-    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, currentRadius * 2);
+    const gradient = ctx.createRadialGradient(
+      0,
+      0,
+      0,
+      0,
+      0,
+      currentRadius * 2
+    );
     gradient.addColorStop(0, "rgba(0, 255, 255, 0.8)");
     gradient.addColorStop(0.5, "rgba(0, 150, 255, 0.4)");
     gradient.addColorStop(1, "rgba(0, 100, 200, 0)");
@@ -58,7 +65,10 @@ class EnergyOrb {
       const dist = Math.hypot(fragment.x - this.x, fragment.y - this.y);
       if (dist < attractRadius && dist > 0) {
         const force = (0.1 * (attractRadius - dist)) / attractRadius;
-        const angle = Math.atan2(this.y - fragment.y, this.x - fragment.x);
+        const angle = Math.atan2(
+          this.y - fragment.y,
+          this.x - fragment.x
+        );
         fragment.velocity.x += Math.cos(angle) * force;
         fragment.velocity.y += Math.sin(angle) * force;
       }
@@ -108,8 +118,16 @@ class CrystalShard {
 
     // Outer glow effect
     if (this.isDrifting) {
-      const glowRadius = this.size * 2 + Math.sin(this.sparkleTimer * 0.1) * 3;
-      const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowRadius);
+      const glowRadius =
+        this.size * 2 + Math.sin(this.sparkleTimer * 0.1) * 3;
+      const glowGradient = ctx.createRadialGradient(
+        0,
+        0,
+        0,
+        0,
+        0,
+        glowRadius
+      );
       glowGradient.addColorStop(0, `rgba(64, 196, 255, ${alpha * 0.3})`);
       glowGradient.addColorStop(1, "rgba(64, 196, 255, 0)");
 
@@ -246,7 +264,8 @@ class CrystalShard {
 
         // Create impact sparkles
         for (let j = 0; j < 6; j++) {
-          const sparkleAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.5;
+          const sparkleAngle =
+            Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.5;
           particles.push(
             new Particle(
               this.x + Math.cos(sparkleAngle) * this.size,
@@ -325,7 +344,8 @@ class ShieldGenerator {
     this.x = x;
     this.y = y;
     this.radius = GAME_CONFIG.newObjects.shieldGenerator.radius;
-    this.shieldRadius = GAME_CONFIG.newObjects.shieldGenerator.shieldRadius;
+    this.shieldRadius =
+      GAME_CONFIG.newObjects.shieldGenerator.shieldRadius;
     this.chargeTime = GAME_CONFIG.newObjects.shieldGenerator.chargeTime;
     this.activeTime = GAME_CONFIG.newObjects.shieldGenerator.activeTime;
     this.age = 0;

@@ -9,9 +9,6 @@ class Asteroid {
     this.velocity = velocity;
     this.shapePoints = this.createShape();
     this.isFragment = false;
-    this.id =
-      Math.random().toString(36).substring(2, 15) +
-      Math.random().toString(36).substring(2, 15); // Unique ID
 
     // Random movement patterns for diversity
     this.movementPattern = Math.random();
@@ -105,8 +102,10 @@ class Asteroid {
       } else if (this.movementPattern < 0.9) {
         // Spiral movement (10%)
         const spiralRadius = Math.sin(this.timer * 0.02) * 2;
-        this.x += this.velocity.x + Math.cos(this.timer * 0.1) * spiralRadius;
-        this.y += this.velocity.y + Math.sin(this.timer * 0.1) * spiralRadius;
+        this.x +=
+          this.velocity.x + Math.cos(this.timer * 0.1) * spiralRadius;
+        this.y +=
+          this.velocity.y + Math.sin(this.timer * 0.1) * spiralRadius;
       } else {
         // Erratic movement (10%)
         const jitter = 0.5;
@@ -185,36 +184,8 @@ class Laser {
   }
   drawBeam() {
     ctx.save();
-
-    // Main beam with gradient
+    ctx.beginPath();
     const len = width + height;
-    const beamWidth = 15;
-    const glowWidth = 25;
-
-    // Calculate gradient coordinates
-    const x0 = this.x - Math.cos(this.angle) * 100;
-    const y0 = this.y - Math.sin(this.angle) * 100;
-    const x1 = this.x + Math.cos(this.angle) * 100;
-    const y1 = this.y + Math.sin(this.angle) * 100;
-
-    // Validate coordinates are finite
-    if ([x0, y0, x1, y1].some((v) => !isFinite(v))) {
-      ctx.restore();
-      return;
-    }
-
-    // Create gradient for Superman-style beam
-    const gradient = ctx.createLinearGradient(x0, y0, x1, y1);
-
-    // Bright center with red-tinted edges like Superman's heat vision
-    gradient.addColorStop(0, "rgba(255, 255, 255, 0.9)");
-    gradient.addColorStop(0.3, "rgba(255, 255, 200, 0.95)");
-    gradient.addColorStop(0.5, "rgba(255, 220, 150, 1)");
-    gradient.addColorStop(0.7, "rgba(255, 100, 50, 0.95)");
-    gradient.addColorStop(1, "rgba(255, 0, 0, 0.9)");
-
-    // Draw outer glow
-    ctx.beginPath();
     ctx.moveTo(
       this.x - Math.cos(this.angle) * len,
       this.y - Math.sin(this.angle) * len
@@ -223,44 +194,11 @@ class Laser {
       this.x + Math.cos(this.angle) * len,
       this.y + Math.sin(this.angle) * len
     );
-    ctx.strokeStyle = "rgba(255, 0, 0, 0.4)";
-    ctx.lineWidth = glowWidth;
-    ctx.shadowColor = "#ff3300";
-    ctx.shadowBlur = 30;
-    ctx.stroke();
-
-    // Draw inner beam
-    ctx.beginPath();
-    ctx.moveTo(
-      this.x - Math.cos(this.angle) * len,
-      this.y - Math.sin(this.angle) * len
-    );
-    ctx.lineTo(
-      this.x + Math.cos(this.angle) * len,
-      this.y + Math.sin(this.angle) * len
-    );
-    ctx.strokeStyle = gradient;
-    ctx.lineWidth = beamWidth;
-    ctx.shadowColor = "#ff3300";
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 15;
+    ctx.shadowColor = "var(--danger-color)";
     ctx.shadowBlur = 20;
     ctx.stroke();
-
-    // Add pulsing intensity
-    if (Math.random() > 0.7) {
-      ctx.beginPath();
-      ctx.moveTo(
-        this.x - Math.cos(this.angle) * len,
-        this.y - Math.sin(this.angle) * len
-      );
-      ctx.lineTo(
-        this.x + Math.cos(this.angle) * len,
-        this.y + Math.sin(this.angle) * len
-      );
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-      ctx.lineWidth = 8 + Math.random() * 4;
-      ctx.stroke();
-    }
-
     ctx.restore();
   }
   update() {
@@ -281,7 +219,7 @@ class BlackHole {
     this.x = x;
     this.y = y;
     this.radius = GAME_CONFIG.blackHoles.baseRadius;
-    const difficultyLevel = Math.floor(score / 1500); // Every 1500 points (reduced from 3000)
+    const difficultyLevel = Math.floor(score / 3000);
 
     // Random variations for unpredictability
     const sizeVariation = 0.7 + Math.random() * 0.6; // 70%-130%
@@ -294,7 +232,8 @@ class BlackHole {
       sizeVariation;
     this.strength =
       (GAME_CONFIG.blackHoles.baseStrength +
-        difficultyLevel * GAME_CONFIG.blackHoles.strengthIncreasePerLevel) *
+        difficultyLevel *
+          GAME_CONFIG.blackHoles.strengthIncreasePerLevel) *
       strengthVariation;
     this.maxRadius =
       (GAME_CONFIG.blackHoles.baseMaxRadius +
@@ -302,7 +241,8 @@ class BlackHole {
       sizeVariation;
     this.growthRate =
       (GAME_CONFIG.blackHoles.baseGrowthRate +
-        difficultyLevel * GAME_CONFIG.blackHoles.growthRateIncreasePerLevel) *
+        difficultyLevel *
+          GAME_CONFIG.blackHoles.growthRateIncreasePerLevel) *
       (0.5 + Math.random());
     this.alpha = 0;
     this.isTemporary = isTemporary;
@@ -390,7 +330,9 @@ class BlackHole {
 
         // Stronger effect on player for dramatic gameplay
         let forceMultiplier =
-          obj === player ? GAME_CONFIG.blackHoles.playerForceMultiplier : 1;
+          obj === player
+            ? GAME_CONFIG.blackHoles.playerForceMultiplier
+            : 1;
 
         // Distance-based intensity for realistic feel
         const force = falloff * this.strength * forceMultiplier;
@@ -401,7 +343,8 @@ class BlackHole {
         // Visual feedback for player when in gravity field
         if (
           obj === player &&
-          dist < this.gravityRadius * GAME_CONFIG.blackHoles.shakeThreshold
+          dist <
+            this.gravityRadius * GAME_CONFIG.blackHoles.shakeThreshold
         ) {
           triggerScreenShake(GAME_CONFIG.blackHoles.shakeIntensity);
         }
@@ -411,13 +354,8 @@ class BlackHole {
   }
 }
 class Missile {
-  constructor(spawnPosition) {
-    // Generate unique ID for missile
-    this.id =
-      Math.random().toString(36).substring(2, 15) +
-      Math.random().toString(36).substring(2, 15);
-
-    // Diverse spawn patterns for missiles - use provided spawn info or generate randomly
+  constructor() {
+    // Diverse spawn patterns for missiles
     const spawnPattern = Math.random();
     if (spawnPattern < 0.4) {
       // Side spawn (40%)
@@ -466,17 +404,7 @@ class Missile {
       this.fromLeft = this.x < width / 2;
     }
     this.radius = GAME_CONFIG.missiles.radius;
-
-    // DEBUG: Log missile creation with suspicious radius
-    if (this.radius !== 18) {
-      console.warn(
-        `⚠️ MISSILE CREATED WITH WRONG RADIUS: ${this.radius}, expected=18`
-      );
-      console.log("Config value:", GAME_CONFIG.missiles.radius);
-      console.trace("Creation stack trace");
-    }
-
-    const difficultyLevel = Math.floor(score / 1500); // Every 1500 points (reduced from 3000)
+    const difficultyLevel = Math.floor(score / 3000);
     this.speed =
       (GAME_CONFIG.missiles.baseSpeed +
         difficultyLevel * GAME_CONFIG.missiles.speedIncreasePerLevel) *
@@ -492,10 +420,8 @@ class Missile {
   }
   draw() {
     this.trail.forEach((p) => {
-      // Ensure radius is never negative
-      const radius = Math.max(0.1, p.r || 0.1);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(244, 143, 177, ${p.a})`;
       ctx.fill();
     });
@@ -562,7 +488,10 @@ class Missile {
   }
   update() {
     this.lifeTimer++;
-    if (!this.hasSpedUp && this.lifeTimer > GAME_CONFIG.missiles.speedUpTime) {
+    if (
+      !this.hasSpedUp &&
+      this.lifeTimer > GAME_CONFIG.missiles.speedUpTime
+    ) {
       this.speed *= GAME_CONFIG.missiles.speedUpMultiplier;
       this.turnSpeed *= GAME_CONFIG.missiles.turnSpeedUpMultiplier;
       this.hasSpedUp = true;
@@ -588,9 +517,9 @@ class Missile {
     this.trail.push({ x: this.x, y: this.y, r: this.radius / 2, a: 1 });
     this.trail.forEach((p) => {
       p.a -= 0.05;
-      p.r = Math.max(0.1, p.r - 0.05); // Ensure radius never goes negative
+      p.r -= 0.05;
     });
-    this.trail = this.trail.filter((p) => p.a > 0 && p.r > 0);
+    this.trail = this.trail.filter((p) => p.a > 0);
     this.draw();
   }
   explode(isImpact = false) {
@@ -752,7 +681,11 @@ class LaserMine {
     if (this.alpha < 1 && this.state !== "fading") this.alpha += 0.02;
     this.timer++;
 
-    if (this.state === "charging" && this.timer === 60 && !this.warningShown) {
+    if (
+      this.state === "charging" &&
+      this.timer === 60 &&
+      !this.warningShown
+    ) {
       playSound("laserMine");
       this.warningShown = true;
     }
