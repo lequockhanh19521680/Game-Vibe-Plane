@@ -57,6 +57,8 @@ window.init = function () {
   height = canvas.height = window.innerHeight;
   mouse = { x: width / 2, y: height * 0.8 };
   prevMouse = { ...mouse };
+
+  // === RESETS ALL GAME STATE VARIABLES ===
   isGameRunning = true;
   score = 0;
   gameStartTime = Date.now();
@@ -64,8 +66,8 @@ window.init = function () {
   lastDifficultyLevel = 0;
   spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval || 60;
   globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed || 1.0;
-  currentEventInterval = GAME_CONFIG.events.interval; // <--- THÊM DÒNG NÀY
 
+  // Reset timers and event state (THIS IS THE CRITICAL FIX)
   timers = {
     asteroid: 0,
     difficulty: 0,
@@ -79,6 +81,8 @@ window.init = function () {
     gameFrame: 0,
   };
   eventActive = { type: null, endTime: 0 };
+  // =======================================
+
   // Reset UI cache to ensure fresh display
   lastDisplayedScore = -1;
   lastDisplayedTime = "";
@@ -91,12 +95,8 @@ window.init = function () {
     uiElements.scoreContainer.style.display = "block";
   }
 
-  console.log("🎮 Game Initialized - Score reset to:", score);
-  console.log("🎮 UI Elements:", {
-    scoreDisplay: uiElements.scoreDisplay,
-    survivalDisplay: uiElements.survivalDisplay,
-    highscoreDisplay: uiElements.highscoreDisplay,
-  });
+  console.log("🎮 Game Initialized - Score and Speed have been reset.");
+  console.log("🎮 Initial globalSpeedMultiplier:", globalSpeedMultiplier);
 
   // Initialize game entities
   player = new Player(
@@ -105,6 +105,8 @@ window.init = function () {
     GAME_CONFIG.player.radius,
     "var(--primary-color)"
   );
+
+  // Reset all entity arrays
   stars = [];
   asteroids = [];
   particles = [];
@@ -165,224 +167,6 @@ window.init = function () {
   nebulae = Array(5)
     .fill(null)
     .map(() => createNebula());
-};
-
-// Make animate function globally available
-window.animate = function () {
-  if (!isGameRunning) return;
-
-  animationFrameId = requestAnimationFrame(animate);
-
-  // If game is paused, only draw current state but don't update
-  if (window.isGamePaused && window.isGamePaused()) {
-    // Just redraw the current frame without updating game state
-    ctx.fillStyle = "#050510";
-    ctx.fillRect(0, 0, width, height);
-
-    // Draw background nebulae
-    nebulae.forEach((n) => {
-      ctx.fillStyle = n;
-      ctx.fillRect(0, 0, width, height);
-    });
-
-    // Draw all objects in their current positions
-    stars.forEach((star) => star.draw());
-    asteroids.forEach((asteroid) => asteroid.draw());
-    lasers.forEach((laser) => laser.draw());
-    blackHoles.forEach((blackHole) => blackHole.draw());
-    missiles.forEach((missile) => missile.draw());
-    laserMines.forEach((mine) => mine.draw());
-    crystalClusters.forEach((crystal) => crystal.draw());
-    fragments.forEach((fragment) => fragment.draw());
-    particles.forEach((particle) => particle.draw());
-    warnings.forEach((warning) => warning.draw());
-    energyOrbs.forEach((orb) => orb.draw());
-    plasmaFields.forEach((field) => field.draw());
-    crystalShards.forEach((shard) => shard.draw());
-    quantumPortals.forEach((portal) => portal.draw());
-    shieldGenerators.forEach((shield) => shield.draw());
-    freezeZones.forEach((zone) => zone.draw());
-    superNovas.forEach((nova) => nova.draw());
-    wormholes.forEach((wormhole) => wormhole.draw());
-    magneticStorms.forEach((storm) => storm.draw());
-    lightningStorms.forEach((storm) => storm.draw());
-    gravityWaves.forEach((wave) => wave.draw());
-    timeDistortions.forEach((distortion) => distortion.draw());
-    chainLightnings.forEach((chain) => chain.draw());
-    voidRifts.forEach((rift) => rift.draw());
-    cosmicMines.forEach((mine) => mine.draw());
-    laserTurrets.forEach((turret) => turret.draw());
-    player.draw();
-
-    return; // Don't continue with game updates
-  }
-
-  // Clear canvas
-  ctx.fillStyle = "#050510";
-  ctx.fillRect(0, 0, width, height);
-
-  // Draw background nebulae
-  nebulae.forEach((n) => {
-    ctx.fillStyle = n;
-    ctx.fillRect(0, 0, width, height);
-  });
-
-  // Update game state
-  // Calculate elapsed time since game start
-  const currentTime = Date.now();
-  survivalTime = Math.floor((currentTime - gameStartTime) / 1000);
-
-  // Update difficulty based on time
-  updateDifficulty();
-
-  // Spawn new game objects
-  spawnGameObjects();
-
-  // Check for special events
-  checkForEvents();
-
-  // Update mouse-based movement with lerping
-  updateMousePosition();
-
-  // Update all game objects
-  stars.forEach((star) => star.update());
-  asteroids.forEach((asteroid, index) => updateAsteroid(asteroid, index));
-  lasers.forEach((laser, index) => updateLaser(laser, index));
-  blackHoles.forEach((blackHole, index) => updateBlackHole(blackHole, index));
-  missiles.forEach((missile, index) => updateMissile(missile, index));
-  laserMines.forEach((mine, index) => updateLaserMine(mine, index));
-  crystalClusters.forEach((crystal, index) =>
-    updateCrystalCluster(crystal, index)
-  );
-  // Update fragments with collision detection
-  fragments = fragments.filter((fragment) => {
-    // Check collision with player
-    if (
-      !player.shieldActive &&
-      !player.thunderShieldActive &&
-      fragment.lethal
-    ) {
-      const dist = Math.hypot(player.x - fragment.x, player.y - fragment.y);
-      if (dist < player.radius + fragment.radius) {
-        endGame("collision");
-        return false;
-      }
-    }
-    // Update and draw
-    const expired = fragment.update();
-    fragment.draw();
-    return !expired;
-  });
-  particles = particles.filter((particle) => particle.alpha > 0);
-  particles.forEach((particle) => particle.update());
-  warnings = warnings.filter((warning) => warning.update());
-  energyOrbs = energyOrbs.filter((orb, index) => updateEnergyOrb(orb, index));
-  plasmaFields = plasmaFields.filter((field, index) =>
-    updatePlasmaField(field, index)
-  );
-  crystalShards = crystalShards.filter((shard, index) =>
-    updateCrystalShard(shard, index)
-  );
-  quantumPortals = quantumPortals.filter((portal, index) =>
-    updateQuantumPortal(portal, index)
-  );
-  shieldGenerators = shieldGenerators.filter((shield, index) =>
-    updateShieldGenerator(shield, index)
-  );
-  freezeZones = freezeZones.filter((zone, index) =>
-    updateFreezeZone(zone, index)
-  );
-  superNovas = superNovas.filter((nova, index) => updateSuperNova(nova, index));
-  wormholes = wormholes.filter((wormhole, index) =>
-    updateWormhole(wormhole, index)
-  );
-  magneticStorms = magneticStorms.filter((storm, index) =>
-    updateMagneticStorm(storm, index)
-  );
-  lightningStorms = lightningStorms.filter((storm, index) =>
-    updateLightningStorm(storm, index)
-  );
-
-  // Update new creative objects
-  gravityWaves = gravityWaves.filter((wave) => {
-    wave.draw();
-    return !wave.update();
-  });
-  timeDistortions = timeDistortions.filter((distortion) => {
-    distortion.draw();
-    return !distortion.update();
-  });
-  chainLightnings = chainLightnings.filter((lightning) => {
-    lightning.draw();
-    return !lightning.update();
-  });
-  voidRifts = voidRifts.filter((rift) => {
-    rift.draw();
-    return !rift.update();
-  });
-  cosmicMines = cosmicMines.filter((mine) => {
-    mine.draw();
-    return !mine.update();
-  });
-
-  // Update player last to ensure it's on top
-  if (player) player.update();
-
-  player = new Player(
-    width / 2,
-    height * 0.8,
-    GAME_CONFIG.player.radius,
-    "var(--primary-color)"
-  );
-
-  // Kích hoạt khiên bảo vệ ngay từ đầu game
-  if (GAME_CONFIG.player.initialShieldDuration) {
-    player.shieldActive = true;
-    player.shieldTimer = GAME_CONFIG.player.initialShieldDuration;
-    // Removed meaningless event text notification for shield activation
-    playSound("shield");
-  }
-
-  stars = [];
-  asteroids = [];
-  particles = [];
-  lasers = [];
-  blackHoles = [];
-  missiles = [];
-  laserMines = [];
-  laserTurrets = [];
-  crystalClusters = [];
-  fragments = [];
-  warnings = [];
-  energyOrbs = [];
-  plasmaFields = [];
-  crystalShards = [];
-  quantumPortals = [];
-  shieldGenerators = [];
-  freezeZones = [];
-  superNovas = [];
-  wormholes = [];
-  magneticStorms = [];
-  lightningStorms = [];
-  for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
-    const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
-    for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
-      stars.push(
-        new Star(
-          Math.random() * width,
-          Math.random() * height,
-          Math.random() * GAME_CONFIG.visual.stars.maxRadius * layer,
-          layer
-        )
-      );
-  }
-  nebulae = Array(GAME_CONFIG.visual.nebula.count)
-    .fill(null)
-    .map(() => createNebula());
-  highScore = localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0;
-  if (uiElements.highscoreDisplay) {
-    uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
-  }
 };
 
 // Make animate function globally available
