@@ -32,6 +32,8 @@ const GAME_CONFIG = {
 
     levelUpInterval: 30,
     microProgressInterval: 900,
+
+    scorePerLevel: 3000, // <<<< ĐIỂM CẦN THIẾT ĐỂ LÊN MỖI CẤP
   },
 
   // =============================================================================

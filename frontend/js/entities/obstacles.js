@@ -102,10 +102,8 @@ class Asteroid {
       } else if (this.movementPattern < 0.9) {
         // Spiral movement (10%)
         const spiralRadius = Math.sin(this.timer * 0.02) * 2;
-        this.x +=
-          this.velocity.x + Math.cos(this.timer * 0.1) * spiralRadius;
-        this.y +=
-          this.velocity.y + Math.sin(this.timer * 0.1) * spiralRadius;
+        this.x += this.velocity.x + Math.cos(this.timer * 0.1) * spiralRadius;
+        this.y += this.velocity.y + Math.sin(this.timer * 0.1) * spiralRadius;
       } else {
         // Erratic movement (10%)
         const jitter = 0.5;
@@ -161,44 +159,72 @@ class Laser {
     this.timer = 0;
     this.maxTime = GAME_CONFIG.lasers.warningTime;
     this.fired = false;
+    this.beamFlicker = 1; // For flicker effect
   }
   drawWarning() {
     ctx.save();
-    ctx.globalAlpha = this.timer / this.maxTime;
-    ctx.beginPath();
+    // Hiệu ứng nhấp nháy đơn giản và rõ ràng
+    const alpha = Math.sin((this.timer / this.maxTime) * Math.PI) * 0.9;
+    ctx.globalAlpha = alpha;
+
     const len = width + height;
-    ctx.moveTo(
-      this.x - Math.cos(this.angle) * len,
-      this.y - Math.sin(this.angle) * len
-    );
-    ctx.lineTo(
-      this.x + Math.cos(this.angle) * len,
-      this.y + Math.sin(this.angle) * len
-    );
-    ctx.strokeStyle = "var(--danger-color)";
-    ctx.lineWidth = 4;
-    ctx.shadowColor = "var(--danger-color)";
-    ctx.shadowBlur = 15;
+    const endX = this.x + Math.cos(this.angle) * len;
+    const endY = this.y + Math.sin(this.angle) * len;
+    const startX = this.x - Math.cos(this.angle) * len;
+    const startY = this.y - Math.sin(this.angle) * len;
+
+    // Một đường nét đứt duy nhất sẽ sạch sẽ hơn
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.strokeStyle = "#ff8a8a"; // Màu đỏ nhạt, ít chói hơn
+    ctx.lineWidth = 2;
+    ctx.setLineDash([15, 10]);
+    ctx.shadowColor = "#ff4444";
+    ctx.shadowBlur = 10;
     ctx.stroke();
+
     ctx.restore();
   }
   drawBeam() {
     ctx.save();
-    ctx.beginPath();
     const len = width + height;
-    ctx.moveTo(
-      this.x - Math.cos(this.angle) * len,
-      this.y - Math.sin(this.angle) * len
-    );
-    ctx.lineTo(
-      this.x + Math.cos(this.angle) * len,
-      this.y + Math.sin(this.angle) * len
-    );
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 15;
-    ctx.shadowColor = "var(--danger-color)";
+    const endX = this.x + Math.cos(this.angle) * len;
+    const endY = this.y + Math.sin(this.angle) * len;
+    const startX = this.x - Math.cos(this.angle) * len;
+    const startY = this.y - Math.sin(this.angle) * len;
+
+    // Áp dụng hiệu ứng rung
+    ctx.globalAlpha = this.beamFlicker;
+
+    // Layer 1: Hào quang ngoài (rất rộng, rất trong suốt)
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.strokeStyle = "rgba(255, 100, 150, 0.15)";
+    ctx.lineWidth = 30;
+    ctx.shadowColor = "#ff4444";
+    ctx.shadowBlur = 35;
+    ctx.stroke();
+
+    // Layer 2: Thân tia chính (rộng vừa, màu đậm)
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.strokeStyle = "rgba(255, 200, 200, 0.8)";
+    ctx.lineWidth = 8;
     ctx.shadowBlur = 20;
     ctx.stroke();
+
+    // Layer 3: Lõi sáng (mỏng, màu trắng sáng)
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+
     ctx.restore();
   }
   update() {
@@ -210,6 +236,8 @@ class Laser {
         triggerScreenShake(GAME_CONFIG.visual.screenShake.laserIntensity);
         this.fired = true;
       }
+      // Thêm hiệu ứng rung khi tia laser hoạt động
+      this.beamFlicker = 0.8 + Math.random() * 0.2;
       this.drawBeam();
     }
   }
@@ -232,8 +260,7 @@ class BlackHole {
       sizeVariation;
     this.strength =
       (GAME_CONFIG.blackHoles.baseStrength +
-        difficultyLevel *
-          GAME_CONFIG.blackHoles.strengthIncreasePerLevel) *
+        difficultyLevel * GAME_CONFIG.blackHoles.strengthIncreasePerLevel) *
       strengthVariation;
     this.maxRadius =
       (GAME_CONFIG.blackHoles.baseMaxRadius +
@@ -241,8 +268,7 @@ class BlackHole {
       sizeVariation;
     this.growthRate =
       (GAME_CONFIG.blackHoles.baseGrowthRate +
-        difficultyLevel *
-          GAME_CONFIG.blackHoles.growthRateIncreasePerLevel) *
+        difficultyLevel * GAME_CONFIG.blackHoles.growthRateIncreasePerLevel) *
       (0.5 + Math.random());
     this.alpha = 0;
     this.isTemporary = isTemporary;
@@ -330,9 +356,7 @@ class BlackHole {
 
         // Stronger effect on player for dramatic gameplay
         let forceMultiplier =
-          obj === player
-            ? GAME_CONFIG.blackHoles.playerForceMultiplier
-            : 1;
+          obj === player ? GAME_CONFIG.blackHoles.playerForceMultiplier : 1;
 
         // Distance-based intensity for realistic feel
         const force = falloff * this.strength * forceMultiplier;
@@ -343,8 +367,7 @@ class BlackHole {
         // Visual feedback for player when in gravity field
         if (
           obj === player &&
-          dist <
-            this.gravityRadius * GAME_CONFIG.blackHoles.shakeThreshold
+          dist < this.gravityRadius * GAME_CONFIG.blackHoles.shakeThreshold
         ) {
           triggerScreenShake(GAME_CONFIG.blackHoles.shakeIntensity);
         }
@@ -488,10 +511,7 @@ class Missile {
   }
   update() {
     this.lifeTimer++;
-    if (
-      !this.hasSpedUp &&
-      this.lifeTimer > GAME_CONFIG.missiles.speedUpTime
-    ) {
+    if (!this.hasSpedUp && this.lifeTimer > GAME_CONFIG.missiles.speedUpTime) {
       this.speed *= GAME_CONFIG.missiles.speedUpMultiplier;
       this.turnSpeed *= GAME_CONFIG.missiles.turnSpeedUpMultiplier;
       this.hasSpedUp = true;
@@ -681,11 +701,7 @@ class LaserMine {
     if (this.alpha < 1 && this.state !== "fading") this.alpha += 0.02;
     this.timer++;
 
-    if (
-      this.state === "charging" &&
-      this.timer === 60 &&
-      !this.warningShown
-    ) {
+    if (this.state === "charging" && this.timer === 60 && !this.warningShown) {
       playSound("laserMine");
       this.warningShown = true;
     }

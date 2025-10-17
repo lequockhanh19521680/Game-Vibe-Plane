@@ -121,8 +121,10 @@ function animate() {
     .padStart(2, "0")}`;
 
   const distMoved = Math.hypot(mouse.x - prevMouse.x, mouse.y - prevMouse.y);
+  const scorePerLevel = GAME_CONFIG.difficulty.scorePerLevel;
+
   // Dynamic movement threshold - giảm dần theo level (dựa trên điểm số)
-  const currentLevel = Math.floor(score / 3000) + 1; // Level tăng mỗi 3000 điểm
+  const currentLevel = Math.floor(score / scorePerLevel) + 1; // Level tăng mỗi scorePerLevel điểm
   const dynamicThreshold = Math.max(
     GAME_CONFIG.scoring.minMovementThreshold,
     GAME_CONFIG.scoring.baseMovementThreshold *
@@ -136,7 +138,16 @@ function animate() {
   prevMouse = { ...mouse };
   uiElements.scoreDisplay.innerText = `Score: ${~~score}`;
   uiElements.levelDisplay.innerText = `Level: ${currentLevel}`;
-  uiElements.timeDisplay.innerText = `Time: ${~~survivalTime}s`;
+
+  // Update level progress bar with corrected logic for accuracy
+  const scoreForLevelUp = scorePerLevel;
+  const scoreAtStartOfCurrentLevel = (currentLevel - 1) * scoreForLevelUp;
+  const scoreProgressInLevel = score - scoreAtStartOfCurrentLevel;
+  const progressPercentage = (scoreProgressInLevel / scoreForLevelUp) * 100;
+  const levelProgressBar = document.getElementById("level-progress-bar");
+  if (levelProgressBar) {
+    levelProgressBar.style.width = `${Math.min(100, progressPercentage)}%`;
+  }
 
   [
     particles,
@@ -205,7 +216,7 @@ function animate() {
   // --- Spawning Logic ---
   timers.asteroid++;
   if (timers.asteroid % currentSpawnInterval === 0) {
-    const difficultyLevel = Math.floor(score / 3000); // Every 3000 points
+    const difficultyLevel = Math.floor(score / scorePerLevel); // Every scorePerLevel points
     const radius =
       eventActive.type === "denseField"
         ? GAME_CONFIG.asteroids.minRadius +
@@ -308,7 +319,7 @@ function animate() {
   }
   if (score > GAME_CONFIG.lasers.spawnScore) {
     timers.laser++;
-    const difficultyLevel = Math.floor(score / 3000);
+    const difficultyLevel = Math.floor(score / scorePerLevel);
     const laserInterval = Math.max(
       GAME_CONFIG.lasers.minInterval,
       GAME_CONFIG.lasers.baseInterval -
@@ -790,14 +801,14 @@ function animate() {
   }
 
   // Enhanced Difficulty Progression - Score-based levels
-  const difficultyLevel = Math.floor(score / 3000); // Every 3000 points
+  const difficultyLevel = Math.floor(score / scorePerLevel); // Every scorePerLevel points
 
   if (difficultyLevel > lastDifficultyLevel && difficultyLevel > 0) {
     // Update last difficulty level to prevent infinite spawning
     lastDifficultyLevel = difficultyLevel;
 
     // Show difficulty increase message
-    showEventText(`🌀 CHAOS LEVEL ${difficultyLevel} 🌀`);
+    showEventText(`🌀 LEVEL ${difficultyLevel + 1} 🌀`);
     playSound("powerup");
 
     // Chaos Manifest event removed as requested
@@ -849,7 +860,7 @@ function animate() {
       spawnInterval -= 1;
     globalSpeedMultiplier +=
       GAME_CONFIG.difficulty.microSpeedIncrease *
-      (1 + Math.floor(score / 3000) * 0.02); // Using score-based levels
+      (1 + Math.floor(score / scorePerLevel) * 0.02); // Using score-based levels
   }
 
   // Survival milestone rewards removed as requested

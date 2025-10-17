@@ -1099,94 +1099,64 @@ function createPulsarBurstSound() {
 
 // Create supernova sound
 function createSuperNovaSound() {
-  // Massive energy buildup
+  // Âm thanh chính, dịu hơn
   createSound(
-    150,
-    1.5,
-    "sawtooth",
-    GAME_CONFIG.audio.volumes.explosion * 0.8,
+    80, // Tần số thấp hơn
+    2.0, // Kéo dài hơn
+    "sine", // Sóng sine mượt mà hơn
+    GAME_CONFIG.audio.volumes.supernova * 0.7, // Giảm âm lượng
     true,
     {
-      attack: 0.5,
+      attack: 0.8, // Tăng attack để âm thanh vào từ từ
       decay: 1.0,
       sustain: true,
-      sustainLevel: 0.8,
-      frequencySlide: 100,
+      sustainLevel: 0.5,
+      frequencySlide: 60, // Tăng dần tần số
       modulate: true,
-      modFreq: 0.2,
-      modDepth: 40,
+      modFreq: 0.3,
+      modDepth: 20,
     }
   );
 
-  // Delayed explosion wave
+  // Hiệu ứng phụ, tạo cảm giác loé sáng
   setTimeout(() => {
     createSound(
-      100,
-      0.8,
-      "sawtooth",
-      GAME_CONFIG.audio.volumes.explosion * 0.9,
+      400,
+      1.0,
+      "triangle",
+      GAME_CONFIG.audio.volumes.supernova * 0.5,
       true,
       {
-        attack: 0.01,
+        attack: 0.1,
         decay: 0.8,
-        frequencySlide: -50,
+        frequencySlide: -100,
       }
     );
+  }, 500);
 
-    // Multiple shockwave harmonics across stereo field
+  // Âm thanh tan rã
+  setTimeout(() => {
+    // Dispersing energy particles
     for (let i = 0; i < 5; i++) {
       setTimeout(() => {
+        const pan = (Math.random() - 0.5) * 1.5;
         createSound(
-          300 + i * 100,
-          0.4,
+          300 + i * 150,
+          0.5,
           "sine",
-          GAME_CONFIG.audio.volumes.explosion * 0.6,
+          GAME_CONFIG.audio.volumes.supernova * 0.3,
           true,
           {
-            attack: 0.01,
-            decay: 0.3,
-            frequencySlide: -80,
+            attack: 0.1,
+            decay: 0.4,
             spatial: true,
-            pan: [-0.8, -0.4, 0, 0.4, 0.8][i],
+            pan: pan,
           }
         );
-      }, i * 80);
+      }, i * 100);
     }
-  }, 800);
-
-  // Stellar remnant radiation (white noise component)
-  setTimeout(() => {
-    const noiseBuffer = audioContext.createBuffer(
-      2, // stereo
-      audioContext.sampleRate * 0.6, // 0.6 seconds
-      audioContext.sampleRate
-    );
-
-    // Fill buffer with filtered noise
-    for (let channel = 0; channel < noiseBuffer.numberOfChannels; channel++) {
-      const data = noiseBuffer.getChannelData(channel);
-      for (let i = 0; i < data.length; i++) {
-        data[i] =
-          (Math.random() * 2 - 1) *
-          Math.exp(-i / (audioContext.sampleRate * 0.2)) *
-          0.6;
-      }
-    }
-
-    // Play the buffer
-    const noiseSource = audioContext.createBufferSource();
-    noiseSource.buffer = noiseBuffer;
-
-    const noiseGain = audioContext.createGain();
-    noiseGain.gain.value = GAME_CONFIG.audio.volumes.explosion * 0.5;
-
-    noiseSource.connect(noiseGain);
-    noiseGain.connect(analyserNode);
-
-    noiseSource.start();
-  }, 1000);
+  }, 1200);
 }
-
 // Subtle cosmic background ambience
 function startSpaceAmbience() {
   if (spaceAmbientInterval) clearInterval(spaceAmbientInterval);

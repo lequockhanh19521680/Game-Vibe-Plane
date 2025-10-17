@@ -20,12 +20,22 @@
     <canvas id="game-canvas"></canvas>
 
     <div id="ui-container">
-      <div id="score-container">
-        <div id="score-display">Score: 0</div>
-        <div id="level-display">Level: 1</div>
-        <div id="time-display">Time: 0s</div>
-        <div id="highscore-display">High Score: 0</div>
-        <div id="survival-display">Time: 0:00</div>
+      <div id="top-bar">
+        <div class="hud-left">
+          <div id="score-display">Score: 0</div>
+        </div>
+        <div class="hud-center">
+          <div id="level-display">Level: 1</div>
+          <div id="level-progress-bar-container">
+            <div id="level-progress-bar"></div>
+          </div>
+          <div id="highscore-display">High Score: 0</div>
+        </div>
+        <div class="hud-right">
+          <div id="survival-display">Time: 0:00</div>
+          <!-- Nút Pause được di chuyển vào đây -->
+          <button id="pause-button" style="display: none">❚❚</button>
+        </div>
       </div>
 
       <div id="event-text"></div>
@@ -87,12 +97,17 @@
         <button id="restart-from-pause-button">Restart</button>
         <button id="main-menu-from-pause-button">Main Menu</button>
       </div>
-      <button id="pause-button" style="display: none">❚❚</button>
+      <!-- Nút Pause đã được di chuyển lên top-bar -->
     </div>
+
+    <!-- Make sure your background.mp3 file is in /assets/audio/ -->
+    <audio id="background-music" loop src="assets/audio/background.mp3"></audio>
 
     <script src="gameConfig.js"></script>
 
     <script src="js/audio/audioSystem.js"></script>
+    <script src="js/audio/musicSystem.js"></script>
+    <script src="js/audio/soundEffects.js"></script>
 
     <script src="js/base/Entity.js"></script>
 
@@ -105,8 +120,13 @@
     <script src="js/entities/portals.js"></script>
 
     <script src="js/core/game.js"></script>
+    <script src="js/core/eventSystem.js"></script>
     <script src="js/utils/helpers.js"></script>
+    <script src="js/utils/mobileOptimizer.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/ui/common.js"></script>
+    <script src="js/ui/dashboard.js"></script>
+    <script src="js/ui/initUI.js"></script>
     <script src="js/ui/menuSystem.js"></script>
   </body>
 </html>

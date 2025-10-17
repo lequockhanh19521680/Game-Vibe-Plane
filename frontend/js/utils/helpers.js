@@ -18,11 +18,7 @@ function triggerAsteroidCircle() {
     Math.random() * (canvas.height - 2 * config.centerVariation);
 
   // Tạo warning nhấp nháy trước
-  const circleWarning = new CircleWarning(
-    centerX,
-    centerY,
-    config.radius
-  );
+  const circleWarning = new CircleWarning(centerX, centerY, config.radius);
   warnings.push(circleWarning);
 
   // Sau thời gian warning, spawn asteroids thành vòng tròn
@@ -43,16 +39,10 @@ function triggerAsteroidCircle() {
       const dx = Math.cos(angle) * config.speed;
       const dy = Math.sin(angle) * config.speed;
 
-      const asteroid = new Asteroid(
-        x,
-        y,
-        config.asteroidRadius,
-        "#ffbb33",
-        {
-          x: dx,
-          y: dy,
-        }
-      );
+      const asteroid = new Asteroid(x, y, config.asteroidRadius, "#ffbb33", {
+        x: dx,
+        y: dy,
+      });
       asteroids.push(asteroid);
     }
   }, config.warningTime * (1000 / 60)); // Convert frames to milliseconds
@@ -64,11 +54,7 @@ function triggerAsteroidBelt() {
   const centerY = canvas.height / 2;
 
   // Tạo warning nhấp nháy trước
-  const beltWarning = new BeltWarning(
-    centerX,
-    centerY,
-    config.beltRadius
-  );
+  const beltWarning = new BeltWarning(centerX, centerY, config.beltRadius);
   warnings.push(beltWarning);
 
   // Sau thời gian warning, spawn asteroid belt
@@ -95,3 +81,49 @@ function triggerAsteroidBelt() {
   }, 180 * (1000 / 60)); // 3 seconds warning
 }
 
+function createMiniShowerAsteroid(direction) {
+  const config = GAME_CONFIG.asteroids;
+  const radius =
+    config.minRadius +
+    Math.random() * (config.maxRadius - config.minRadius) * 0.5; // Smaller asteroids for showers
+  const speed =
+    (config.baseSpeed + Math.random() * config.speedVariation) * 1.5; // Slightly faster
+
+  let x, y, velocity;
+
+  switch (direction) {
+    case "top":
+      x = Math.random() * width;
+      y = -radius;
+      velocity = { x: (Math.random() - 0.5) * 2, y: speed };
+      break;
+    case "left":
+      x = -radius;
+      y = Math.random() * height;
+      velocity = { x: speed, y: (Math.random() - 0.5) * 2 };
+      break;
+    case "right":
+      x = width + radius;
+      y = Math.random() * height;
+      velocity = { x: -speed, y: (Math.random() - 0.5) * 2 };
+      break;
+    case "bottom":
+      x = Math.random() * width;
+      y = height + radius;
+      velocity = { x: (Math.random() - 0.5) * 2, y: -speed };
+      break;
+    default: // Default to top
+      x = Math.random() * width;
+      y = -radius;
+      velocity = { x: (Math.random() - 0.5) * 2, y: speed };
+      break;
+  }
+
+  return new Asteroid(
+    x,
+    y,
+    radius,
+    config.colors[~~(Math.random() * config.colors.length)],
+    velocity
+  );
+}

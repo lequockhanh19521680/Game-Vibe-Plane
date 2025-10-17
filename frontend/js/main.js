@@ -4,7 +4,7 @@ const ctx = canvas.getContext("2d");
 const uiElements = {
   startScreen: document.getElementById("start-screen"),
   gameOverScreen: document.getElementById("game-over-screen"),
-  scoreContainer: document.getElementById("score-container"),
+  topBar: document.getElementById("top-bar"), // Sửa từ scoreContainer thành topBar
   scoreDisplay: document.getElementById("score-display"),
   levelDisplay: document.getElementById("level-display"),
   timeDisplay: document.getElementById("time-display"),
@@ -88,12 +88,13 @@ let nextEventScore = 1000;
 let eventActive = { type: null, endTime: 0 };
 
 function startGame() {
+  initAudioSystem(); // Khởi tạo âm thanh khi người dùng bắt đầu game
   init();
   animate();
   playSound("backgroundMusic");
   uiElements.startScreen.style.display = "none";
   uiElements.gameOverScreen.style.display = "none";
-  uiElements.scoreContainer.style.opacity = "1";
+  uiElements.topBar.style.opacity = "1"; // Sửa từ scoreContainer thành topBar
   uiElements.pauseButton.style.display = "block";
 }
 function endGame(reason = "unknown") {
@@ -134,7 +135,7 @@ function endGame(reason = "unknown") {
       .toString()
       .padStart(2, "0")}`;
     uiElements.gameOverScreen.style.display = "flex";
-    uiElements.scoreContainer.style.opacity = "0";
+    uiElements.topBar.style.opacity = "0"; // Sửa từ scoreContainer thành topBar
   }, 1000);
 }
 
@@ -160,11 +161,13 @@ restartButton.addEventListener("click", () => {
 });
 
 leaderboardButton.addEventListener("click", () => {
+  initAudioSystem(); // Thêm để khởi tạo âm thanh khi vào menu
   playSound("buttonHover");
   showLeaderboard();
 });
 
 howToPlayButton.addEventListener("click", () => {
+  initAudioSystem(); // Thêm để khởi tạo âm thanh khi vào menu
   playSound("buttonHover");
   showHowToPlay();
 });
@@ -200,7 +203,7 @@ mainMenuFromPauseButton.addEventListener("click", () => {
   togglePause();
   isGameRunning = false;
   uiElements.pauseButton.style.display = "none";
-  uiElements.scoreContainer.style.opacity = "0";
+  uiElements.topBar.style.opacity = "0"; // Sửa từ scoreContainer thành topBar
 
   // Clear the canvas and redraw the starfield background
   ctx.fillStyle = "#050510";
@@ -265,7 +268,7 @@ window.addEventListener("keydown", (e) => {
 // --- Initial Draw ---
 uiElements.startScreen.style.display = "flex";
 uiElements.gameOverScreen.style.display = "none";
-uiElements.scoreContainer.style.opacity = "0";
+uiElements.topBar.style.opacity = "0"; // Sửa từ scoreContainer thành topBar
 width = canvas.width = window.innerWidth;
 height = canvas.height = window.innerHeight;
 ctx.fillStyle = "#050510";
