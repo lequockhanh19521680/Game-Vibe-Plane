@@ -21,30 +21,20 @@
 
     <div id="ui-container">
       <div id="top-bar">
-        <button id="pause-button" style="display: none">❚❚</button>
-
-        <div class="hud-center-column">
-          <div class="info-block level-block">
-            <span id="level-display" class="label">Level 1</span>
-            <div id="level-progress-bar-container">
-              <div id="level-progress-bar"></div>
-            </div>
-          </div>
-          <div class="stats-container">
-            <div class="info-block score-block">
-              <span class="label">Score</span>
-              <span id="score-display" class="value">0</span>
-            </div>
-            <div class="info-block time-block">
-              <span class="label">Time</span>
-              <span id="survival-display" class="value">0:00</span>
-            </div>
-          </div>
+        <div class="hud-left">
+          <div id="score-display">Score: 0</div>
         </div>
-
-        <div class="info-block highscore-block">
-          <span class="label">High Score</span>
-          <span id="highscore-display" class="value">0</span>
+        <div class="hud-center">
+          <div id="level-display">Level: 1</div>
+          <div id="level-progress-bar-container">
+            <div id="level-progress-bar"></div>
+          </div>
+          <div id="highscore-display">High Score: 0</div>
+        </div>
+        <div class="hud-right">
+          <div id="survival-display">Time: 0:00</div>
+          <!-- Nút Pause được di chuyển vào đây -->
+          <button id="pause-button" style="display: none">❚❚</button>
         </div>
       </div>
 
@@ -64,21 +54,11 @@
 
       <div id="game-over-screen" class="ui-element">
         <h2>Game Over</h2>
-        <div class="final-stats">
-          <div class="final-stat-block">
-            <span class="label">Final Score</span>
-            <p id="final-score">0</p>
-          </div>
-          <div class="final-stat-block">
-            <span class="label">Survival Time</span>
-            <p id="final-time">0:00</p>
-          </div>
-        </div>
+        <p id="final-score">Your score: 0</p>
+        <p id="final-time">Survival time: 0:00</p>
         <p id="new-highscore-msg">New High Score!</p>
-        <div class="button-container">
-          <button id="restart-button">Try Again</button>
-          <button id="main-menu-from-over-button">Main Menu</button>
-        </div>
+        <button id="restart-button">Try Again</button>
+        <button id="main-menu-from-over-button">Main Menu</button>
       </div>
 
       <div id="leaderboard-screen" class="ui-element" style="display: none">
@@ -117,8 +97,10 @@
         <button id="restart-from-pause-button">Restart</button>
         <button id="main-menu-from-pause-button">Main Menu</button>
       </div>
+      <!-- Nút Pause đã được di chuyển lên top-bar -->
     </div>
 
+    <!-- Make sure your background.mp3 file is in /assets/audio/ -->
     <audio id="background-music" loop src="assets/audio/background.mp3"></audio>
 
     <script src="gameConfig.js"></script>
