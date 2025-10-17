@@ -116,7 +116,7 @@ function animate() {
   survivalTime = Math.floor((Date.now() - gameStartTime) / 1000);
   const minutes = Math.floor(survivalTime / 60);
   const seconds = survivalTime % 60;
-  uiElements.survivalDisplay.innerText = `Time: ${minutes}:${seconds
+  uiElements.survivalDisplay.innerText = `${minutes}:${seconds
     .toString()
     .padStart(2, "0")}`;
 
@@ -136,8 +136,10 @@ function animate() {
     score += distMoved * GAME_CONFIG.scoring.movementMultiplier;
   }
   prevMouse = { ...mouse };
-  uiElements.scoreDisplay.innerText = `Score: ${~~score}`;
-  uiElements.levelDisplay.innerText = `Level: ${currentLevel}`;
+  uiElements.scoreDisplay.innerText = `${~~score}`;
+  if (uiElements.levelDisplay) {
+    uiElements.levelDisplay.innerText = `Level ${currentLevel}`;
+  }
 
   // Update level progress bar with corrected logic for accuracy
   const scoreForLevelUp = scorePerLevel;

@@ -3,9 +3,9 @@ let musicPaused = false;
 
 function startBackgroundMusic() {
   if (backgroundMusicElement) {
-    // Set volume from config, maybe a bit quieter for background
-    backgroundMusicElement.volume =
-      GAME_CONFIG.audio.volumes.backgroundMusic * 0.7;
+    // Set volume from config
+    // ĐÃ SỬA: Bỏ đoạn `* 0.7` để âm lượng được áp dụng đúng từ file config
+    backgroundMusicElement.volume = GAME_CONFIG.audio.volumes.backgroundMusic;
 
     // play() returns a promise which can reject if the user hasn't interacted
     const playPromise = backgroundMusicElement.play();

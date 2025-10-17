@@ -4,10 +4,9 @@ const ctx = canvas.getContext("2d");
 const uiElements = {
   startScreen: document.getElementById("start-screen"),
   gameOverScreen: document.getElementById("game-over-screen"),
-  topBar: document.getElementById("top-bar"), // Sửa từ scoreContainer thành topBar
+  topBar: document.getElementById("top-bar"),
   scoreDisplay: document.getElementById("score-display"),
   levelDisplay: document.getElementById("level-display"),
-  timeDisplay: document.getElementById("time-display"),
   highscoreDisplay: document.getElementById("highscore-display"),
   survivalDisplay: document.getElementById("survival-display"),
   finalScoreEl: document.getElementById("final-score"),
@@ -91,11 +90,11 @@ function startGame() {
   initAudioSystem(); // Khởi tạo âm thanh khi người dùng bắt đầu game
   init();
   animate();
-  playSound("backgroundMusic");
+  startBackgroundMusic();
   uiElements.startScreen.style.display = "none";
   uiElements.gameOverScreen.style.display = "none";
-  uiElements.topBar.style.opacity = "1"; // Sửa từ scoreContainer thành topBar
-  uiElements.pauseButton.style.display = "block";
+  uiElements.topBar.style.opacity = "1";
+  uiElements.pauseButton.style.display = "flex";
 }
 function endGame(reason = "unknown") {
   if (!isGameRunning) return;
@@ -130,12 +129,12 @@ function endGame(reason = "unknown") {
   setTimeout(() => {
     const minutes = Math.floor(survivalTime / 60);
     const seconds = survivalTime % 60;
-    uiElements.finalScoreEl.innerText = `Your Score: ${score}`;
-    uiElements.finalTimeEl.innerText = `Survival Time: ${minutes}:${seconds
+    uiElements.finalScoreEl.innerText = `${score}`;
+    uiElements.finalTimeEl.innerText = `${minutes}:${seconds
       .toString()
       .padStart(2, "0")}`;
     uiElements.gameOverScreen.style.display = "flex";
-    uiElements.topBar.style.opacity = "0"; // Sửa từ scoreContainer thành topBar
+    uiElements.topBar.style.opacity = "0";
   }, 1000);
 }
 
@@ -144,9 +143,11 @@ function togglePause() {
   if (isPaused) {
     uiElements.pauseMenu.style.display = "flex";
     cancelAnimationFrame(animationFrameId);
+    pauseBackgroundMusic();
   } else {
     uiElements.pauseMenu.style.display = "none";
     animate();
+    resumeBackgroundMusic();
   }
 }
 
@@ -161,13 +162,13 @@ restartButton.addEventListener("click", () => {
 });
 
 leaderboardButton.addEventListener("click", () => {
-  initAudioSystem(); // Thêm để khởi tạo âm thanh khi vào menu
+  initAudioSystem();
   playSound("buttonHover");
   showLeaderboard();
 });
 
 howToPlayButton.addEventListener("click", () => {
-  initAudioSystem(); // Thêm để khởi tạo âm thanh khi vào menu
+  initAudioSystem();
   playSound("buttonHover");
   showHowToPlay();
 });
@@ -203,7 +204,7 @@ mainMenuFromPauseButton.addEventListener("click", () => {
   togglePause();
   isGameRunning = false;
   uiElements.pauseButton.style.display = "none";
-  uiElements.topBar.style.opacity = "0"; // Sửa từ scoreContainer thành topBar
+  uiElements.topBar.style.opacity = "0";
 
   // Clear the canvas and redraw the starfield background
   ctx.fillStyle = "#050510";
@@ -249,12 +250,21 @@ window.addEventListener(
   { passive: false }
 );
 window.addEventListener("resize", () => {
-  if (!isGameRunning) return;
   width = canvas.width = window.innerWidth;
   height = canvas.height = window.innerHeight;
-  nebulae = Array(5)
-    .fill(null)
-    .map(() => createNebula());
+  if (!isGameRunning) {
+    // Redraw background if not in game
+    ctx.fillStyle = "#050510";
+    ctx.fillRect(0, 0, width, height);
+    nebulae = Array(5)
+      .fill(null)
+      .map(() => createNebula());
+    nebulae.forEach((n) => {
+      ctx.fillStyle = n;
+      ctx.fillRect(0, 0, width, height);
+    });
+    stars.forEach((s) => s.draw());
+  }
 });
 
 window.addEventListener("keydown", (e) => {
@@ -268,7 +278,7 @@ window.addEventListener("keydown", (e) => {
 // --- Initial Draw ---
 uiElements.startScreen.style.display = "flex";
 uiElements.gameOverScreen.style.display = "none";
-uiElements.topBar.style.opacity = "0"; // Sửa từ scoreContainer thành topBar
+uiElements.topBar.style.opacity = "0";
 width = canvas.width = window.innerWidth;
 height = canvas.height = window.innerHeight;
 ctx.fillStyle = "#050510";
@@ -294,6 +304,7 @@ for (let i = 0; i < 3; i++) {
     );
 }
 stars.forEach((s) => s.draw());
-uiElements.highscoreDisplay.innerText = `High Score: ${
-  localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0
-}`;
+highScore = localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0;
+if (uiElements.highscoreDisplay) {
+  uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
+}

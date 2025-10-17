@@ -336,34 +336,38 @@ const GAME_CONFIG = {
   },
 
   // =============================================================================
-  // AUDIO SETTINGS - Cài đặt âm thanh
+  // AUDIO SETTINGS - Cài đặt âm thanh (ĐÃ CẬP NHẬT)
   // =============================================================================
   audio: {
     masterVolume: 1.0,
     volumes: {
-      explosion: 0.15,
-      laser: 0.1,
-      missile: 0.08,
-      buttonHover: 0.03,
-      collision: 0.12,
-      warning: 0.08,
-      score: 0.04,
-      powerup: 0.06,
-      blackhole: 0.03,
-      backgroundMusic: 0.015,
+      backgroundMusic: 0.5, // Tăng lên đáng kể để làm âm thanh chính
+      explosion: 0.2, // Giảm xuống
+      laser: 0.15, // Giảm xuống
+      missile: 0.1, // Giảm xuống
+      collision: 0.15, // Giảm xuống
+
+      // Các hiệu ứng phụ khác cũng nên giảm
+      buttonHover: 0.1,
+      warning: 0.12,
+      score: 0.08,
+      powerup: 0.15,
+      blackhole: 0.2,
+      fragmentHit: 0.1,
+      laserMine: 0.12,
+      wormhole: 0.15,
+      shield: 0.15,
+      freeze: 0.15,
+      supernova: 0.25,
+
+      // Giữ nguyên hoặc điều chỉnh nhỏ các âm thanh còn lại
       blackholeGrowth: 0.02,
       blackholeDestroy: 0.04,
-      fragmentHit: 0.08,
-      laserMine: 0.06,
-      wormhole: 0.05,
-      shield: 0.04,
-      freeze: 0.03,
       plasmaStorm: 0.07,
       temporalRift: 0.06,
       quantumFluctuation: 0.05,
       cosmicRadiation: 0.04,
       pulsarBurst: 0.06,
-      supernova: 0.09,
       ambientSpace: 0.02,
     },
     backgroundMusic: {
