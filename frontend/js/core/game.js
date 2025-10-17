@@ -25,105 +25,113 @@ window.createNebula = function () {
   return grad;
 };
 
-// Helper function for FPS calculation
-score = 0;
-gameStartTime = Date.now();
-survivalTime = 0;
-lastDifficultyLevel = 0;
-spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval || 60;
-globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed || 1.0;
-nextEventScore = GAME_CONFIG.events.interval;
-eventActive = { type: null, endTime: 0 };
-timers = {
-  asteroid: 0,
-  difficulty: 0,
-  laser: 0,
-  blackHole: 0,
-  missile: 0,
-  mine: 0,
-  crystal: 0,
-  speedScore: 0,
-  event: 0,
-  gameFrame: 0,
-};
-// Reset UI cache
-lastDisplayedScore = -1;
-lastDisplayedTime = "";
-lastDisplayedSurvivalTime = "";
-lastSurvivalSecond = 0;
-// Reset event timeouts
-if (window._eventTimeouts && Array.isArray(window._eventTimeouts)) {
-  window._eventTimeouts.forEach((id) => clearTimeout(id));
-  window._eventTimeouts = [];
-} else {
-  window._eventTimeouts = [];
-}
-// Always show score/time UI when game starts
-if (uiElements && uiElements.scoreContainer) {
-  uiElements.scoreContainer.style.opacity = "1";
-  uiElements.scoreContainer.style.display = "block";
-}
-console.log(
-  "🎮 Game FULLY RESET - Score:",
-  score,
-  "Level:",
-  lastDifficultyLevel
-);
-console.log("🎮 UI Elements:", {
-  scoreDisplay: uiElements.scoreDisplay,
-  survivalDisplay: uiElements.survivalDisplay,
-  highscoreDisplay: uiElements.highscoreDisplay,
-});
-// Declare all game arrays at the top
-let stars = [];
-let asteroids = [];
-let particles = [];
-let lasers = [];
-let blackHoles = [];
-let missiles = [];
-let laserMines = [];
-let laserTurrets = [];
-let crystalClusters = [];
-let fragments = [];
-let warnings = [];
-let energyOrbs = [];
-let plasmaFields = [];
-let crystalShards = [];
-let quantumPortals = [];
-let shieldGenerators = [];
-let freezeZones = [];
-let superNovas = [];
-let wormholes = [];
-let magneticStorms = [];
-let lightningStorms = [];
-let gravityWaves = [];
-let timeDistortions = [];
-let chainLightnings = [];
-let voidRifts = [];
-let cosmicMines = [];
-let nebulae = [];
+// --- Main Initialization Function ---
+window.init = function () {
+  // Set canvas size
+  width = canvas.width = window.innerWidth;
+  height = canvas.height = window.innerHeight;
 
-// Create stars
-for (let i = 0; i < 3; i++) {
-  const layer = (i + 1) / 3;
-  for (let j = 0; j < 80; j++) {
-    stars.push(
-      new Star(
-        Math.random() * width,
-        Math.random() * height,
-        Math.random() * 1.5 * layer,
-        layer
-      )
-    );
+  // Clear canvas
+  ctx.fillStyle = "#050510";
+  ctx.fillRect(0, 0, width, height);
+
+  // Reset game state variables
+  score = 0;
+  gameStartTime = Date.now();
+  survivalTime = 0;
+  lastDifficultyLevel = 0;
+  spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval || 60;
+  globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed || 1.0;
+  nextEventScore = GAME_CONFIG.events.interval;
+  eventActive = { type: null, endTime: 0 };
+  timers = {
+    asteroid: 0,
+    difficulty: 0,
+    laser: 0,
+    blackHole: 0,
+    missile: 0,
+    mine: 0,
+    crystal: 0,
+    speedScore: 0,
+    event: 0,
+    gameFrame: 0,
+  };
+
+  // Reset UI cache
+  lastDisplayedScore = -1;
+  lastDisplayedTime = "";
+  lastDisplayedSurvivalTime = "";
+  lastSurvivalSecond = 0;
+
+  // Clear all game object arrays
+  stars = [];
+  asteroids = [];
+  particles = [];
+  lasers = [];
+  blackHoles = [];
+  missiles = [];
+  laserMines = [];
+  laserTurrets = [];
+  crystalClusters = [];
+  fragments = [];
+  warnings = [];
+  energyOrbs = [];
+  plasmaFields = [];
+  crystalShards = [];
+  quantumPortals = [];
+  shieldGenerators = [];
+  freezeZones = [];
+  superNovas = [];
+  wormholes = [];
+  magneticStorms = [];
+  lightningStorms = [];
+  gravityWaves = [];
+  timeDistortions = [];
+  chainLightnings = [];
+  voidRifts = [];
+  cosmicMines = [];
+  nebulae = [];
+
+  // Create Player
+  player = new Player(
+    width / 2,
+    height * 0.8,
+    GAME_CONFIG.player.radius,
+    "var(--primary-color)"
+  );
+
+  // Activate initial shield
+  if (GAME_CONFIG.player.initialShieldDuration) {
+    player.activateShield();
   }
-}
-// Create nebulae background
-nebulae = Array(5)
-  .fill(null)
-  .map(() => window.createNebula());
 
-animationFrameId = requestAnimationFrame(animate);
+  // Create stars
+  for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
+    const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
+    for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
+      stars.push(
+        new Star(
+          Math.random() * width,
+          Math.random() * height,
+          Math.random() * GAME_CONFIG.visual.stars.maxRadius * layer,
+          layer
+        )
+      );
+  }
 
+  // Create nebulae background
+  nebulae = Array(GAME_CONFIG.visual.nebula.count)
+    .fill(null)
+    .map(() => window.createNebula());
+
+  // Load high score
+  highScore = localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0;
+  if (uiElements.highscoreDisplay) {
+    uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
+  }
+
+  console.log("✅ Game Initialized Successfully");
+};
 // Make animate function globally available
 window.animate = function () {
   animationFrameId = requestAnimationFrame(animate);

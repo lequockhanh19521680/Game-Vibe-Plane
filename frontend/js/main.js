@@ -1065,17 +1065,7 @@ document.addEventListener("DOMContentLoaded", function () {
       mouse.y = e.clientY;
     }
   });
-  window.addEventListener(
-    "touchmove",
-    (e) => {
-      if (e.touches.length > 0) {
-        e.preventDefault();
-        mouse.x = e.touches[0].clientX;
-        mouse.y = e.touches[0].clientY;
-      }
-    },
-    { passive: false }
-  );
+
   // Add keyboard event listener for thunder strike ability and pause
   window.addEventListener("keydown", (e) => {
     if (isGameRunning && (e.code === "Space" || e.key === " ")) {
@@ -1120,8 +1110,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Touch support for mobile
-  canvas.addEventListener("touchmove", (e) => {
+  canvas.addEventListener("touchstart", (e) => {
     if (isGameRunning && !isGamePaused) {
       e.preventDefault();
       const touch = e.touches[0];
