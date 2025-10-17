@@ -25,45 +25,72 @@ window.createNebula = function () {
   return grad;
 };
 
-// --- Main Initialization Function ---
+// Helper function for FPS calculation
+let lastFrameTime = 0;
+let frameCount = 0;
+let fps = 0;
+
+// UI update caching to prevent flickering
+let lastDisplayedScore = -1;
+let lastDisplayedTime = "";
+let lastDisplayedSurvivalTime = "";
+let lastSurvivalSecond = 0; // Track last second for survival bonus
+
+function getFPS() {
+  return fps;
+}
+
+function updateMousePosition() {
+  // Player movement is now handled entirely in player.update()
+  // This function is kept for compatibility but does nothing
+  // Mouse position is already updated by event listeners in main.js
+}
+
+// Make init function globally available
 window.init = function () {
-  // Set canvas size
+  console.log("Initializing game...");
+
+  // Detect mobile and apply optimizations first
+  detectMobile();
+
   width = canvas.width = window.innerWidth;
   height = canvas.height = window.innerHeight;
-
-  // Clear canvas
-  ctx.fillStyle = "#050510";
-  ctx.fillRect(0, 0, width, height);
-
-  // Reset game state variables
+  mouse = { x: width / 2, y: height * 0.8 };
+  prevMouse = { ...mouse };
+  isGameRunning = true;
   score = 0;
   gameStartTime = Date.now();
   survivalTime = 0;
   lastDifficultyLevel = 0;
   spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval || 60;
   globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed || 1.0;
-  nextEventScore = GAME_CONFIG.events.interval;
-  eventActive = { type: null, endTime: 0 };
-  timers = {
-    asteroid: 0,
-    difficulty: 0,
-    laser: 0,
-    blackHole: 0,
-    missile: 0,
-    mine: 0,
-    crystal: 0,
-    speedScore: 0,
-    event: 0,
-    gameFrame: 0,
-  };
 
-  // Reset UI cache
+  // Reset UI cache to ensure fresh display
   lastDisplayedScore = -1;
   lastDisplayedTime = "";
   lastDisplayedSurvivalTime = "";
   lastSurvivalSecond = 0;
 
-  // Clear all game object arrays
+  // Always show score/time UI when game starts
+  if (uiElements && uiElements.scoreContainer) {
+    uiElements.scoreContainer.style.opacity = "1";
+    uiElements.scoreContainer.style.display = "block";
+  }
+
+  console.log("🎮 Game Initialized - Score reset to:", score);
+  console.log("🎮 UI Elements:", {
+    scoreDisplay: uiElements.scoreDisplay,
+    survivalDisplay: uiElements.survivalDisplay,
+    highscoreDisplay: uiElements.highscoreDisplay,
+  });
+
+  // Initialize game entities
+  player = new Player(
+    width / 2,
+    height * 0.8,
+    GAME_CONFIG.player.radius,
+    "var(--primary-color)"
+  );
   stars = [];
   asteroids = [];
   particles = [];
@@ -90,51 +117,49 @@ window.init = function () {
   chainLightnings = [];
   voidRifts = [];
   cosmicMines = [];
-  nebulae = [];
 
-  // Create Player
-  player = new Player(
-    width / 2,
-    height * 0.8,
-    GAME_CONFIG.player.radius,
-    "var(--primary-color)"
-  );
+  // Kích hoạt sự kiện sớm ngay từ đầu game để tăng sự thú vị
+  setTimeout(() => {
+    if (isGameRunning) {
+      triggerRandomEvent();
+    }
+  }, 3000); // Kích hoạt sự kiện đầu tiên sau 3 giây
 
-  // Activate initial shield
-  if (GAME_CONFIG.player.initialShieldDuration) {
-    player.activateShield();
-  }
+  // Thiết lập lịch trình sự kiện sớm ban đầu
+  setTimeout(() => {
+    if (isGameRunning) {
+      triggerRandomEvent();
+    }
+  }, 8000); // Kích hoạt sự kiện thứ hai sau 8 giây
 
   // Create stars
-  for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
-    const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
-    for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
+  for (let i = 0; i < 3; i++) {
+    const layer = (i + 1) / 3;
+    for (let j = 0; j < 80; j++) {
       stars.push(
         new Star(
           Math.random() * width,
           Math.random() * height,
-          Math.random() * GAME_CONFIG.visual.stars.maxRadius * layer,
+          Math.random() * 1.5 * layer,
           layer
         )
       );
+    }
   }
 
   // Create nebulae background
-  nebulae = Array(GAME_CONFIG.visual.nebula.count)
+  nebulae = Array(5)
     .fill(null)
-    .map(() => window.createNebula());
-
-  // Load high score
-  highScore = localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0;
-  if (uiElements.highscoreDisplay) {
-    uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
-  }
-
-  console.log("✅ Game Initialized Successfully");
+    .map(() => createNebula());
 };
+
 // Make animate function globally available
 window.animate = function () {
+  if (!isGameRunning) return;
+
   animationFrameId = requestAnimationFrame(animate);
+
+  // If game is paused, only draw current state but don't update
   if (window.isGamePaused && window.isGamePaused()) {
     // Just redraw the current frame without updating game state
     ctx.fillStyle = "#050510";
@@ -174,187 +199,191 @@ window.animate = function () {
     cosmicMines.forEach((mine) => mine.draw());
     laserTurrets.forEach((turret) => turret.draw());
     player.draw();
+
     return; // Don't continue with game updates
   }
-  // ...rest of animate logic...
-};
 
-// Clear canvas
-ctx.fillStyle = "#050510";
-ctx.fillRect(0, 0, width, height);
-
-// Draw background nebulae
-nebulae.forEach((n) => {
-  ctx.fillStyle = n;
+  // Clear canvas
+  ctx.fillStyle = "#050510";
   ctx.fillRect(0, 0, width, height);
-});
 
-// Update game state
-// Calculate elapsed time since game start
-const currentTime = Date.now();
-survivalTime = Math.floor((currentTime - gameStartTime) / 1000);
+  // Draw background nebulae
+  nebulae.forEach((n) => {
+    ctx.fillStyle = n;
+    ctx.fillRect(0, 0, width, height);
+  });
 
-// Update difficulty based on time
-updateDifficulty();
+  // Update game state
+  // Calculate elapsed time since game start
+  const currentTime = Date.now();
+  survivalTime = Math.floor((currentTime - gameStartTime) / 1000);
 
-// Spawn new game objects
-spawnGameObjects();
+  // Update difficulty based on time
+  updateDifficulty();
 
-// Check for special events
-checkForEvents();
+  // Spawn new game objects
+  spawnGameObjects();
 
-// Update mouse-based movement with lerping
-updateMousePosition();
+  // Check for special events
+  checkForEvents();
 
-// Update all game objects
-stars.forEach((star) => star.update());
-asteroids.forEach((asteroid, index) => updateAsteroid(asteroid, index));
-lasers.forEach((laser, index) => updateLaser(laser, index));
-blackHoles.forEach((blackHole, index) => updateBlackHole(blackHole, index));
-missiles.forEach((missile, index) => updateMissile(missile, index));
-laserMines.forEach((mine, index) => updateLaserMine(mine, index));
-crystalClusters.forEach((crystal, index) =>
-  updateCrystalCluster(crystal, index)
-);
-// Update fragments with collision detection
-fragments = fragments.filter((fragment) => {
-  // Check collision with player
-  if (!player.shieldActive && !player.thunderShieldActive && fragment.lethal) {
-    const dist = Math.hypot(player.x - fragment.x, player.y - fragment.y);
-    if (dist < player.radius + fragment.radius) {
-      endGame("collision");
-      return false;
+  // Update mouse-based movement with lerping
+  updateMousePosition();
+
+  // Update all game objects
+  stars.forEach((star) => star.update());
+  asteroids.forEach((asteroid, index) => updateAsteroid(asteroid, index));
+  lasers.forEach((laser, index) => updateLaser(laser, index));
+  blackHoles.forEach((blackHole, index) => updateBlackHole(blackHole, index));
+  missiles.forEach((missile, index) => updateMissile(missile, index));
+  laserMines.forEach((mine, index) => updateLaserMine(mine, index));
+  crystalClusters.forEach((crystal, index) =>
+    updateCrystalCluster(crystal, index)
+  );
+  // Update fragments with collision detection
+  fragments = fragments.filter((fragment) => {
+    // Check collision with player
+    if (
+      !player.shieldActive &&
+      !player.thunderShieldActive &&
+      fragment.lethal
+    ) {
+      const dist = Math.hypot(player.x - fragment.x, player.y - fragment.y);
+      if (dist < player.radius + fragment.radius) {
+        endGame("collision");
+        return false;
+      }
     }
+    // Update and draw
+    const expired = fragment.update();
+    fragment.draw();
+    return !expired;
+  });
+  particles = particles.filter((particle) => particle.alpha > 0);
+  particles.forEach((particle) => particle.update());
+  warnings = warnings.filter((warning) => warning.update());
+  energyOrbs = energyOrbs.filter((orb, index) => updateEnergyOrb(orb, index));
+  plasmaFields = plasmaFields.filter((field, index) =>
+    updatePlasmaField(field, index)
+  );
+  crystalShards = crystalShards.filter((shard, index) =>
+    updateCrystalShard(shard, index)
+  );
+  quantumPortals = quantumPortals.filter((portal, index) =>
+    updateQuantumPortal(portal, index)
+  );
+  shieldGenerators = shieldGenerators.filter((shield, index) =>
+    updateShieldGenerator(shield, index)
+  );
+  freezeZones = freezeZones.filter((zone, index) =>
+    updateFreezeZone(zone, index)
+  );
+  superNovas = superNovas.filter((nova, index) => updateSuperNova(nova, index));
+  wormholes = wormholes.filter((wormhole, index) =>
+    updateWormhole(wormhole, index)
+  );
+  magneticStorms = magneticStorms.filter((storm, index) =>
+    updateMagneticStorm(storm, index)
+  );
+  lightningStorms = lightningStorms.filter((storm, index) =>
+    updateLightningStorm(storm, index)
+  );
+
+  // Update new creative objects
+  gravityWaves = gravityWaves.filter((wave) => {
+    wave.draw();
+    return !wave.update();
+  });
+  timeDistortions = timeDistortions.filter((distortion) => {
+    distortion.draw();
+    return !distortion.update();
+  });
+  chainLightnings = chainLightnings.filter((lightning) => {
+    lightning.draw();
+    return !lightning.update();
+  });
+  voidRifts = voidRifts.filter((rift) => {
+    rift.draw();
+    return !rift.update();
+  });
+  cosmicMines = cosmicMines.filter((mine) => {
+    mine.draw();
+    return !mine.update();
+  });
+
+  // Update player last to ensure it's on top
+  if (player) player.update();
+
+  nextEventScore = GAME_CONFIG.events.interval;
+  eventActive = { type: null, endTime: 0 };
+  timers = {
+    asteroid: 0,
+    difficulty: 0,
+    laser: 0,
+    blackHole: 0,
+    missile: 0,
+    mine: 0,
+    crystal: 0,
+    speedScore: 0, // Timer for speed-based scoring
+    event: 0, // Timer for events
+    gameFrame: 0, // General frame counter
+  };
+  player = new Player(
+    width / 2,
+    height * 0.8,
+    GAME_CONFIG.player.radius,
+    "var(--primary-color)"
+  );
+
+  // Kích hoạt khiên bảo vệ ngay từ đầu game
+  if (GAME_CONFIG.player.initialShieldDuration) {
+    player.shieldActive = true;
+    player.shieldTimer = GAME_CONFIG.player.initialShieldDuration;
+    // Removed meaningless event text notification for shield activation
+    playSound("shield");
   }
-  // Update and draw
-  const expired = fragment.update();
-  fragment.draw();
-  return !expired;
-});
-particles = particles.filter((particle) => particle.alpha > 0);
-particles.forEach((particle) => particle.update());
-warnings = warnings.filter((warning) => warning.update());
-energyOrbs = energyOrbs.filter((orb, index) => updateEnergyOrb(orb, index));
-plasmaFields = plasmaFields.filter((field, index) =>
-  updatePlasmaField(field, index)
-);
-crystalShards = crystalShards.filter((shard, index) =>
-  updateCrystalShard(shard, index)
-);
-quantumPortals = quantumPortals.filter((portal, index) =>
-  updateQuantumPortal(portal, index)
-);
-shieldGenerators = shieldGenerators.filter((shield, index) =>
-  updateShieldGenerator(shield, index)
-);
-freezeZones = freezeZones.filter((zone, index) =>
-  updateFreezeZone(zone, index)
-);
-superNovas = superNovas.filter((nova, index) => updateSuperNova(nova, index));
-wormholes = wormholes.filter((wormhole, index) =>
-  updateWormhole(wormhole, index)
-);
-magneticStorms = magneticStorms.filter((storm, index) =>
-  updateMagneticStorm(storm, index)
-);
-lightningStorms = lightningStorms.filter((storm, index) =>
-  updateLightningStorm(storm, index)
-);
 
-// Update new creative objects
-gravityWaves = gravityWaves.filter((wave) => {
-  wave.draw();
-  return !wave.update();
-});
-timeDistortions = timeDistortions.filter((distortion) => {
-  distortion.draw();
-  return !distortion.update();
-});
-chainLightnings = chainLightnings.filter((lightning) => {
-  lightning.draw();
-  return !lightning.update();
-});
-voidRifts = voidRifts.filter((rift) => {
-  rift.draw();
-  return !rift.update();
-});
-cosmicMines = cosmicMines.filter((mine) => {
-  mine.draw();
-  return !mine.update();
-});
-
-// Update player last to ensure it's on top
-if (player) player.update();
-
-nextEventScore = GAME_CONFIG.events.interval;
-eventActive = { type: null, endTime: 0 };
-timers = {
-  asteroid: 0,
-  difficulty: 0,
-  laser: 0,
-  blackHole: 0,
-  missile: 0,
-  mine: 0,
-  crystal: 0,
-  speedScore: 0, // Timer for speed-based scoring
-  event: 0, // Timer for events
-  gameFrame: 0, // General frame counter
+  stars = [];
+  asteroids = [];
+  particles = [];
+  lasers = [];
+  blackHoles = [];
+  missiles = [];
+  laserMines = [];
+  laserTurrets = [];
+  crystalClusters = [];
+  fragments = [];
+  warnings = [];
+  energyOrbs = [];
+  plasmaFields = [];
+  crystalShards = [];
+  quantumPortals = [];
+  shieldGenerators = [];
+  freezeZones = [];
+  superNovas = [];
+  wormholes = [];
+  magneticStorms = [];
+  lightningStorms = [];
+  for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
+    const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
+    for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
+      stars.push(
+        new Star(
+          Math.random() * width,
+          Math.random() * height,
+          Math.random() * GAME_CONFIG.visual.stars.maxRadius * layer,
+          layer
+        )
+      );
+  }
+  nebulae = Array(GAME_CONFIG.visual.nebula.count)
+    .fill(null)
+    .map(() => createNebula());
+  highScore = localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0;
+  if (uiElements.highscoreDisplay) {
+    uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
+  }
 };
-player = new Player(
-  width / 2,
-  height * 0.8,
-  GAME_CONFIG.player.radius,
-  "var(--primary-color)"
-);
-
-// Kích hoạt khiên bảo vệ ngay từ đầu game
-if (GAME_CONFIG.player.initialShieldDuration) {
-  player.shieldActive = true;
-  player.shieldTimer = GAME_CONFIG.player.initialShieldDuration;
-  // Removed meaningless event text notification for shield activation
-  playSound("shield");
-}
-
-stars = [];
-asteroids = [];
-particles = [];
-lasers = [];
-blackHoles = [];
-missiles = [];
-laserMines = [];
-laserTurrets = [];
-crystalClusters = [];
-fragments = [];
-warnings = [];
-energyOrbs = [];
-plasmaFields = [];
-crystalShards = [];
-quantumPortals = [];
-shieldGenerators = [];
-freezeZones = [];
-superNovas = [];
-wormholes = [];
-magneticStorms = [];
-lightningStorms = [];
-for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
-  const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
-  for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
-    stars.push(
-      new Star(
-        Math.random() * width,
-        Math.random() * height,
-        Math.random() * GAME_CONFIG.visual.stars.maxRadius * layer,
-        layer
-      )
-    );
-}
-nebulae = Array(GAME_CONFIG.visual.nebula.count)
-  .fill(null)
-  .map(() => window.createNebula());
-highScore = localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0;
-if (uiElements.highscoreDisplay) {
-  uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
-}
 
 // Make animate function globally available
 window.animate = function () {
@@ -1542,7 +1571,8 @@ window.animate = function () {
       score += 25; // Reduced from 50
       player.activateShield();
 
-      // Removed shield activation event text as requested
+      // Show shield activation message
+      showEventText("Crystal Shield Activated! (10s)");
 
       // Crystal absorption effect - reduced to even fewer particles
       for (let j = 0; j < 3; j++) {
@@ -1843,40 +1873,41 @@ window.animate = function () {
   const difficultyLevel = Math.floor(score / 2500) + 1; // Every 2500 points (increased from 1500)
 
   if (difficultyLevel > lastDifficultyLevel && difficultyLevel > 0) {
+    // Update last difficulty level to prevent infinite spawning
     lastDifficultyLevel = difficultyLevel;
+
+    // Show difficulty increase message
     showEventText(`🌀 LEVEL ${difficultyLevel} 🌀`);
     playSound("powerup");
 
-    if (difficultyLevel === 1) {
-      // Level 1: Make everything much slower for onboarding
-      globalSpeedMultiplier = (GAME_CONFIG.difficulty.baseSpeed || 1.0) * 0.45; // 45% speed
-      spawnInterval = (GAME_CONFIG.difficulty.baseSpawnInterval || 60) * 2.2; // 2.2x slower spawn
-    } else {
-      // Level 2+: Sharply increase difficulty
-      globalSpeedMultiplier =
-        (GAME_CONFIG.difficulty.baseSpeed || 1.0) +
-        GAME_CONFIG.difficulty.speedIncreaseStep * (1 + difficultyLevel * 0.25);
-      if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval) {
-        spawnInterval -=
-          GAME_CONFIG.difficulty.spawnDecreaseStep *
-          (1 + difficultyLevel * 0.12);
-      }
+    // Chaos Manifest event removed as requested
+    // setTimeout(() => {
+    //   if (typeof triggerChaosEvent === "function") {
+    //     triggerChaosEvent(difficultyLevel);
+    //   }
+    // }, 2000);
+
+    // Progressive difficulty scaling - tăng độ khó nhiều hơn khi lên level
+    globalSpeedMultiplier +=
+      GAME_CONFIG.difficulty.speedIncreaseStep * (1 + difficultyLevel * 0.2); // Tăng hệ số từ 0.1 lên 0.2
+    if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval) {
+      spawnInterval -=
+        GAME_CONFIG.difficulty.spawnDecreaseStep * (1 + difficultyLevel * 0.08); // Tăng hệ số từ 0.05 lên 0.08
     }
 
     // Unlock more dangerous events at higher levels
-    if (difficultyLevel === 1) {
-      // Level 1: Make everything slower for onboarding
-      globalSpeedMultiplier = (GAME_CONFIG.difficulty.baseSpeed || 1.0) * 0.55; // 55% speed (faster than before)
-      spawnInterval = (GAME_CONFIG.difficulty.baseSpawnInterval || 60) * 1.7; // 1.7x slower spawn (faster than before)
-    } else {
-      // Level 2+: Sharply increase difficulty and speed
-      globalSpeedMultiplier =
-        (GAME_CONFIG.difficulty.baseSpeed || 1.0) +
-        GAME_CONFIG.difficulty.speedIncreaseStep * (1 + difficultyLevel * 0.32);
-      if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval) {
-        spawnInterval -=
-          GAME_CONFIG.difficulty.spawnDecreaseStep *
-          (1 + difficultyLevel * 0.16);
+    if (difficultyLevel >= 3) {
+      // Trigger additional event at level 3+
+      if (Math.random() < 0.3) {
+        setTimeout(() => triggerRandomEvent(), 2000);
+      }
+    }
+
+    if (difficultyLevel >= 5) {
+      // Overlapping events at level 5+
+      if (Math.random() < 0.4) {
+        setTimeout(() => triggerRandomEvent(), 1000);
+        setTimeout(() => triggerRandomEvent(), 3000);
       }
     }
   }

@@ -63,33 +63,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const restartButton = document.getElementById("restart-button");
   if (restartButton) {
     restartButton.addEventListener("click", function () {
-      // Hide game over screen and reset UI panels
-      if (uiElements.gameOverScreen)
-        uiElements.gameOverScreen.style.display = "none";
-      if (uiElements.mainMenuContainer)
-        uiElements.mainMenuContainer.style.display = "none";
-      if (uiElements.leftGamePanel) {
-        uiElements.leftGamePanel.classList.add("visible");
-        uiElements.leftGamePanel.style.opacity = "1";
-      }
-      if (uiElements.scoreContainer) {
-        uiElements.scoreContainer.style.opacity = "1";
-        uiElements.scoreContainer.style.display = "flex";
-      }
-      if (uiElements.rightGamePanel) {
-        uiElements.rightGamePanel.style.opacity = "1";
-      }
-      document.body.classList.remove("menu-active");
-      document.body.classList.remove("game-over");
-      document.body.classList.add("game-running");
-      // Cancel previous animation frame before starting a new game
-      if (
-        typeof animationFrameId !== "undefined" &&
-        animationFrameId !== null
-      ) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = undefined;
-      }
       startGame(); // Always start a new game from the beginning
     });
   }
@@ -117,6 +90,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Game over buttons
   const mainMenuButton = document.getElementById("main-menu-button");
+  // Add event listener for Try Again button to always start a new game
+  if (restartButton) {
+    restartButton.addEventListener("click", function () {
+      startGame(); // Always start a new game from the beginning
+    });
+  }
 
   // Pause menu buttons
   const pauseButton = document.getElementById("pause-button");
@@ -125,88 +104,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const pauseMenu = document.getElementById("pause-menu");
 
   function startGame() {
-    // --- CLEAR ALL PENDING EVENT TIMEOUTS ---
-    if (window._eventTimeouts && Array.isArray(window._eventTimeouts)) {
-      window._eventTimeouts.forEach((id) => clearTimeout(id));
-      window._eventTimeouts = [];
-    } else {
-      window._eventTimeouts = [];
-    }
-    // --- FULL GAME OBJECTS & STATE RESET ---
-    player = undefined;
-    stars = [];
-    asteroids = [];
-    particles = [];
-    lasers = [];
-    blackHoles = [];
-    missiles = [];
-    laserMines = [];
-    crystalClusters = [];
-    fragments = [];
-    warnings = [];
-    energyOrbs = [];
-    plasmaFields = [];
-    crystalShards = [];
-    quantumPortals = [];
-    shieldGenerators = [];
-    freezeZones = [];
-    superNovas = [];
-    wormholes = [];
-    magneticStorms = [];
-    lightningStorms = [];
-    gravityWaves = [];
-    timeDistortions = [];
-    chainLightnings = [];
-    voidRifts = [];
-    cosmicMines = [];
-    nebulae = [];
-    mouse = { x: 0, y: 0 };
-    prevMouse = { x: 0, y: 0 };
-    score = 0;
-    highScore = 0;
-    bestTime = 0;
-    gameStartTime = 0;
-    survivalTime = 0;
-    isGamePaused = false;
-    lastDifficultyLevel = 0;
-    animationFrameId = undefined;
-    timers = {
-      asteroid: 0,
-      difficulty: 0,
-      laser: 0,
-      blackHole: 0,
-      missile: 0,
-      mine: 0,
-      crystal: 0,
-      speedScore: 0,
-      event: 0,
-      gameFrame: 0,
-    };
-    spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval;
-    globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed;
-    nextEventScore = GAME_CONFIG.events.interval;
-    eventActive = { type: null, endTime: 0 };
-    deathReason = "";
-    // Reset animation timing to prevent fast progression after Try Again
-    window.lastFrameTime = null;
-    // --- FULL GAME STATE RESET ---
-    globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed;
-    spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval;
-    lastDifficultyLevel = 0;
-    nextEventScore = GAME_CONFIG.events.interval;
-    eventActive = { type: null, endTime: 0 };
-    timers = {
-      asteroid: 0,
-      difficulty: 0,
-      laser: 0,
-      blackHole: 0,
-      missile: 0,
-      mine: 0,
-      crystal: 0,
-      speedScore: 0,
-      event: 0,
-      gameFrame: 0,
-    };
     // DEBUG: Log missile config at game start
     console.log("🎮 Game starting - Missile config check:");
     console.log("GAME_CONFIG.missiles.radius:", GAME_CONFIG.missiles.radius);
@@ -955,11 +852,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // Initialize audio system on first user interaction
     unlockAudio(); // Try to unlock audio
     playSound("buttonHover");
-    // Cancel previous animation frame before starting a new game
-    if (typeof animationFrameId !== "undefined" && animationFrameId !== null) {
-      cancelAnimationFrame(animationFrameId);
-      animationFrameId = undefined;
-    }
     startGame();
   });
   leaderboardButton.addEventListener("click", () => {
@@ -1065,7 +957,17 @@ document.addEventListener("DOMContentLoaded", function () {
       mouse.y = e.clientY;
     }
   });
-
+  window.addEventListener(
+    "touchmove",
+    (e) => {
+      if (e.touches.length > 0) {
+        e.preventDefault();
+        mouse.x = e.touches[0].clientX;
+        mouse.y = e.touches[0].clientY;
+      }
+    },
+    { passive: false }
+  );
   // Add keyboard event listener for thunder strike ability and pause
   window.addEventListener("keydown", (e) => {
     if (isGameRunning && (e.code === "Space" || e.key === " ")) {
@@ -1110,7 +1012,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  canvas.addEventListener("touchstart", (e) => {
+  // Touch support for mobile
+  canvas.addEventListener("touchmove", (e) => {
     if (isGameRunning && !isGamePaused) {
       e.preventDefault();
       const touch = e.touches[0];
