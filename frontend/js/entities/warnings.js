@@ -89,10 +89,7 @@ class Warning extends Entity {
         warningColor = "#e91e63"; // Pink for magnetic
         warningSymbol = "🧲";
         break;
-      case "lightning":
-        warningColor = "#ffeb3b"; // Yellow for lightning
-        warningSymbol = "⚡";
-        break;
+      // ...existing code...
       case "gravity":
         warningColor = "#7c4dff"; // Purple for gravity
         warningSymbol = "🌀";

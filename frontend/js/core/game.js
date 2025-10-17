@@ -24,7 +24,6 @@ window.createNebula = function () {
   grad.addColorStop(1, color);
   return grad;
 };
-
 // Helper function for FPS calculation
 let lastFrameTime = 0;
 let frameCount = 0;
@@ -49,25 +48,23 @@ function updateMousePosition() {
 // Make init function globally available
 window.init = function () {
   console.log("Initializing game...");
-
-  // Detect mobile and apply optimizations first
-  detectMobile();
-
+  // Set canvas size
   width = canvas.width = window.innerWidth;
   height = canvas.height = window.innerHeight;
-  mouse = { x: width / 2, y: height * 0.8 };
-  prevMouse = { ...mouse };
 
-  // === RESETS ALL GAME STATE VARIABLES ===
-  isGameRunning = true;
+  // Clear canvas
+  ctx.fillStyle = "#050510";
+  ctx.fillRect(0, 0, width, height);
+
+  // Reset game state variables
   score = 0;
   gameStartTime = Date.now();
   survivalTime = 0;
   lastDifficultyLevel = 0;
-  spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval || 60;
-  globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed || 1.0;
-
-  // Reset timers and event state (THIS IS THE CRITICAL FIX)
+  spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval;
+  globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed;
+  nextEventScore = GAME_CONFIG.events.interval;
+  eventActive = { type: null, endTime: 0 };
   timers = {
     asteroid: 0,
     difficulty: 0,
@@ -80,33 +77,14 @@ window.init = function () {
     event: 0,
     gameFrame: 0,
   };
-  eventActive = { type: null, endTime: 0 };
-  // =======================================
 
-  // Reset UI cache to ensure fresh display
+  // Reset UI cache
   lastDisplayedScore = -1;
   lastDisplayedTime = "";
   lastDisplayedSurvivalTime = "";
   lastSurvivalSecond = 0;
 
-  // Always show score/time UI when game starts
-  if (uiElements && uiElements.scoreContainer) {
-    uiElements.scoreContainer.style.opacity = "1";
-    uiElements.scoreContainer.style.display = "block";
-  }
-
-  console.log("🎮 Game Initialized - Score and Speed have been reset.");
-  console.log("🎮 Initial globalSpeedMultiplier:", globalSpeedMultiplier);
-
-  // Initialize game entities
-  player = new Player(
-    width / 2,
-    height * 0.8,
-    GAME_CONFIG.player.radius,
-    "var(--primary-color)"
-  );
-
-  // Reset all entity arrays
+  // Clear all game object arrays
   stars = [];
   asteroids = [];
   particles = [];
@@ -133,40 +111,50 @@ window.init = function () {
   chainLightnings = [];
   voidRifts = [];
   cosmicMines = [];
+  nebulae = [];
 
-  // Kích hoạt sự kiện sớm ngay từ đầu game để tăng sự thú vị
-  setTimeout(() => {
-    if (isGameRunning) {
-      triggerRandomEvent();
-    }
-  }, 3000); // Kích hoạt sự kiện đầu tiên sau 3 giây
+  // Create Player
+  player = new Player(
+    width / 2,
+    height * 0.8,
+    GAME_CONFIG.player.radius,
+    "var(--primary-color)"
+  );
 
-  // Thiết lập lịch trình sự kiện sớm ban đầu
-  setTimeout(() => {
-    if (isGameRunning) {
-      triggerRandomEvent();
-    }
-  }, 8000); // Kích hoạt sự kiện thứ hai sau 8 giây
+  // Activate initial shield
+  if (GAME_CONFIG.player.initialShieldDuration) {
+    player.shieldActive = true;
+    player.shieldTimer = GAME_CONFIG.player.initialShieldDuration;
+    playSound("shield");
+  }
 
   // Create stars
-  for (let i = 0; i < 3; i++) {
-    const layer = (i + 1) / 3;
-    for (let j = 0; j < 80; j++) {
+  for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
+    const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
+    for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
       stars.push(
         new Star(
           Math.random() * width,
           Math.random() * height,
-          Math.random() * 1.5 * layer,
+          Math.random() * GAME_CONFIG.visual.stars.maxRadius * layer,
           layer
         )
       );
-    }
   }
 
   // Create nebulae background
-  nebulae = Array(5)
+  nebulae = Array(GAME_CONFIG.visual.nebula.count)
     .fill(null)
-    .map(() => createNebula());
+    .map(() => window.createNebula());
+
+  // Load high score
+  highScore = localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0;
+  if (uiElements.highscoreDisplay) {
+    uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
+  }
+
+  console.log("🎮 Game Initialized - Score and Speed have been reset.");
+  console.log(`🎮 Initial globalSpeedMultiplier: ${globalSpeedMultiplier}`);
 };
 
 // Make animate function globally available
@@ -432,7 +420,7 @@ window.animate = function () {
       bh.y < height + farOffScreenBuffer
   );
 
-  crystalClusters = crystalClusters.filter((cc) => cc.alpha > 0);
+  crystalClusters = crystalClusters.filter((crystal) => !crystal.update());
   warnings = warnings.filter((w) => w.timer < w.duration);
   energyOrbs = energyOrbs.filter((e) => e.update() !== false);
 
@@ -1355,9 +1343,6 @@ window.animate = function () {
       // Collect crystal for shield and points (reduced)
       score += 25; // Reduced from 50
       player.activateShield();
-
-      // Show shield activation message
-      showEventText("Crystal Shield Activated! (10s)");
 
       // Crystal absorption effect - reduced to even fewer particles
       for (let j = 0; j < 3; j++) {

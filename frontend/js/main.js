@@ -104,125 +104,90 @@ document.addEventListener("DOMContentLoaded", function () {
   const pauseMenu = document.getElementById("pause-menu");
 
   function startGame() {
-    // DEBUG: Log missile config at game start
-    console.log("🎮 Game starting - Missile config check:");
-    console.log("GAME_CONFIG.missiles.radius:", GAME_CONFIG.missiles.radius);
-    console.log(
-      "GAME_CONFIG.fragments.missileFragments:",
-      GAME_CONFIG.fragments.missileFragments
-    );
-
-    if (GAME_CONFIG.missiles.radius !== 18) {
-      console.error(
-        "❌ MISSILE CONFIG ERROR: radius should be 18 but is",
-        GAME_CONFIG.missiles.radius
-      );
+    // --- BƯỚC 1: HỦY VÒNG LẶP GAME CŨ (QUAN TRỌNG NHẤT) ---
+    // Điều này ngăn chặn nhiều vòng lặp game chạy chồng lên nhau
+    if (typeof animationFrameId !== "undefined" && animationFrameId !== null) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = undefined; // Đặt lại ID để tránh nhầm lẫn
     }
 
-    // Get username from input field
-    const usernameInput = document.getElementById("username-input");
-    currentUsername = usernameInput ? usernameInput.value.trim() : "";
-    if (!currentUsername) {
-      currentUsername = "Me"; // Default username
-    }
-
-    // Set game running state FIRST
+    // --- BƯỚC 2: RESET TOÀN BỘ TRẠNG THÁI GAME VỀ BAN ĐẦU ---
+    // Đảm bảo mỗi lần chơi mới đều bắt đầu như lần đầu tiên
+    globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed;
+    spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval;
+    lastDifficultyLevel = 0;
+    score = 0;
+    gameStartTime = Date.now();
     isGameRunning = true;
     isGamePaused = false;
+    deathReason = "";
+    window.lastFrameTime = null; // Reset bộ đếm thời gian của vòng lặp
 
-    // Initialize audio system first (will only work after user interaction)
-    if (typeof initAudioSystem === "function") {
-      initAudioSystem();
+    // Reset tất cả các bộ đếm thời gian
+    timers = {
+      asteroid: 0,
+      difficulty: 0,
+      laser: 0,
+      blackHole: 0,
+      missile: 0,
+      mine: 0,
+      crystal: 0,
+      speedScore: 0,
+      event: 0,
+      gameFrame: 0,
+    };
+
+    // Xóa các sự kiện hẹn giờ cũ
+    if (window._eventTimeouts && Array.isArray(window._eventTimeouts)) {
+      window._eventTimeouts.forEach((id) => clearTimeout(id));
+      window._eventTimeouts = [];
     }
 
-    // Hide cursor during gameplay
-    document.body.classList.remove("menu-active");
-    document.body.classList.remove("game-over");
+    // Lấy username
+    const usernameInput = document.getElementById("username-input");
+    currentUsername = (usernameInput ? usernameInput.value.trim() : "") || "Me";
+
+    // Cập nhật giao diện
+    document.body.classList.remove("menu-active", "game-over");
     document.body.classList.add("game-running");
-
-    // Hide menu and game over screen BEFORE initializing game
-    if (uiElements.mainMenuContainer) {
+    if (uiElements.mainMenuContainer)
       uiElements.mainMenuContainer.style.display = "none";
-    }
-    if (uiElements.gameOverScreen) {
+    if (uiElements.gameOverScreen)
       uiElements.gameOverScreen.style.display = "none";
-    }
 
-    // Initialize game
+    // --- BƯỚC 3: KHỞI TẠO LẠI TOÀN BỘ GAME ---
+    // Gọi hàm init() để dọn dẹp và tạo mới các đối tượng game
     if (typeof window.init === "function") {
       window.init();
     } else {
       console.error("Init function not defined. Game initialization failed.");
+      return;
     }
 
-    // Force update UI displays immediately after init
-    // DEBUG: Check if elements exist
-    console.log("🔍 Checking UI elements:", {
-      scoreDisplay: uiElements.scoreDisplay,
-      highscoreDisplay: uiElements.highscoreDisplay,
-      survivalDisplay: uiElements.survivalDisplay,
-      leftPanel: uiElements.leftGamePanel,
-    });
-
-    if (uiElements.scoreDisplay) {
-      uiElements.scoreDisplay.innerText = `Score: 0`;
-      uiElements.scoreDisplay.style.display = "block";
-      console.log("✅ Score display updated");
-    } else {
-      console.error("❌ scoreDisplay element not found!");
-    }
-
-    if (uiElements.highscoreDisplay) {
+    // Cập nhật lại các hiển thị UI
+    if (uiElements.scoreDisplay) uiElements.scoreDisplay.innerText = `Score: 0`;
+    if (uiElements.highscoreDisplay)
       uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
-      uiElements.highscoreDisplay.style.display = "block";
-      console.log("✅ Highscore display updated");
-    } else {
-      console.error("❌ highscoreDisplay element not found!");
-    }
-
-    if (uiElements.survivalDisplay) {
+    if (uiElements.survivalDisplay)
       uiElements.survivalDisplay.innerText = `Time: 0:00`;
-      uiElements.survivalDisplay.style.display = "block";
-      console.log("✅ Survival display updated");
-    } else {
-      console.error("❌ survivalDisplay element not found!");
-    }
 
+    // Hiển thị các panel trong game
+    if (uiElements.leftGamePanel)
+      uiElements.leftGamePanel.classList.add("visible");
+    if (uiElements.scoreContainer)
+      uiElements.scoreContainer.style.opacity = "1";
+    if (uiElements.rightGamePanel)
+      uiElements.rightGamePanel.style.opacity = "1";
+
+    // --- BƯỚC 4: BẮT ĐẦU VÒNG LẶP GAME MỚI ---
     if (typeof window.animate === "function") {
       window.animate();
     } else {
       console.error("Animate function not defined. Game animation failed.");
     }
 
-    // Try to play background music after a slight delay to ensure AudioContext is ready
-    setTimeout(() => {
-      playSound("backgroundMusic");
-    }, 100);
-
-    // Show game UI panels
-    if (uiElements.leftGamePanel) {
-      uiElements.leftGamePanel.classList.add("visible");
-      uiElements.leftGamePanel.style.opacity = "1";
-    } else {
-      console.error("leftGamePanel not found!");
-    }
-
-    // Show score container
-    if (uiElements.scoreContainer) {
-      uiElements.scoreContainer.style.opacity = "1";
-      uiElements.scoreContainer.style.display = "flex";
-      console.log("✅ Score container shown");
-    } else {
-      console.error("❌ scoreContainer not found!");
-    }
-
-    if (uiElements.rightGamePanel) {
-      uiElements.rightGamePanel.style.opacity = "1";
-    } else {
-      console.error("rightGamePanel not found!");
-    }
-
-    // Initialize live leaderboard
+    // Bật lại nhạc nền
+    setTimeout(() => playSound("backgroundMusic"), 100);
     initializeLiveLeaderboard();
   }
 

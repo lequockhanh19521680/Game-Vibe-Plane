@@ -431,10 +431,10 @@ const GAME_CONFIG = {
     },
 
     crystalRain: {
-      count: 20, // Số crystal shard (giảm từ 32 xuống 20 để dễ thu thập)
-      delay: 80, // Delay giữa các crystal (chậm hơn để tạo formation)
-      clusterSize: 5, // Số crystal mỗi cluster (giảm từ 8 xuống 5)
-      driftSpeed: 1.2, // Tốc độ trôi dạt
+      count: 5,
+      delay: 80,
+      clusterSize: 5,
+      driftSpeed: 1.2,
     },
 
     quantumTunnels: {
