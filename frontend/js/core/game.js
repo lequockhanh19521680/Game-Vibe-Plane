@@ -64,7 +64,21 @@ window.init = function () {
   lastDifficultyLevel = 0;
   spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval || 60;
   globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed || 1.0;
+  currentEventInterval = GAME_CONFIG.events.interval; // <--- THÊM DÒNG NÀY
 
+  timers = {
+    asteroid: 0,
+    difficulty: 0,
+    laser: 0,
+    blackHole: 0,
+    missile: 0,
+    mine: 0,
+    crystal: 0,
+    speedScore: 0,
+    event: 0,
+    gameFrame: 0,
+  };
+  eventActive = { type: null, endTime: 0 };
   // Reset UI cache to ensure fresh display
   lastDisplayedScore = -1;
   lastDisplayedTime = "";
@@ -314,20 +328,6 @@ window.animate = function () {
   // Update player last to ensure it's on top
   if (player) player.update();
 
-  nextEventScore = GAME_CONFIG.events.interval;
-  eventActive = { type: null, endTime: 0 };
-  timers = {
-    asteroid: 0,
-    difficulty: 0,
-    laser: 0,
-    blackHole: 0,
-    missile: 0,
-    mine: 0,
-    crystal: 0,
-    speedScore: 0, // Timer for speed-based scoring
-    event: 0, // Timer for events
-    gameFrame: 0, // General frame counter
-  };
   player = new Player(
     width / 2,
     height * 0.8,
@@ -722,7 +722,8 @@ window.animate = function () {
   // --- Event System ---
   // Sự kiện xuất hiện theo frame thay vì điểm số
   timers.event++;
-  if (timers.event % GAME_CONFIG.events.interval === 0 && !eventActive.type) {
+  if (timers.event % currentEventInterval === 0 && !eventActive.type) {
+    // <--- SỬA DÒNG NÀY
     triggerRandomEvent();
   }
 
@@ -1914,12 +1915,10 @@ window.animate = function () {
 
   // Time-based difficulty increase
   if (timers.difficulty % (60 * 15) === 0 && timers.difficulty > 0) {
-    // Every 15 seconds - silent progression
     globalSpeedMultiplier += 0.02;
 
-    // Decrease event intervals over time - slower reduction
-    if (GAME_CONFIG.events.interval > 800) {
-      GAME_CONFIG.events.interval -= 20;
+    if (currentEventInterval > 800) {
+      currentEventInterval -= 20;
     }
   }
 
@@ -1934,7 +1933,5 @@ window.animate = function () {
 
   // Survival milestone rewards removed as requested
 }; // Close window.animate function
-
-// Event system moved to js/core/eventSystem.js
 
 console.log("Game.js loaded successfully");

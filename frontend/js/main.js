@@ -55,8 +55,8 @@ let globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed;
 let nebulae = [];
 let nextEventScore = 1000;
 let eventActive = { type: null, endTime: 0 };
-let currentUsername = ""; // Store username for current game session
-let deathReason = ""; // Store death reason for backend submission
+let currentEventInterval; // <--- THÊM DÒNG NÀY
+let currentUsername = "";
 
 document.addEventListener("DOMContentLoaded", function () {
   // Game over buttons
