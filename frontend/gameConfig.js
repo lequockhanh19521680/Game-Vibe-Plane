@@ -451,7 +451,7 @@ const GAME_CONFIG = {
   },
 };
 
-// Export cho sử dụng
+// Export for use
 if (typeof module !== "undefined" && module.exports) {
   module.exports = GAME_CONFIG;
 } else if (typeof window !== "undefined") {

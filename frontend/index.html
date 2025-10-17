@@ -21,31 +21,30 @@
 
     <div id="ui-container">
       <div id="top-bar">
-        <div class="hud-container hud-left-container">
-          <div class="info-block">
-            <span class="label">Score</span>
-            <span id="score-display" class="value">0</span>
-          </div>
-          <div class="info-block">
-            <span id="highscore-display">High Score: 0</span>
-          </div>
-        </div>
+        <button id="pause-button" style="display: none">❚❚</button>
 
-        <div class="hud-container hud-center-container">
-          <div class="info-block">
+        <div class="hud-center-column">
+          <div class="info-block level-block">
             <span id="level-display" class="label">Level 1</span>
             <div id="level-progress-bar-container">
               <div id="level-progress-bar"></div>
             </div>
           </div>
+          <div class="stats-container">
+            <div class="info-block score-block">
+              <span class="label">Score</span>
+              <span id="score-display" class="value">0</span>
+            </div>
+            <div class="info-block time-block">
+              <span class="label">Time</span>
+              <span id="survival-display" class="value">0:00</span>
+            </div>
+          </div>
         </div>
 
-        <div class="hud-container hud-right-container">
-          <div class="info-block">
-            <span class="label">Time</span>
-            <span id="survival-display" class="value">0:00</span>
-          </div>
-          <button id="pause-button" style="display: none">❚❚</button>
+        <div class="info-block highscore-block">
+          <span class="label">High Score</span>
+          <span id="highscore-display" class="value">0</span>
         </div>
       </div>
 
