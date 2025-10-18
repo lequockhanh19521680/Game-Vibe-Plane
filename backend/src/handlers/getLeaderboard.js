@@ -1,11 +1,25 @@
-const { getTopScores } = require('../utils/dynamodb');
+const { getTopScores } = require("../utils/dynamodb");
 
 /**
  * Get the global leaderboard
  */
 exports.handler = async (event) => {
+  // Thêm xử lý OPTIONS request cho CORS Preflight
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers":
+          "Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+      },
+      body: "",
+    };
+  }
+
   try {
-    console.log('Get leaderboard event:', JSON.stringify(event, null, 2));
+    console.log("Get leaderboard event:", JSON.stringify(event, null, 2));
 
     // Parse query parameters
     const queryParams = event.queryStringParameters || {};
@@ -13,10 +27,10 @@ exports.handler = async (event) => {
     const country = queryParams.country;
 
     let leaderboard;
-    
+
     if (country) {
       // Get country-specific leaderboard
-      const { getCountryLeaderboard } = require('../utils/dynamodb');
+      const { getCountryLeaderboard } = require("../utils/dynamodb");
       leaderboard = await getCountryLeaderboard(country, limit);
     } else {
       // Get global leaderboard
@@ -34,39 +48,38 @@ exports.handler = async (event) => {
       countryCode: entry.countryCode,
       deathCause: entry.deathCause,
       timestamp: entry.timestamp,
-      createdAt: entry.createdAt
+      createdAt: entry.createdAt,
     }));
 
     return {
       statusCode: 200,
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS'
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
       },
       body: JSON.stringify({
         success: true,
         leaderboard: formattedLeaderboard,
         total: formattedLeaderboard.length,
-        country: country || 'global',
-        timestamp: Date.now()
-      })
+        country: country || "global",
+        timestamp: Date.now(),
+      }),
     };
-
   } catch (error) {
-    console.error('Error getting leaderboard:', error);
-    
+    console.error("Error getting leaderboard:", error);
+
     return {
       statusCode: 500,
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS'
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
       },
       body: JSON.stringify({
-        error: 'Internal server error',
-        message: error.message
-      })
+        error: "Internal server error",
+        message: error.message,
+      }),
     };
   }
 };
