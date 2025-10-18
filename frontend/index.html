@@ -20,6 +20,9 @@
     <link rel="stylesheet" href="css/playerName.css" />
   </head>
   <body>
+    <!-- Lớp phủ Modal - Được hiển thị bởi settingsUI.js -->
+    <!-- <div id="modal-overlay" style="display: none;"></div> -->
+
     <canvas id="game-canvas"></canvas>
 
     <div id="ui-container">
@@ -48,7 +51,7 @@
 
       <div id="event-text"></div>
 
-      <!-- Main Menu Screen -->
+      <!-- Main Menu Screen (Tối ưu hóa bố cục) -->
       <div id="start-screen" class="ui-element">
         <h1>Stellar Drift</h1>
         <h2>SINGULARITY</h2>
@@ -70,25 +73,25 @@
               maxlength="20"
               autocomplete="off"
             />
-            <div id="name-validation-message" class="validation-message"></div>
           </div>
-          <p class="name-info-text" data-translate="playerName.info">
-            Your name will appear on the leaderboard (2-20 chars)
-          </p>
+          Your name will appear on the leaderboard (2-20 chars)
         </div>
 
-        <button id="start-button" data-translate="menu.startBattle">
-          Start Battle
-        </button>
-        <button id="leaderboard-button" data-translate="menu.leaderboard">
-          Leaderboard
-        </button>
-        <button id="how-to-play-button" data-translate="menu.howToPlay">
-          How to Play
-        </button>
-        <button id="settings-button" data-translate="menu.settings">
-          Settings
-        </button>
+        <!-- Nhóm các nút lại cho gọn gàng hơn -->
+        <div class="menu-buttons-group">
+          <button id="start-button" data-translate="menu.startBattle">
+            Start Battle
+          </button>
+          <button id="leaderboard-button" data-translate="menu.leaderboard">
+            Leaderboard
+          </button>
+          <button id="how-to-play-button" data-translate="menu.howToPlay">
+            How to Play
+          </button>
+          <button id="settings-button" data-translate="menu.settings">
+            Settings
+          </button>
+        </div>
       </div>
 
       <!-- Game Over Screen -->
@@ -181,6 +184,9 @@
         <button id="restart-from-pause-button">Restart</button>
         <button id="main-menu-from-pause-button">Main Menu</button>
       </div>
+
+      <!-- Settings Screen được tạo động bởi settingsUI.js -->
+      <!-- Loại bỏ <div id="settings-screen" ...> cũ -->
     </div>
 
     <audio id="background-music" loop src="assets/audio/background.mp3"></audio>
