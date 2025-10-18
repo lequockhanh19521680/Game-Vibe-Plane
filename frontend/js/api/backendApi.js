@@ -4,10 +4,11 @@
 
 const BACKEND_CONFIG = {
   // Set this to your deployed API Gateway URL, or leave empty to use local storage only
-  API_BASE_URL: "", // Update this after deploying the backend
-
+  API_BASE_URL:
+    "https://0jfeiivfpb.execute-api.ap-southeast-1.amazonaws.com/prod", // Update this after deploying the backend
+  WS_BASE_URL: "wss://ie81hxoio7.execute-api.ap-southeast-1.amazonaws.com/prod", // Update this after deploying the backend
   // Enable/disable backend integration
-  USE_BACKEND: false, // Set to true after deploying backend and updating API_BASE_URL
+  USE_BACKEND: true, // Set to true after deploying backend and updating API_BASE_URL
 
   // Fallback to local storage if backend is unavailable
   FALLBACK_TO_LOCAL: true,
@@ -21,11 +22,7 @@ const BackendAPI = {
   async getClientIP() {
     try {
       // Try multiple IP detection services
-      const services = [
-        "https://api.ipify.org?format=json",
-        "https://api.my-ip.io/ip.json",
-        "https://ipapi.co/json/",
-      ];
+      const services = ["https://api.ipify.org?format=json"];
 
       for (const service of services) {
         try {

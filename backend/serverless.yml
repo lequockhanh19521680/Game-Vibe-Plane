@@ -1,19 +1,19 @@
 service: game-vibe-plane-backend
 
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 provider:
   name: aws
   runtime: nodejs18.x
-  region: us-east-1
+  region: ap-southeast-1
   stage: ${opt:stage, 'dev'}
-  
+
   environment:
     SCORES_TABLE: ${self:service}-scores-${self:provider.stage}
     COUNTRIES_TABLE: ${self:service}-countries-${self:provider.stage}
     WEBSOCKET_TABLE: ${self:service}-websocket-${self:provider.stage}
     STAGE: ${self:provider.stage}
-    
+
   iam:
     role:
       statements:
@@ -46,7 +46,7 @@ functions:
           path: /submit-score
           method: post
           cors: true
-          
+
   getLeaderboard:
     handler: src/handlers/getLeaderboard.handler
     events:
@@ -54,7 +54,7 @@ functions:
           path: /leaderboard
           method: get
           cors: true
-          
+
   getCountryLeaderboard:
     handler: src/handlers/getCountryLeaderboard.handler
     events:
@@ -62,7 +62,7 @@ functions:
           path: /leaderboard/country
           method: get
           cors: true
-          
+
   healthCheck:
     handler: src/handlers/healthCheck.handler
     events:
@@ -77,13 +77,13 @@ functions:
     events:
       - websocket:
           route: $connect
-          
+
   websocketDisconnect:
     handler: src/handlers/websocket.disconnectHandler
     events:
       - websocket:
           route: $disconnect
-          
+
   websocketDefault:
     handler: src/handlers/websocket.defaultHandler
     events:

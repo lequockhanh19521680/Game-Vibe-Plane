@@ -72,12 +72,12 @@ class GameStateManager {
    * Register default game states
    */
   registerDefaultStates() {
-    this.registerState('menu', MenuState);
-    this.registerState('playing', PlayingState);
-    this.registerState('paused', PausedState);
-    this.registerState('gameOver', GameOverState);
-    this.registerState('leaderboard', LeaderboardState);
-    this.registerState('howToPlay', HowToPlayState);
+    this.registerState("menu", MenuState);
+    this.registerState("playing", PlayingState);
+    this.registerState("paused", PausedState);
+    this.registerState("gameOver", GameOverState);
+    this.registerState("leaderboard", LeaderboardState);
+    this.registerState("howToPlay", HowToPlayState);
   }
 }
 
@@ -118,7 +118,7 @@ class MenuState extends GameState {
     uiElements.howToPlayScreen.style.display = "none";
     uiElements.pauseMenu.style.display = "none";
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
-    
+
     // Draw background
     this.drawBackground();
   }
@@ -130,7 +130,7 @@ class MenuState extends GameState {
   drawBackground() {
     ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
     ctx.fillRect(0, 0, width, height);
-    
+
     // Draw nebulae and stars
     if (nebulae && nebulae.length > 0) {
       nebulae.forEach((n) => {
@@ -138,7 +138,7 @@ class MenuState extends GameState {
         ctx.fillRect(0, 0, width, height);
       });
     }
-    
+
     if (stars && stars.length > 0) {
       stars.forEach((s) => s.draw());
     }
@@ -155,7 +155,7 @@ class PlayingState extends GameState {
     uiElements.pauseMenu.style.display = "none";
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarOpacity;
     uiElements.pauseButton.style.display = "flex";
-    
+
     if (!isGameRunning) {
       init();
       animate();
@@ -206,19 +206,19 @@ class GameOverState extends GameState {
     isGameRunning = false;
     uiElements.pauseButton.style.display = "none";
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
-    
+
     stopBackgroundMusic();
     playSound("explosion");
-    
+
     // Create death explosion
     this.createDeathExplosion();
-    
+
     // Send game over data to backend
     this.sendGameOverData();
-    
+
     // Check for high score
     this.checkHighScore();
-    
+
     // Show game over screen after delay
     setTimeout(() => {
       this.showGameOverScreen();
@@ -227,12 +227,30 @@ class GameOverState extends GameState {
 
   createDeathExplosion() {
     triggerScreenShake(GAME_CONFIG.visual.screenShake.explosionIntensity);
-    for (let i = 0; i < GAME_CONFIG.visual.particles.explosionCount * GAME_CONFIG.visual.particles.deathMultiplier; i++) {
+    for (
+      let i = 0;
+      i <
+      GAME_CONFIG.visual.particles.explosionCount *
+        GAME_CONFIG.visual.particles.deathMultiplier;
+      i++
+    ) {
       particles.push(
-        new Particle(player.x, player.y, Math.random() * GAME_CONFIG.visual.particles.maxSize, GAME_CONFIG.visual.colors.danger, {
-          x: (Math.random() - 0.5) * GAME_CONFIG.visual.particles.explosionSpeed * GAME_CONFIG.visual.particles.deathSpeedMultiplier,
-          y: (Math.random() - 0.5) * GAME_CONFIG.visual.particles.explosionSpeed * GAME_CONFIG.visual.particles.deathSpeedMultiplier,
-        })
+        new Particle(
+          player.x,
+          player.y,
+          Math.random() * GAME_CONFIG.visual.particles.maxSize,
+          GAME_CONFIG.visual.colors.danger,
+          {
+            x:
+              (Math.random() - 0.5) *
+              GAME_CONFIG.visual.particles.explosionSpeed *
+              GAME_CONFIG.visual.particles.deathSpeedMultiplier,
+            y:
+              (Math.random() - 0.5) *
+              GAME_CONFIG.visual.particles.explosionSpeed *
+              GAME_CONFIG.visual.particles.deathSpeedMultiplier,
+          }
+        )
       );
     }
   }
@@ -241,7 +259,11 @@ class GameOverState extends GameState {
     score = ~~score;
     if (score > highScore) {
       highScore = score;
-      localStorage.setItem(GAME_CONFIG.core.localStorageKey || GAME_CONFIG.advanced.localStorageKey, highScore);
+      localStorage.setItem(
+        GAME_CONFIG.core.localStorageKey ||
+          GAME_CONFIG.advanced.localStorageKey,
+        highScore
+      );
       uiElements.newHighscoreMsg.style.display = "block";
     } else {
       uiElements.newHighscoreMsg.style.display = "none";
@@ -252,7 +274,9 @@ class GameOverState extends GameState {
     const minutes = Math.floor(survivalTime / 60);
     const seconds = survivalTime % 60;
     uiElements.finalScoreEl.innerText = `${score}`;
-    uiElements.finalTimeEl.innerText = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    uiElements.finalTimeEl.innerText = `${minutes}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
     uiElements.gameOverScreen.style.display = "flex";
   }
 
@@ -272,16 +296,14 @@ class GameOverState extends GameState {
         time: survivalTime,
         deathBy: this.data.reason || "unknown",
         deathTime: new Date().toISOString(),
-        clientIP: clientIP
+        clientIP: clientIP,
       };
-
-      console.log("Game Over Data:", gameOverData);
 
       // Send to backend if available
       if (window.BackendAPI && BACKEND_CONFIG.USE_BACKEND) {
         try {
           await BackendAPI.submitScore(
-            "Player", // username - can be made configurable later
+            "Khanh",
             gameOverData.score,
             gameOverData.time,
             gameOverData.deathBy
@@ -294,16 +316,17 @@ class GameOverState extends GameState {
       }
 
       // Store locally as backup
-      const localGameHistory = JSON.parse(localStorage.getItem('gameHistory') || '[]');
+      const localGameHistory = JSON.parse(
+        localStorage.getItem("gameHistory") || "[]"
+      );
       localGameHistory.push(gameOverData);
-      
+
       // Keep only last 100 games
       if (localGameHistory.length > 100) {
         localGameHistory.splice(0, localGameHistory.length - 100);
       }
-      
-      localStorage.setItem('gameHistory', JSON.stringify(localGameHistory));
 
+      localStorage.setItem("gameHistory", JSON.stringify(localGameHistory));
     } catch (error) {
       console.error("Error sending game over data:", error);
     }
@@ -323,7 +346,7 @@ class LeaderboardState extends GameState {
     uiElements.howToPlayScreen.style.display = "none";
     uiElements.leaderboardScreen.style.display = "flex";
     // Call function to populate leaderboard data
-    if (typeof updateLeaderboard === 'function') {
+    if (typeof updateLeaderboard === "function") {
       updateLeaderboard();
     }
   }

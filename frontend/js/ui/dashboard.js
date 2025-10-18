@@ -40,80 +40,78 @@ function setupTabSwitching() {
 
 // Connect to WebSocket for real-time updates
 function connectWebSocket() {
-  if (!BACKEND_CONFIG.USE_BACKEND || !BACKEND_CONFIG.API_BASE_URL) {
-    updateConnectionStatus('offline', 'Backend disabled');
+  if (!BACKEND_CONFIG.USE_BACKEND || !BACKEND_CONFIG.WS_BASE_URL) {
+    updateConnectionStatus("offline", "Backend disabled");
     return;
   }
 
   try {
-    // Convert HTTP URL to WebSocket URL
-    const wsUrl = BACKEND_CONFIG.API_BASE_URL.replace('https://', 'wss://').replace('http://', 'ws://');
-    
-    updateConnectionStatus('connecting', 'Connecting...');
-    
+    const wsUrl = BACKEND_CONFIG.WS_BASE_URL;
+
+    updateConnectionStatus("connecting", "Connecting...");
+
     websocket = new WebSocket(wsUrl);
-    
+
     websocket.onopen = () => {
-      console.log('WebSocket connected');
+      console.log("WebSocket connected");
       isConnected = true;
-      updateConnectionStatus('connected', 'Live');
-      
+      updateConnectionStatus("connected", "Live");
+
       // Subscribe to real-time updates
-      websocket.send(JSON.stringify({ action: 'subscribe' }));
+      websocket.send(JSON.stringify({ action: "subscribe" }));
     };
-    
+
     websocket.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
         handleWebSocketMessage(message);
       } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
+        console.error("Error parsing WebSocket message:", error);
       }
     };
-    
+
     websocket.onclose = () => {
-      console.log('WebSocket disconnected');
+      console.log("WebSocket disconnected");
       isConnected = false;
-      updateConnectionStatus('disconnected', 'Disconnected');
-      
+      updateConnectionStatus("disconnected", "Disconnected");
+
       // Attempt to reconnect after 5 seconds
       setTimeout(connectWebSocket, 5000);
     };
-    
+
     websocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      updateConnectionStatus('error', 'Connection error');
+      console.error("WebSocket error:", error);
+      updateConnectionStatus("error", "Connection error");
     };
-    
   } catch (error) {
-    console.error('Failed to create WebSocket:', error);
-    updateConnectionStatus('error', 'Connection failed');
+    console.error("Failed to create WebSocket:", error);
+    updateConnectionStatus("error", "Connection failed");
   }
 }
 
 // Handle incoming WebSocket messages
 function handleWebSocketMessage(message) {
   switch (message.type) {
-    case 'leaderboard_update':
-      if (message.data.type === 'global') {
+    case "leaderboard_update":
+      if (message.data.type === "global") {
         globalLeaderboard = message.data.leaderboard;
         updateGlobalLeaderboard();
       }
       break;
-      
-    case 'country_update':
-      if (message.data.type === 'countries') {
+
+    case "country_update":
+      if (message.data.type === "countries") {
         countryLeaderboard = message.data.countries;
         updateCountryLeaderboard();
       }
       break;
-      
-    case 'pong':
+
+    case "pong":
       // Keep-alive response
       break;
-      
+
     default:
-      console.log('Unknown WebSocket message type:', message.type);
+      console.log("Unknown WebSocket message type:", message.type);
   }
 }
 
@@ -126,7 +124,7 @@ async function loadInitialData() {
       globalLeaderboard = globalData.leaderboard;
       updateGlobalLeaderboard();
     }
-    
+
     // Load country leaderboard
     const countryData = await BackendAPI.fetchLeaderboardByCountry(null, 10);
     if (countryData && countryData.countries) {
@@ -134,7 +132,7 @@ async function loadInitialData() {
       updateCountryLeaderboard();
     }
   } catch (error) {
-    console.error('Error loading initial leaderboard data:', error);
+    console.error("Error loading initial leaderboard data:", error);
     showOfflineLeaderboard();
   }
 }
@@ -145,7 +143,8 @@ function updateGlobalLeaderboard() {
   if (!leaderboardList) return;
 
   if (globalLeaderboard.length === 0) {
-    leaderboardList.innerHTML = '<div class="no-data">No scores yet. Be the first!</div>';
+    leaderboardList.innerHTML =
+      '<div class="no-data">No scores yet. Be the first!</div>';
     return;
   }
 
@@ -154,15 +153,15 @@ function updateGlobalLeaderboard() {
   globalLeaderboard.forEach((entry, index) => {
     const entryElement = document.createElement("div");
     entryElement.className = "leaderboard-entry";
-    
+
     // Add special styling for top 3
     if (index < 3) {
       entryElement.classList.add(`rank-${index + 1}`);
     }
-    
+
     const timeFormatted = formatTime(entry.survivalTime || 0);
     const countryFlag = getCountryFlag(entry.countryCode);
-    
+
     entryElement.innerHTML = `
       <div class="rank">
         ${index < 3 ? getRankMedal(index + 1) : `#${index + 1}`}
@@ -170,13 +169,13 @@ function updateGlobalLeaderboard() {
       <div class="player-info">
         <div class="username">${escapeHtml(entry.username)}</div>
         <div class="country">
-          ${countryFlag} ${entry.country || 'Unknown'}
+          ${countryFlag} ${entry.country || "Unknown"}
         </div>
       </div>
       <div class="score">${entry.score.toLocaleString()}</div>
       <div class="time">${timeFormatted}</div>
     `;
-    
+
     leaderboardList.appendChild(entryElement);
   });
 }
@@ -187,7 +186,8 @@ function updateCountryLeaderboard() {
   if (!leaderboardList) return;
 
   if (countryLeaderboard.length === 0) {
-    leaderboardList.innerHTML = '<div class="no-data">No country data yet.</div>';
+    leaderboardList.innerHTML =
+      '<div class="no-data">No country data yet.</div>';
     return;
   }
 
@@ -196,15 +196,15 @@ function updateCountryLeaderboard() {
   countryLeaderboard.forEach((entry, index) => {
     const entryElement = document.createElement("div");
     entryElement.className = "country-entry";
-    
+
     // Add special styling for top 3
     if (index < 3) {
       entryElement.classList.add(`rank-${index + 1}`);
     }
-    
+
     const countryFlag = getCountryFlag(entry.country);
     const top10Score = entry.top10PercentScore || entry.totalScore;
-    
+
     entryElement.innerHTML = `
       <div class="rank">
         ${index < 3 ? getRankMedal(index + 1) : `#${index + 1}`}
@@ -222,32 +222,35 @@ function updateCountryLeaderboard() {
         <div class="avg-score">Avg: ${entry.averageScore.toLocaleString()}</div>
       </div>
     `;
-    
+
     leaderboardList.appendChild(entryElement);
   });
 }
 
 // Show offline leaderboard (from localStorage)
 function showOfflineLeaderboard() {
-  const gameHistory = JSON.parse(localStorage.getItem('gameHistory') || '[]');
-  const sortedHistory = gameHistory.sort((a, b) => b.score - a.score).slice(0, 10);
-  
+  const gameHistory = JSON.parse(localStorage.getItem("gameHistory") || "[]");
+  const sortedHistory = gameHistory
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+
   const leaderboardList = document.getElementById("global-leaderboard-list");
   if (!leaderboardList) return;
-  
+
   if (sortedHistory.length === 0) {
-    leaderboardList.innerHTML = '<div class="no-data">No local scores yet. Play a game!</div>';
+    leaderboardList.innerHTML =
+      '<div class="no-data">No local scores yet. Play a game!</div>';
     return;
   }
-  
+
   leaderboardList.innerHTML = "";
-  
+
   sortedHistory.forEach((entry, index) => {
     const entryElement = document.createElement("div");
     entryElement.className = "leaderboard-entry offline";
-    
+
     const timeFormatted = formatTime(entry.time || 0);
-    
+
     entryElement.innerHTML = `
       <div class="rank">#${index + 1}</div>
       <div class="player-info">
@@ -257,7 +260,7 @@ function showOfflineLeaderboard() {
       <div class="score">${entry.score.toLocaleString()}</div>
       <div class="time">${timeFormatted}</div>
     `;
-    
+
     leaderboardList.appendChild(entryElement);
   });
 }
@@ -269,20 +272,30 @@ function updatePlayerStats() {
 
   // Get stats from localStorage
   const highScore = localStorage.getItem(GAME_CONFIG.core.localStorageKey) || 0;
-  const gameHistory = JSON.parse(localStorage.getItem('gameHistory') || '[]');
+  const gameHistory = JSON.parse(localStorage.getItem("gameHistory") || "[]");
   const gamesPlayed = gameHistory.length;
-  const totalTime = gameHistory.reduce((sum, game) => sum + (game.time || 0), 0);
-  const averageScore = gamesPlayed > 0 ? Math.floor(gameHistory.reduce((sum, game) => sum + game.score, 0) / gamesPlayed) : 0;
+  const totalTime = gameHistory.reduce(
+    (sum, game) => sum + (game.time || 0),
+    0
+  );
+  const averageScore =
+    gamesPlayed > 0
+      ? Math.floor(
+          gameHistory.reduce((sum, game) => sum + game.score, 0) / gamesPlayed
+        )
+      : 0;
 
   // Calculate death statistics
   const deathStats = {};
-  gameHistory.forEach(game => {
-    const cause = game.deathBy || 'unknown';
+  gameHistory.forEach((game) => {
+    const cause = game.deathBy || "unknown";
     deathStats[cause] = (deathStats[cause] || 0) + 1;
   });
 
-  const mostCommonDeath = Object.keys(deathStats).reduce((a, b) => 
-    deathStats[a] > deathStats[b] ? a : b, 'none');
+  const mostCommonDeath = Object.keys(deathStats).reduce(
+    (a, b) => (deathStats[a] > deathStats[b] ? a : b),
+    "none"
+  );
 
   playerStats.innerHTML = `
     <div class="stats-grid">
@@ -308,7 +321,9 @@ function updatePlayerStats() {
       </div>
       <div class="stat-item">
         <div class="stat-label">⚡ Best Survival</div>
-        <div class="stat-value">${formatTime(Math.max(...gameHistory.map(g => g.time || 0), 0))}</div>
+        <div class="stat-value">${formatTime(
+          Math.max(...gameHistory.map((g) => g.time || 0), 0)
+        )}</div>
       </div>
     </div>
   `;
@@ -316,19 +331,19 @@ function updatePlayerStats() {
 
 // Update connection status indicator
 function updateConnectionStatus(status, text) {
-  const indicator = document.getElementById('connection-indicator');
-  const statusText = document.getElementById('connection-text');
-  
+  const indicator = document.getElementById("connection-indicator");
+  const statusText = document.getElementById("connection-text");
+
   if (indicator && statusText) {
     const statusConfig = {
-      'connecting': { icon: '🟡', text: text },
-      'connected': { icon: '🟢', text: text },
-      'disconnected': { icon: '🔴', text: text },
-      'error': { icon: '🔴', text: text },
-      'offline': { icon: '⚫', text: text }
+      connecting: { icon: "🟡", text: text },
+      connected: { icon: "🟢", text: text },
+      disconnected: { icon: "🔴", text: text },
+      error: { icon: "🔴", text: text },
+      offline: { icon: "⚫", text: text },
     };
-    
-    const config = statusConfig[status] || statusConfig['offline'];
+
+    const config = statusConfig[status] || statusConfig["offline"];
     indicator.textContent = config.icon;
     statusText.textContent = config.text;
   }
@@ -343,42 +358,42 @@ function formatTime(seconds) {
 
 function formatDeathCause(cause) {
   const deathCauses = {
-    'asteroid collision': '☄️ Asteroid',
-    'missile collision': '🚀 Missile',
-    'laser collision': '⚡ Laser',
-    'black hole collision': '🕳️ Black Hole',
-    'plasma field burn': '🔥 Plasma',
-    'crystal cluster collision': '💎 Crystal',
-    'laser mine collision': '💣 Mine',
-    'unknown': '❓ Unknown'
+    "asteroid collision": "☄️ Asteroid",
+    "missile collision": "🚀 Missile",
+    "laser collision": "⚡ Laser",
+    "black hole collision": "🕳️ Black Hole",
+    "plasma field burn": "🔥 Plasma",
+    "crystal cluster collision": "💎 Crystal",
+    "laser mine collision": "💣 Mine",
+    unknown: "❓ Unknown",
   };
   return deathCauses[cause] || `❓ ${cause}`;
 }
 
 function getRankMedal(rank) {
-  const medals = ['🥇', '🥈', '🥉'];
+  const medals = ["🥇", "🥈", "🥉"];
   return medals[rank - 1] || `#${rank}`;
 }
 
 function getCountryFlag(countryCode) {
-  if (!countryCode || countryCode === 'XX') return '🌍';
-  
+  if (!countryCode || countryCode === "XX") return "🌍";
+
   // Convert country code to flag emoji
   const codePoints = countryCode
     .toUpperCase()
-    .split('')
-    .map(char => 127397 + char.charCodeAt());
+    .split("")
+    .map((char) => 127397 + char.charCodeAt());
   return String.fromCodePoint(...codePoints);
 }
 
 function escapeHtml(text) {
-  const div = document.createElement('div');
+  const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
 }
 
 // Cleanup WebSocket on page unload
-window.addEventListener('beforeunload', () => {
+window.addEventListener("beforeunload", () => {
   if (websocket) {
     websocket.close();
   }
