@@ -3,19 +3,64 @@
 // Example: 'https://abc123.execute-api.us-east-1.amazonaws.com/prod'
 
 const BACKEND_CONFIG = {
-  // Set this to your deployed API Gateway URL, or leave empty to use local storage only
-  API_BASE_URL:
-    "https://0jfeiivfpb.execute-api.ap-southeast-1.amazonaws.com/prod", // Update this after deploying the backend
-  WS_BASE_URL: "wss://ie81hxoio7.execute-api.ap-southeast-1.amazonaws.com/prod", // Update this after deploying the backend
   // Enable/disable backend integration
-  USE_BACKEND: true, // Set to true after deploying backend and updating API_BASE_URL
-
+  USE_BACKEND: true,
   // Fallback to local storage if backend is unavailable
   FALLBACK_TO_LOCAL: true,
+  // Security settings
+  ENABLE_ENDPOINT_ROTATION: true,
+  ENDPOINT_ROTATION_INTERVAL: 3600000, // 1 hour
 };
 
 // API Service for communicating with backend
 const BackendAPI = {
+  /**
+   * Initialize API with secure endpoints
+   */
+  async initialize() {
+    if (window.endpointManager) {
+      await window.endpointManager.initialize();
+      
+      // Set up endpoint rotation if enabled
+      if (BACKEND_CONFIG.ENABLE_ENDPOINT_ROTATION) {
+        setInterval(() => {
+          window.endpointManager.rotateEndpoints();
+        }, BACKEND_CONFIG.ENDPOINT_ROTATION_INTERVAL);
+      }
+    }
+  },
+
+  /**
+   * Get secure API base URL
+   */
+  getApiBaseUrl() {
+    if (window.endpointManager && window.endpointManager.getApiEndpoint()) {
+      return window.endpointManager.getApiEndpoint();
+    }
+    
+    // Fallback for development
+    if (window.location.hostname === 'localhost') {
+      return 'http://localhost:3000';
+    }
+    
+    return null;
+  },
+
+  /**
+   * Get secure WebSocket URL
+   */
+  getWsUrl() {
+    if (window.endpointManager && window.endpointManager.getWsEndpoint()) {
+      return window.endpointManager.getWsEndpoint();
+    }
+    
+    // Fallback for development
+    if (window.location.hostname === 'localhost') {
+      return 'ws://localhost:3001';
+    }
+    
+    return null;
+  },
   /**
    * Get client IP address (backend will also detect it from request headers)
    */
@@ -44,7 +89,9 @@ const BackendAPI = {
    * Submit game score to backend
    */
   async submitScore(username, score, survivalTime, deathCause) {
-    if (!BACKEND_CONFIG.USE_BACKEND || !BACKEND_CONFIG.API_BASE_URL) {
+    const apiBaseUrl = this.getApiBaseUrl();
+    
+    if (!BACKEND_CONFIG.USE_BACKEND || !apiBaseUrl) {
       console.log("Backend integration disabled, using local storage only");
       return null;
     }
@@ -52,9 +99,19 @@ const BackendAPI = {
     try {
       // Get client IP (optional, backend can also extract from headers)
       const clientIP = await this.getClientIP();
+      
+      // Get user identification
+      let userId = null;
+      let fingerprint = null;
+      
+      if (window.userIdentification && window.userIdentification.isInitialized()) {
+        const userInfo = window.userIdentification.getUserInfo();
+        userId = userInfo.userId;
+        fingerprint = userInfo.fingerprint;
+      }
 
       const response = await fetch(
-        `${BACKEND_CONFIG.API_BASE_URL}/submit-score`,
+        `${apiBaseUrl}/submit-score`,
         {
           method: "POST",
           headers: {
@@ -66,6 +123,8 @@ const BackendAPI = {
             survivalTime: Math.floor(survivalTime),
             deathCause: deathCause || "unknown",
             clientIP: clientIP, // Send client IP to backend
+            userId: userId, // Unique user identifier
+            fingerprint: fingerprint, // Browser fingerprint
             userAgent: navigator.userAgent,
             timestamp: new Date().toISOString(),
           }),
@@ -94,13 +153,15 @@ const BackendAPI = {
    * Fetch leaderboard from backend
    */
   async fetchLeaderboard(limit = 100, country = null) {
-    if (!BACKEND_CONFIG.USE_BACKEND || !BACKEND_CONFIG.API_BASE_URL) {
+    const apiBaseUrl = this.getApiBaseUrl();
+    
+    if (!BACKEND_CONFIG.USE_BACKEND || !apiBaseUrl) {
       console.log("Backend integration disabled, using local storage only");
       return null;
     }
 
     try {
-      let url = `${BACKEND_CONFIG.API_BASE_URL}/leaderboard?limit=${limit}`;
+      let url = `${apiBaseUrl}/leaderboard?limit=${limit}`;
       if (country) {
         url += `&country=${country}`;
       }
@@ -129,13 +190,15 @@ const BackendAPI = {
    * Fetch leaderboard by country
    */
   async fetchLeaderboardByCountry(country = null, limit = 10) {
-    if (!BACKEND_CONFIG.USE_BACKEND || !BACKEND_CONFIG.API_BASE_URL) {
+    const apiBaseUrl = this.getApiBaseUrl();
+    
+    if (!BACKEND_CONFIG.USE_BACKEND || !apiBaseUrl) {
       console.log("Backend integration disabled");
       return null;
     }
 
     try {
-      let url = `${BACKEND_CONFIG.API_BASE_URL}/leaderboard/country?limit=${limit}`;
+      let url = `${apiBaseUrl}/leaderboard/country?limit=${limit}`;
       if (country) {
         url += `&country=${country}`;
       }
@@ -156,14 +219,16 @@ const BackendAPI = {
    * Fetch death statistics from backend
    */
   async fetchDeathStatistics() {
-    if (!BACKEND_CONFIG.USE_BACKEND || !BACKEND_CONFIG.API_BASE_URL) {
+    const apiBaseUrl = this.getApiBaseUrl();
+    
+    if (!BACKEND_CONFIG.USE_BACKEND || !apiBaseUrl) {
       console.log("Backend integration disabled");
       return null;
     }
 
     try {
       const response = await fetch(
-        `${BACKEND_CONFIG.API_BASE_URL}/death-stats`
+        `${apiBaseUrl}/death-stats`
       );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -180,12 +245,14 @@ const BackendAPI = {
    * Test connection to backend
    */
   async testConnection() {
-    if (!BACKEND_CONFIG.USE_BACKEND || !BACKEND_CONFIG.API_BASE_URL) {
+    const apiBaseUrl = this.getApiBaseUrl();
+    
+    if (!BACKEND_CONFIG.USE_BACKEND || !apiBaseUrl) {
       throw new Error("Backend integration disabled");
     }
 
     try {
-      const response = await fetch(`${BACKEND_CONFIG.API_BASE_URL}/health`, {
+      const response = await fetch(`${apiBaseUrl}/health`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

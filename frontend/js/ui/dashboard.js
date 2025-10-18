@@ -4,6 +4,7 @@ let websocket = null;
 let globalLeaderboard = [];
 let countryLeaderboard = [];
 let isConnected = false;
+let heartbeatInterval = null;
 
 // Initialize dashboard functionality
 function initializeDashboard() {
@@ -40,13 +41,14 @@ function setupTabSwitching() {
 
 // Connect to WebSocket for real-time updates
 function connectWebSocket() {
-  if (!BACKEND_CONFIG.USE_BACKEND || !BACKEND_CONFIG.WS_BASE_URL) {
+  const wsUrl = window.BackendAPI ? window.BackendAPI.getWsUrl() : null;
+  
+  if (!BACKEND_CONFIG.USE_BACKEND || !wsUrl) {
     updateConnectionStatus("offline", "Backend disabled");
     return;
   }
 
   try {
-    const wsUrl = BACKEND_CONFIG.WS_BASE_URL;
 
     updateConnectionStatus("connecting", "Connecting...");
 
@@ -59,6 +61,9 @@ function connectWebSocket() {
 
       // Subscribe to real-time updates
       websocket.send(JSON.stringify({ action: "subscribe" }));
+      
+      // Start heartbeat
+      startHeartbeat();
     };
 
     websocket.onmessage = (event) => {
@@ -74,6 +79,9 @@ function connectWebSocket() {
       console.log("WebSocket disconnected");
       isConnected = false;
       updateConnectionStatus("disconnected", "Disconnected");
+      
+      // Stop heartbeat
+      stopHeartbeat();
 
       // Attempt to reconnect after 5 seconds
       setTimeout(connectWebSocket, 5000);
@@ -93,6 +101,7 @@ function connectWebSocket() {
 function handleWebSocketMessage(message) {
   switch (message.type) {
     case "leaderboard_update":
+      console.log("Received leaderboard update:", message.data);
       if (message.data.type === "global") {
         globalLeaderboard = message.data.leaderboard;
         updateGlobalLeaderboard();
@@ -100,6 +109,7 @@ function handleWebSocketMessage(message) {
       break;
 
     case "country_update":
+      console.log("Received country update:", message.data);
       if (message.data.type === "countries") {
         countryLeaderboard = message.data.countries;
         updateCountryLeaderboard();
@@ -107,7 +117,12 @@ function handleWebSocketMessage(message) {
       break;
 
     case "pong":
-      // Keep-alive response
+      // Keep-alive response - connection is healthy
+      console.log("Received pong from server");
+      break;
+
+    case "subscribed":
+      console.log("Successfully subscribed to real-time updates");
       break;
 
     default:
@@ -392,8 +407,28 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// Start heartbeat to keep connection alive
+function startHeartbeat() {
+  stopHeartbeat(); // Clear any existing interval
+  
+  heartbeatInterval = setInterval(() => {
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+      websocket.send(JSON.stringify({ action: "ping" }));
+    }
+  }, 30000); // Ping every 30 seconds
+}
+
+// Stop heartbeat
+function stopHeartbeat() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+}
+
 // Cleanup WebSocket on page unload
 window.addEventListener("beforeunload", () => {
+  stopHeartbeat();
   if (websocket) {
     websocket.close();
   }

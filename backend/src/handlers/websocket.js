@@ -61,12 +61,18 @@ exports.defaultHandler = async (event) => {
     // Handle different message types
     switch (body.action) {
       case 'ping':
+        // Send pong response back to client
+        const { sendToConnection, initializeApiGateway } = require('../utils/websocket');
+        const apiGateway = initializeApiGateway(event);
+        
+        await sendToConnection(apiGateway, connectionId, {
+          type: 'pong',
+          timestamp: Date.now()
+        });
+        
         return {
           statusCode: 200,
-          body: JSON.stringify({ 
-            type: 'pong', 
-            timestamp: Date.now() 
-          })
+          body: JSON.stringify({ message: 'Pong sent' })
         };
         
       case 'subscribe':

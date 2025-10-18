@@ -8,15 +8,19 @@ let currentEventTimeout = null;
  * This function should be the ONLY way to show event text.
  */
 function showEventText(text) {
+  console.log('showEventText called with:', text, 'isGameRunning:', window.isGameRunning);
+  
   // FIX: Đảm bảo không hiển thị hoặc xếp hàng sự kiện nếu game đã kết thúc.
   if (!window.isGameRunning) {
     eventTextQueue.length = 0; // Xóa các sự kiện đang chờ
+    console.log('Game not running, skipping event text');
     return;
   }
 
   // Add to queue if currently showing text
   if (isShowingEventText) {
     eventTextQueue.push(text);
+    console.log('Added to queue:', text);
     return;
   }
 
@@ -29,16 +33,28 @@ function showEventText(text) {
  * Internal function to visually display the text and set fade timers/animations.
  */
 function displayEventText(text) {
+  console.log('displayEventText called with:', text);
+  
   // Clear any existing timeout
   if (currentEventTimeout) {
     clearTimeout(currentEventTimeout);
     currentEventTimeout = null;
   }
 
-  uiElements.eventText.innerText = text;
-  uiElements.eventText.style.fontSize = GAME_CONFIG.ui.eventText.fontSize;
-  uiElements.eventText.style.opacity = "1";
-  uiElements.eventText.style.textShadow = "0 0 15px #ffff00, 0 0 25px #ffff00";
+  // Get event text element safely
+  const eventTextElement = document.getElementById("event-text");
+  if (!eventTextElement) {
+    console.warn("Event text element not found!");
+    return;
+  }
+
+  console.log('Event text element found, displaying:', text);
+  
+  eventTextElement.innerText = text;
+  eventTextElement.style.fontSize = GAME_CONFIG.ui.eventText.fontSize;
+  eventTextElement.style.opacity = "1";
+  eventTextElement.style.textShadow = "0 0 15px #ffff00, 0 0 25px #ffff00";
+  eventTextElement.style.zIndex = "1000"; // Ensure it's on top
 
   // Thêm hiệu ứng rung nhẹ để thu hút sự chú ý
   let shakeCount = 0;
@@ -46,18 +62,18 @@ function displayEventText(text) {
     shakeCount++;
     if (shakeCount > 5) {
       clearInterval(shakeInterval);
-      uiElements.eventText.style.transform = "translateX(-50%)";
+      eventTextElement.style.transform = "translateX(-50%)";
       return;
     }
 
     const direction = shakeCount % 2 === 0 ? 1 : -1;
-    uiElements.eventText.style.transform = `translateX(calc(-50% + ${
+    eventTextElement.style.transform = `translateX(calc(-50% + ${
       direction * 3
     }px))`;
   }, 50);
 
   // Thêm hiệu ứng flash màu sắc
-  uiElements.eventText.style.animation = "textFlash 0.5s linear 3";
+  eventTextElement.style.animation = "textFlash 0.5s linear 3";
   if (!document.querySelector("#event-text-style")) {
     const style = document.createElement("style");
     style.id = "event-text-style";
@@ -72,9 +88,9 @@ function displayEventText(text) {
   }
 
   currentEventTimeout = setTimeout(() => {
-    uiElements.eventText.style.opacity = "0";
-    uiElements.eventText.style.textShadow = "none";
-    uiElements.eventText.style.animation = "none";
+    eventTextElement.style.opacity = "0";
+    eventTextElement.style.textShadow = "none";
+    eventTextElement.style.animation = "none";
 
     // Process next text in queue
     isShowingEventText = false;
@@ -84,7 +100,7 @@ function displayEventText(text) {
       const nextText = eventTextQueue.shift();
       showEventText(nextText);
     }
-  }, GAME_CONFIG.ui.eventText.duration);
+  }, GAME_CONFIG.ui.eventText.duration); // duration already in milliseconds
 }
 
 /**
@@ -100,12 +116,13 @@ function resetEventSystem() {
   }
   isShowingEventText = false;
 
-  if (typeof uiElements !== "undefined" && uiElements.eventText) {
-    uiElements.eventText.style.opacity = "0";
-    uiElements.eventText.style.textShadow = "none";
-    uiElements.eventText.style.animation = "none";
+  const eventTextElement = document.getElementById("event-text");
+  if (eventTextElement) {
+    eventTextElement.style.opacity = "0";
+    eventTextElement.style.textShadow = "none";
+    eventTextElement.style.animation = "none";
     // Ensure the transform is reset after the shake interval is done
-    uiElements.eventText.style.transform = "translateX(-50%)";
+    eventTextElement.style.transform = "translateX(-50%)";
   }
 }
 
@@ -748,5 +765,36 @@ function triggerRandomEvent() {
   }
 }
 
+/**
+ * Test function for event text display
+ */
+function testEventText() {
+  console.log('Testing event text display...');
+  const eventTextElement = document.getElementById("event-text");
+  if (!eventTextElement) {
+    console.error("Event text element not found!");
+    return;
+  }
+  
+  // Force display test text
+  eventTextElement.innerText = "⚠️ TEST EVENT TEXT ⚠️";
+  eventTextElement.style.opacity = "1";
+  eventTextElement.style.fontSize = "2.5rem";
+  eventTextElement.style.color = "#ffbb33";
+  eventTextElement.style.textShadow = "0 0 15px #ffff00, 0 0 25px #ffff00";
+  eventTextElement.style.zIndex = "1000";
+  eventTextElement.style.pointerEvents = "none";
+  
+  console.log('Test event text displayed');
+  
+  // Hide after 3 seconds
+  setTimeout(() => {
+    eventTextElement.style.opacity = "0";
+    console.log('Test event text hidden');
+  }, 3000);
+}
+
 // Expose to global scope for access from game.js
 window.triggerRandomEvent = triggerRandomEvent;
+window.showEventText = showEventText;
+window.testEventText = testEventText;

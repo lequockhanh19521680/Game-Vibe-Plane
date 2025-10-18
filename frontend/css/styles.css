@@ -240,10 +240,13 @@ button:hover {
   color: var(--highlight-color);
   text-shadow: 0 0 15px var(--highlight-color);
   opacity: 0;
-  transition: opacity 0.5s ease-in-out;
+  transition: opacity 0.3s ease-in-out;
   text-transform: uppercase;
   font-weight: 700;
   pointer-events: none;
+  z-index: 1000;
+  white-space: nowrap;
+  text-align: center;
 }
 
 #pause-button {

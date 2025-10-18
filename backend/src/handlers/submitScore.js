@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
-const { putItem, getItem, updateItem } = require('../utils/dynamodb');
+const { putItem, getItem, updateItem, getTopScores, getTopCountries } = require('../utils/dynamodb');
 const { getCountryFromIP, extractIPFromEvent } = require('../utils/geoip');
+const { broadcastLeaderboardUpdate, broadcastCountryUpdate } = require('../utils/websocket');
 
 /**
  * Submit a new score to the leaderboard
@@ -29,7 +30,7 @@ exports.handler = async (event) => {
     }
 
     // Validate required fields
-    const { username, score, survivalTime, deathCause } = body;
+    const { username, score, survivalTime, deathCause, userId, fingerprint } = body;
     
     if (!username || typeof score !== 'number' || typeof survivalTime !== 'number') {
       return {
@@ -75,6 +76,8 @@ exports.handler = async (event) => {
       city: countryInfo.city || null,
       region: countryInfo.region || null,
       clientIP: clientIP,
+      userId: userId || null, // Unique user identifier
+      fingerprint: fingerprint || null, // Browser fingerprint
       userAgent: body.userAgent || event.headers?.['user-agent'],
       timestamp,
       createdAt: new Date().toISOString()
@@ -86,6 +89,9 @@ exports.handler = async (event) => {
 
     // Update country statistics
     await updateCountryStats(countryInfo.country, Math.floor(score));
+    
+    // Trigger real-time leaderboard updates
+    await triggerLeaderboardUpdate(event);
 
     // Return success response
     return {
@@ -186,5 +192,53 @@ async function calculatePlayerRank(score) {
   } catch (error) {
     console.error('Error calculating rank:', error);
     return null;
+  }
+}
+
+/**
+ * Trigger real-time leaderboard updates
+ */
+async function triggerLeaderboardUpdate(event) {
+  try {
+    console.log('Triggering real-time leaderboard update...');
+    
+    // Get updated leaderboards
+    const [globalLeaderboard, countryLeaderboard] = await Promise.all([
+      getTopScores(10),
+      getTopCountries(10)
+    ]);
+
+    // Broadcast updates to all connected WebSocket clients
+    await Promise.all([
+      broadcastLeaderboardUpdate(event, {
+        type: 'global',
+        leaderboard: globalLeaderboard.map((entry, index) => ({
+          rank: index + 1,
+          username: entry.username,
+          score: entry.score,
+          country: entry.country,
+          countryCode: entry.countryCode,
+          survivalTime: entry.survivalTime,
+          timestamp: entry.timestamp
+        }))
+      }),
+      broadcastCountryUpdate(event, {
+        type: 'countries',
+        countries: countryLeaderboard.map((country, index) => ({
+          rank: index + 1,
+          country: country.country,
+          totalScore: country.totalScore,
+          playerCount: country.playerCount,
+          averageScore: country.averageScore,
+          top10PercentScore: country.top10PercentScore || country.totalScore
+        }))
+      })
+    ]);
+
+    console.log('Real-time leaderboard updates broadcasted successfully');
+    
+  } catch (error) {
+    console.error('Error triggering leaderboard update:', error);
+    // Don't throw error to avoid breaking score submission
   }
 }

@@ -550,7 +550,7 @@ const GAME_CONFIG = {
   // UI SETTINGS
   // =============================================================================
   ui: {
-    eventText: { duration: 500, fontSize: "1.5rem" },
+    eventText: { duration: 3000, fontSize: "2.5rem" }, // duration in milliseconds
     warning: {
       radius: 30,
       pulseIntensity: 15,
