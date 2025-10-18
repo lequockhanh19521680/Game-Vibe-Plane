@@ -9,38 +9,75 @@ class EndpointManager {
   }
 
   /**
-   * Initialize endpoints with obfuscation
+   * Initialize endpoints with modern configuration system
    */
   async initialize() {
     if (this.initialized) return;
 
     try {
-      // Obfuscated endpoint data (in production, this could be fetched from a secure endpoint)
-      const obfuscatedData = {
-        // Base64 encoded API endpoint
-        api: 'aHR0cHM6Ly8wamZlaWl2ZnBiLmV4ZWN1dGUtYXBpLmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vcHJvZA==',
-        // Base64 encoded WebSocket endpoint  
-        ws: 'd3NzOi8vaWU4MWh4b2lvNy5leGVjdXRlLWFwaS5hcC1zb3V0aGVhc3QtMS5hbWF6b25hd3MuY29tL3Byb2Q=',
-        // Additional security token (could be used for API key rotation)
-        token: 'c3RlbGxhcl9kcmlmdF9zZWN1cmVfdG9rZW5fdjE='
-      };
-
-      // Decode endpoints
-      this.endpoints.api = this.decode(obfuscatedData.api);
-      this.endpoints.ws = this.decode(obfuscatedData.ws);
-      this.endpoints.token = this.decode(obfuscatedData.token);
-
-      // Add timestamp-based validation
-      this.endpoints.timestamp = Date.now();
+      // First, try to use the new environment configuration system
+      if (window.environmentConfig) {
+        await this.initializeFromEnvironment();
+      } else {
+        // Fallback to the legacy obfuscated system
+        await this.initializeLegacy();
+      }
       
       this.initialized = true;
-      console.log('Endpoints initialized securely');
+      console.log('Endpoints initialized:', {
+        api: this.endpoints.api ? 'configured' : 'not configured',
+        websocket: this.endpoints.ws ? 'configured' : 'not configured',
+        source: window.environmentConfig ? 'environment' : 'legacy'
+      });
       
     } catch (error) {
       console.error('Failed to initialize endpoints:', error);
       // Fallback to environment detection
       this.initializeFallback();
     }
+  }
+
+  /**
+   * Initialize from modern environment configuration
+   */
+  async initializeFromEnvironment() {
+    const config = window.environmentConfig.initialize();
+    
+    this.endpoints.api = config.apiBaseUrl;
+    this.endpoints.ws = config.websocketUrl;
+    this.endpoints.timeout = config.apiTimeout;
+    this.endpoints.reconnectAttempts = config.websocketReconnectAttempts;
+    this.endpoints.reconnectDelay = config.websocketReconnectDelay;
+    this.endpoints.timestamp = Date.now();
+    
+    // Validate URLs
+    if (this.endpoints.api && !this.isValidUrl(this.endpoints.api)) {
+      console.warn('Invalid API URL detected, falling back to legacy system');
+      await this.initializeLegacy();
+    }
+  }
+
+  /**
+   * Initialize using legacy obfuscated system (fallback)
+   */
+  async initializeLegacy() {
+    // Obfuscated endpoint data (fallback for existing deployments)
+    const obfuscatedData = {
+      // Base64 encoded API endpoint
+      api: 'aHR0cHM6Ly8wamZlaWl2ZnBiLmV4ZWN1dGUtYXBpLmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vcHJvZA==',
+      // Base64 encoded WebSocket endpoint  
+      ws: 'd3NzOi8vaWU4MWh4b2lvNy5leGVjdXRlLWFwaS5hcC1zb3V0aGVhc3QtMS5hbWF6b25hd3MuY29tL3Byb2Q=',
+      // Additional security token (could be used for API key rotation)
+      token: 'c3RlbGxhcl9kcmlmdF9zZWN1cmVfdG9rZW5fdjE='
+    };
+
+    // Decode endpoints
+    this.endpoints.api = this.decode(obfuscatedData.api);
+    this.endpoints.ws = this.decode(obfuscatedData.ws);
+    this.endpoints.token = this.decode(obfuscatedData.token);
+
+    // Add timestamp-based validation
+    this.endpoints.timestamp = Date.now();
   }
 
   /**
@@ -120,17 +157,34 @@ class EndpointManager {
   }
 
   /**
+   * Validate URL format
+   */
+  isValidUrl(url) {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Validate endpoint health
    */
   async validateEndpoints() {
     if (!this.endpoints.api) return false;
 
     try {
+      const timeout = this.endpoints.timeout || 5000;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
       const response = await fetch(`${this.endpoints.api}/health`, {
         method: 'GET',
-        timeout: 5000
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
       return response.ok;
     } catch (error) {
       console.error('Endpoint validation failed:', error);

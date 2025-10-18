@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="css/leaderboard.css" />
     <link rel="stylesheet" href="css/settings.css" />
     <link rel="stylesheet" href="css/playerName.css" />
+    <link rel="stylesheet" href="css/gameUI.css" />
   </head>
   <body>
     <!-- Lớp phủ Modal - Được hiển thị bởi settingsUI.js -->
@@ -74,7 +75,9 @@
               autocomplete="off"
             />
           </div>
-          Your name will appear on the leaderboard (2-20 chars)
+          <div class="name-requirements">
+            Your name will appear on the leaderboard (2-20 chars)
+          </div>
         </div>
 
         <!-- Nhóm các nút lại cho gọn gàng hơn -->
@@ -94,14 +97,68 @@
         </div>
       </div>
 
-      <!-- Game Over Screen -->
-      <div id="game-over-screen" class="ui-element">
-        <h2>Game Over</h2>
-        <p id="final-score">Your score: 0</p>
-        <p id="final-time">Survival time: 0:00</p>
-        <p id="new-highscore-msg">New High Score!</p>
-        <button id="restart-button">Try Again</button>
-        <button id="main-menu-from-over-button">Main Menu</button>
+      <!-- Enhanced Game Over Screen -->
+      <div id="game-over-screen" class="ui-element game-over-enhanced">
+        <div class="game-over-header">
+          <h2 data-translate="gameOver.title">Game Over</h2>
+          <div id="death-cause" class="death-cause">Destroyed by asteroid</div>
+        </div>
+        
+        <div class="game-over-stats">
+          <div class="primary-stats">
+            <div class="stat-item highlight">
+              <div class="stat-label" data-translate="gameOver.yourScore">Final Score</div>
+              <div id="final-score" class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label" data-translate="gameOver.survivalTime">Survival Time</div>
+              <div id="final-time" class="stat-value">0:00</div>
+            </div>
+          </div>
+          
+          <div class="secondary-stats">
+            <div class="stat-row">
+              <span class="stat-name">Level Reached:</span>
+              <span id="final-level" class="stat-data">1</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-name">Enemies Avoided:</span>
+              <span id="enemies-avoided" class="stat-data">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-name">Power-ups Collected:</span>
+              <span id="powerups-collected" class="stat-data">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-name">Distance Traveled:</span>
+              <span id="distance-traveled" class="stat-data">0m</span>
+            </div>
+          </div>
+          
+          <div class="achievement-section" id="achievements-section" style="display: none;">
+            <h4>🏆 Achievements Unlocked</h4>
+            <div id="achievements-list" class="achievements-list"></div>
+          </div>
+        </div>
+        
+        <div id="new-highscore-msg" class="new-record-banner">
+          <div class="record-icon">👑</div>
+          <div class="record-text">
+            <div class="record-title" data-translate="gameOver.newHighScore">New High Score!</div>
+            <div class="record-subtitle">You're now in the top ranks!</div>
+          </div>
+        </div>
+        
+        <div class="game-over-actions">
+          <button id="restart-button" class="action-button primary" data-translate="gameOver.tryAgain">
+            <span class="button-icon">🔄</span>
+            <span class="button-text">Try Again</span>
+          </button>
+          <button id="main-menu-from-over-button" class="action-button secondary" data-translate="gameOver.mainMenu">
+            <span class="button-icon">🏠</span>
+            <span class="button-text">Main Menu</span>
+          </button>
+        </div>
       </div>
 
       <!-- Leaderboard Screen -->
@@ -177,12 +234,58 @@
         <button id="back-to-main-from-how-to-play-button">Back</button>
       </div>
 
-      <!-- Pause Menu -->
-      <div id="pause-menu" class="ui-element" style="display: none">
-        <h2>Paused</h2>
-        <button id="resume-button">Resume</button>
-        <button id="restart-from-pause-button">Restart</button>
-        <button id="main-menu-from-pause-button">Main Menu</button>
+      <!-- Enhanced Pause Menu -->
+      <div id="pause-menu" class="ui-element pause-enhanced" style="display: none">
+        <div class="pause-header">
+          <h2 data-translate="pause.title">Game Paused</h2>
+          <div class="pause-subtitle">Take a break, you're doing great!</div>
+        </div>
+        
+        <div class="pause-stats">
+          <div class="current-session">
+            <h4>📊 Current Session</h4>
+            <div class="session-grid">
+              <div class="session-stat">
+                <span class="session-label">Score:</span>
+                <span id="pause-current-score" class="session-value">0</span>
+              </div>
+              <div class="session-stat">
+                <span class="session-label">Time:</span>
+                <span id="pause-current-time" class="session-value">0:00</span>
+              </div>
+              <div class="session-stat">
+                <span class="session-label">Level:</span>
+                <span id="pause-current-level" class="session-value">1</span>
+              </div>
+              <div class="session-stat">
+                <span class="session-label">High Score:</span>
+                <span id="pause-high-score" class="session-value">0</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="pause-tips">
+            <h4>💡 Pro Tips</h4>
+            <div id="pause-tip" class="tip-text">
+              Collect crystal shards for temporary shields!
+            </div>
+          </div>
+        </div>
+        
+        <div class="pause-actions">
+          <button id="resume-button" class="action-button primary" data-translate="pause.resume">
+            <span class="button-icon">▶️</span>
+            <span class="button-text">Resume Game</span>
+          </button>
+          <button id="restart-from-pause-button" class="action-button secondary" data-translate="pause.restart">
+            <span class="button-icon">🔄</span>
+            <span class="button-text">Restart</span>
+          </button>
+          <button id="main-menu-from-pause-button" class="action-button secondary" data-translate="pause.mainMenu">
+            <span class="button-icon">🏠</span>
+            <span class="button-text">Main Menu</span>
+          </button>
+        </div>
       </div>
 
       <!-- Settings Screen được tạo động bởi settingsUI.js -->
@@ -192,6 +295,7 @@
     <audio id="background-music" loop src="assets/audio/background.mp3"></audio>
 
     <script src="gameConfig.js"></script>
+    <script src="js/config/environment.js"></script>
     <script src="js/config/endpoints.js"></script>
     <script src="js/api/backendApi.js"></script>
     <script src="js/audio/audioSystem.js"></script>
@@ -213,6 +317,8 @@
     <script src="js/utils/userIdentification.js"></script>
     <script src="js/config/settings.js"></script>
     <script src="js/ui/settingsUI.js"></script>
+    <script src="js/ui/playerNameUI.js"></script>
+    <script src="js/ui/gameUI.js"></script>
     <script src="js/main.js"></script>
     <script src="js/ui/dashboard.js"></script>
     <script src="js/ui/initUI.js"></script>
