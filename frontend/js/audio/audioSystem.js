@@ -1328,9 +1328,7 @@ function playSound(soundType) {
     case "freeze":
       createFreezeSound();
       break;
-    case "supernova":
-      createSuperNovaSound();
-      break;
+
     case "plasmaStorm":
       createPlasmaStormSound();
       break;

@@ -25,13 +25,17 @@ class EntityFactory {
     }
 
     const { constructor: EntityClass, defaultConfig } = entityInfo;
-    
+
     // Merge default config with any provided config
-    if (args.length > 0 && typeof args[args.length - 1] === 'object' && args[args.length - 1].isConfig) {
+    if (
+      args.length > 0 &&
+      typeof args[args.length - 1] === "object" &&
+      args[args.length - 1].isConfig
+    ) {
       const config = { ...defaultConfig, ...args.pop() };
       return new EntityClass(...args, config);
     }
-    
+
     return new EntityClass(...args, defaultConfig);
   }
 
@@ -52,100 +56,96 @@ class EntityFactory {
    */
   registerDefaultEntities() {
     // Particles
-    this.registerEntity('particle', Particle, {
+    this.registerEntity("particle", Particle, {
       fadeSpeed: GAME_CONFIG.visual.particles.fadeSpeed,
-      maxLife: 100
+      maxLife: 100,
     });
 
     // Fragments
-    this.registerEntity('fragment', Fragment, {
+    this.registerEntity("fragment", Fragment, {
       gravity: GAME_CONFIG.fragments.gravity,
       airResistance: GAME_CONFIG.fragments.airResistance,
-      rotationSpeed: GAME_CONFIG.fragments.rotationSpeed
+      rotationSpeed: GAME_CONFIG.fragments.rotationSpeed,
     });
 
-    this.registerEntity('missileFragment', MissileFragment, {
+    this.registerEntity("missileFragment", MissileFragment, {
       ...GAME_CONFIG.fragments.missileFragments,
-      lethal: true
+      lethal: true,
     });
 
     // Asteroids
-    this.registerEntity('asteroid', Asteroid, {
+    this.registerEntity("asteroid", Asteroid, {
       colors: GAME_CONFIG.entities.asteroids.colors,
       rotationSpeed: GAME_CONFIG.entities.asteroids.rotationSpeed,
-      speedVariation: GAME_CONFIG.entities.asteroids.speedVariation
+      speedVariation: GAME_CONFIG.entities.asteroids.speedVariation,
     });
 
     // Weapons
-    this.registerEntity('missile', Missile, {
+    this.registerEntity("missile", Missile, {
       baseSpeed: GAME_CONFIG.entities.missiles.baseSpeed,
       turnSpeed: GAME_CONFIG.entities.missiles.baseTurnSpeed,
-      lifetime: GAME_CONFIG.entities.missiles.lifetime
+      lifetime: GAME_CONFIG.entities.missiles.lifetime,
     });
 
-    this.registerEntity('laser', Laser, {
+    this.registerEntity("laser", Laser, {
       warningTime: GAME_CONFIG.entities.lasers.warningTime,
-      beamDuration: GAME_CONFIG.entities.lasers.beamDuration
+      beamDuration: GAME_CONFIG.entities.lasers.beamDuration,
     });
 
     // Hazards
-    this.registerEntity('blackHole', BlackHole, {
+    this.registerEntity("blackHole", BlackHole, {
       baseRadius: GAME_CONFIG.entities.blackHoles.baseRadius,
       gravityRadius: GAME_CONFIG.entities.blackHoles.baseGravityRadius,
-      strength: GAME_CONFIG.entities.blackHoles.baseStrength
+      strength: GAME_CONFIG.entities.blackHoles.baseStrength,
     });
 
-    this.registerEntity('laserMine', LaserMine, {
+    this.registerEntity("laserMine", LaserMine, {
       radius: GAME_CONFIG.entities.laserMines.radius,
       chargeTime: GAME_CONFIG.entities.laserMines.chargeTime,
-      patterns: GAME_CONFIG.entities.laserMines.patterns
+      patterns: GAME_CONFIG.entities.laserMines.patterns,
     });
 
     // Collectibles
-    this.registerEntity('crystalCluster', CrystalCluster, {
+    this.registerEntity("crystalCluster", CrystalCluster, {
       radius: GAME_CONFIG.entities.crystalClusters.radius,
       lifetime: GAME_CONFIG.entities.crystalClusters.lifetime,
-      colors: GAME_CONFIG.entities.crystalClusters.colors
+      colors: GAME_CONFIG.entities.crystalClusters.colors,
     });
 
-    this.registerEntity('energyOrb', EnergyOrb, {
-      ...GAME_CONFIG.specialObjects.energyOrb
+    this.registerEntity("energyOrb", EnergyOrb, {
+      ...GAME_CONFIG.specialObjects.energyOrb,
     });
 
-    this.registerEntity('crystalShard', CrystalShard, {
+    this.registerEntity("crystalShard", CrystalShard, {
       magneticRange: 50,
       scoreValue: 50,
-      effect: (player) => player.activateShield()
+      effect: (player) => player.activateShield(),
     });
 
     // Special Objects
-    this.registerEntity('shieldGenerator', ShieldGenerator, {
-      ...GAME_CONFIG.specialObjects.shieldGenerator
+    this.registerEntity("shieldGenerator", ShieldGenerator, {
+      ...GAME_CONFIG.specialObjects.shieldGenerator,
     });
 
-    this.registerEntity('freezeZone', FreezeZone, {
-      ...GAME_CONFIG.specialObjects.freezeZone
+    this.registerEntity("freezeZone", FreezeZone, {
+      ...GAME_CONFIG.specialObjects.freezeZone,
     });
 
-    this.registerEntity('plasmaField', PlasmaField, {
-      ...GAME_CONFIG.specialObjects.plasmaField
+    this.registerEntity("plasmaField", PlasmaField, {
+      ...GAME_CONFIG.specialObjects.plasmaField,
     });
 
-    this.registerEntity('quantumPortal', QuantumPortal, {
+    this.registerEntity("quantumPortal", QuantumPortal, {
       lifetime: GAME_CONFIG.events.quantumTunnels.lifetime,
-      teleportForce: GAME_CONFIG.events.quantumTunnels.teleportForce
+      teleportForce: GAME_CONFIG.events.quantumTunnels.teleportForce,
     });
 
-    this.registerEntity('superNova', SuperNova, {
-      ...GAME_CONFIG.events.superNova
+    this.registerEntity("magneticStorm", MagneticStorm, {
+      ...GAME_CONFIG.specialObjects.magneticStorm,
     });
 
-    this.registerEntity('magneticStorm', MagneticStorm, {
-      ...GAME_CONFIG.specialObjects.magneticStorm
-    });
-
-    this.registerEntity('lightningStorm', LightningStorm, {
-      ...GAME_CONFIG.specialObjects.lightningStorm
+    this.registerEntity("lightningStorm", LightningStorm, {
+      ...GAME_CONFIG.specialObjects.lightningStorm,
     });
   }
 

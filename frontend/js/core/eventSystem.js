@@ -4,6 +4,12 @@ let isShowingEventText = false;
 let currentEventTimeout = null;
 
 function showEventText(text) {
+  // FIX: Đảm bảo không hiển thị hoặc xếp hàng sự kiện nếu game đã kết thúc.
+  if (!window.isGameRunning) {
+    eventTextQueue.length = 0; // Xóa các sự kiện đang chờ
+    return;
+  }
+
   // Add to queue if currently showing text
   if (isShowingEventText) {
     eventTextQueue.push(text);
@@ -97,6 +103,9 @@ function triggerChaosEvent(level) {
 }
 
 function triggerRandomEvent() {
+  // FIX: Thoát khỏi hàm nếu game không chạy để ngăn việc spawn tiếp
+  if (!window.isGameRunning) return;
+
   // Lấy danh sách trọng số sự kiện cơ bản
   const baseEventWeights = [
     // CORE EVENTS - Basic gameplay (HIGHER weights = easier game)
@@ -119,7 +128,6 @@ function triggerRandomEvent() {
     { type: "asteroidRain", weight: 20 },
     { type: "wormholePortal", weight: 10 },
     { type: "voidRifts", weight: 10 },
-    { type: "superNova", weight: 8 },
     { type: "lightningStorm", weight: 15 },
 
     // ADVANCED THREATS (Lower weights = rarer)
@@ -448,10 +456,6 @@ function triggerRandomEvent() {
       handleVoidRiftsEvent();
       break;
 
-    case "superNova":
-      handleSuperNovaEvent();
-      break;
-
     case "lightningStorm":
       handleLightningStormEvent();
       break;
@@ -667,56 +671,6 @@ function triggerRandomEvent() {
 
     playSound("warning");
     playSound("blackhole");
-  }
-
-  function handleSuperNovaEvent() {
-    eventActive.type = "superNova";
-    showEventText("⚠️ SUPERNOVA IMMINENT ⚠️");
-    const config = GAME_CONFIG.events.superNova || {};
-
-    // Supernova location
-    const superX =
-      (config.minEdgeOffset || 100) +
-      Math.random() * (canvas.width - 2 * (config.minEdgeOffset || 100));
-    const superY =
-      (config.minEdgeOffset || 100) +
-      Math.random() * (canvas.height - 2 * (config.minEdgeOffset || 100));
-
-    // Use universal warning system with enhanced mobile support
-    const warningSystem = spawnWithWarning("supernova", superX, superY, {
-      maxRadius: config.maxRadius,
-      duration: config.warningDuration || 180, // 3 second warning
-    });
-
-    warningSystem.spawn(() => {
-      const supernova = new SuperNova(superX, superY);
-      supernova.createFragmentsOnClear = config.createFragmentsOnClear || true;
-      superNovas.push(supernova);
-
-      showEventText("💥 SUPERNOVA DETONATION 💥");
-      triggerScreenShake(config.shakeIntensity || 1.5);
-
-      // Thêm hiệu ứng âm thanh mạnh hơn
-      playSound("explosion");
-      setTimeout(() => playSound("explosion"), 200);
-      setTimeout(() => playSound("blackholeDestroy"), 400);
-
-      // Thêm hiệu ứng hạt ngay tại vị trí tạo supernova
-      for (let i = 0; i < (config.initialParticleCount || 24); i++) {
-        const angle = (i / (config.initialParticleCount || 24)) * Math.PI * 2;
-        const speed =
-          (config.initialParticleMinSpeed || 5) +
-          Math.random() * (config.initialParticleSpeedVariation || 10);
-        particles.push(
-          new Particle(superX, superY, Math.random() * 4 + 2, "#ffffff", {
-            x: Math.cos(angle) * speed,
-            y: Math.sin(angle) * speed,
-          })
-        );
-      }
-    });
-
-    playSound("warning");
   }
 
   function handleLightningStormEvent() {

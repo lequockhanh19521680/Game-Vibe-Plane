@@ -57,7 +57,6 @@ let player,
   quantumPortals,
   shieldGenerators,
   freezeZones,
-  superNovas,
   wormholes,
   magneticStorms,
   lightningStorms;
@@ -87,20 +86,20 @@ let nextEventScore = GAME_CONFIG.events.interval;
 let eventActive = { type: null, endTime: 0 };
 
 function startGame() {
-  gameStateManager.changeState('playing');
+  gameStateManager.changeState("playing");
 }
 function endGame(reason = "unknown") {
   if (!isGameRunning) return;
   console.log(`Game Over! Reason: ${reason}`);
   cancelAnimationFrame(animationFrameId);
-  gameStateManager.changeState('gameOver', { reason });
+  gameStateManager.changeState("gameOver", { reason });
 }
 
 function togglePause() {
   if (isPaused) {
-    gameStateManager.changeState('playing');
+    gameStateManager.changeState("playing");
   } else {
-    gameStateManager.changeState('paused');
+    gameStateManager.changeState("paused");
   }
 }
 
@@ -117,23 +116,23 @@ restartButton.addEventListener("click", () => {
 leaderboardButton.addEventListener("click", () => {
   initAudioSystem();
   playSound("buttonHover");
-  gameStateManager.changeState('leaderboard');
+  gameStateManager.changeState("leaderboard");
 });
 
 howToPlayButton.addEventListener("click", () => {
   initAudioSystem();
   playSound("buttonHover");
-  gameStateManager.changeState('howToPlay');
+  gameStateManager.changeState("howToPlay");
 });
 
 backToMainMenuButton.addEventListener("click", () => {
   playSound("buttonHover");
-  gameStateManager.changeState('menu');
+  gameStateManager.changeState("menu");
 });
 
 backToMainFromHowToPlayButton.addEventListener("click", () => {
   playSound("buttonHover");
-  gameStateManager.changeState('menu');
+  gameStateManager.changeState("menu");
 });
 
 uiElements.pauseButton.addEventListener("click", () => {
@@ -166,7 +165,7 @@ mainMenuFromPauseButton.addEventListener("click", () => {
     stars.forEach((s) => s.draw());
   }
 
-  gameStateManager.changeState('menu');
+  gameStateManager.changeState("menu");
 });
 
 mainMenuFromOverButton.addEventListener("click", () => {
@@ -180,7 +179,7 @@ mainMenuFromOverButton.addEventListener("click", () => {
     stars.forEach((s) => s.draw());
   }
 
-  gameStateManager.changeState('menu');
+  gameStateManager.changeState("menu");
 });
 
 // Button hover sound effects
@@ -258,4 +257,4 @@ if (uiElements.highscoreDisplay) {
 }
 
 // Start in menu state
-gameStateManager.changeState('menu');
+gameStateManager.changeState("menu");

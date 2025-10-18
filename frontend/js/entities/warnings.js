@@ -35,10 +35,7 @@ class Warning extends Entity {
         warningColor = "#3d2963"; // Dark purple for void rifts
         warningSymbol = "⚠";
         break;
-      case "supernova":
-        warningColor = "#ff3333"; // Red for supernova
-        warningSymbol = "💥";
-        break;
+
       case "plasma":
         warningColor = "#ff6600"; // Orange for plasma
         warningSymbol = "🔥";

@@ -74,8 +74,6 @@ function init() {
   quantumPortals = [];
   shieldGenerators = [];
   freezeZones = [];
-  // laserTurrets removed
-  superNovas = [];
   wormholes = [];
   magneticStorms = [];
   lightningStorms = [];
@@ -128,7 +126,7 @@ function animate() {
   const distMoved = Math.hypot(mouse.x - prevMouse.x, mouse.y - prevMouse.y);
   const scorePerLevel = GAME_CONFIG.difficulty.scorePerLevel;
 
-  // Dynamic movement threshold - giảm dần theo level (dựa trên điểm số)
+  // Dynamic movement threshold
   const currentLevel = Math.floor(score / scorePerLevel) + 1; // Level tăng mỗi scorePerLevel điểm
   const dynamicThreshold = Math.max(
     GAME_CONFIG.scoring.minMovementThreshold,
@@ -173,7 +171,6 @@ function animate() {
     quantumPortals,
     shieldGenerators,
     freezeZones,
-    superNovas,
     wormholes,
     magneticStorms,
     lightningStorms,
@@ -212,7 +209,6 @@ function animate() {
   quantumPortals = quantumPortals.filter((q) => q.update() !== false);
   shieldGenerators = shieldGenerators.filter((s) => s.update() !== false);
   freezeZones = freezeZones.filter((f) => f.update() !== false);
-  superNovas = superNovas.filter((s) => s.update() !== false);
   wormholes = wormholes.filter((w) => w.update() !== false);
   magneticStorms = magneticStorms.filter((m) => m.update() !== false);
   lightningStorms = lightningStorms.filter((l) => l.update() !== false);
@@ -543,25 +539,6 @@ function animate() {
     }
   }
 
-  // --- CHỈNH SỬA LOGIC VA CHẠM CRYSTAL CLUSTER ---
-  for (const cc of crystalClusters) {
-    if (cc.state === "discharging") {
-      const dist = Math.hypot(player.x - cc.x, player.y - cc.y);
-
-      // LOGIC MỚI: Nếu khoảng cách nhỏ hơn bán kính xả năng lượng, bị tiêu diệt.
-      if (dist < cc.dischargeRadius + player.radius) {
-        if (!player.shieldActive) {
-          endGame("crystal cluster collision");
-          return;
-        }
-        // Nếu có shield, cluster bị phá hủy ngay lập tức
-        cc.state = "fading";
-      }
-    }
-  }
-  // --- END CHỈNH SỬA LOGIC VA CHẠM CRYSTAL CLUSTER ---
-
-  // Fragment vs Player collisions (now just visual effects, not lethal)
   for (let i = fragments.length - 1; i >= 0; i--) {
     const fragment = fragments[i];
 
@@ -907,13 +884,6 @@ function animate() {
     showEventText(`LEVEL ${difficultyLevel + 1}`);
     playSound("powerup");
 
-    // Chaos Manifest event removed as requested
-    // setTimeout(() => {
-    //   if (typeof triggerChaosEvent === "function") {
-    //     triggerChaosEvent(difficultyLevel);
-    //   }
-    // }, 2000);
-
     // Progressive difficulty scaling
     globalSpeedMultiplier +=
       GAME_CONFIG.difficulty.speedIncreaseStep * (1 + difficultyLevel * 0.1);
@@ -958,8 +928,16 @@ function animate() {
       GAME_CONFIG.difficulty.microSpeedIncrease *
       (1 + Math.floor(score / scorePerLevel) * 0.02); // Using score-based levels
   }
+}
 
-  // Survival milestone rewards removed as requested
+function endGame(reason = "unknown") {
+  if (!isGameRunning) return;
+  console.log(`Game Over! Reason: ${reason}`);
+  cancelAnimationFrame(animationFrameId);
+  gameStateManager.changeState("gameOver", { reason });
+
+  // FIX: Dừng mọi logic trong frame hiện tại ngay lập tức sau khi chuyển trạng thái game over.
+  return;
 }
 
 function showEventText(text) {
@@ -1000,7 +978,6 @@ function triggerRandomEvent() {
     "gravityWells",
     "meteorBombardment",
     "voidRifts",
-    "superNova",
     "lightningStorm",
   ];
   // All events available from start
@@ -1623,57 +1600,6 @@ function triggerRandomEvent() {
           }
         });
       }
-      break;
-
-    case "superNova":
-      eventActive.type = "superNova";
-      showEventText("⚠️ SUPERNOVA IMMINENT ⚠️");
-
-      // Supernova location
-      const superX = 100 + Math.random() * (canvas.width - 200);
-      const superY = 100 + Math.random() * (canvas.height - 200);
-
-      // Enhanced warning with expanding circle and multiple visual indicators
-      const supernovaWarningSystem = spawnWithWarning(
-        "supernova",
-        superX,
-        superY,
-        {
-          maxRadius: 300,
-          duration: 180, // 3 second warning
-        }
-      );
-
-      supernovaWarningSystem.spawn(() => {
-        if (isGameRunning) {
-          showEventText("💥 SUPERNOVA DETONATION 💥");
-
-          // Enhanced supernova with fragment creation
-          const supernova = new SuperNova(superX, superY);
-          supernova.createFragmentsOnClear = true;
-          superNovas.push(supernova);
-
-          // Massive screen shake
-          triggerScreenShake(1.5);
-
-          // Thêm hiệu ứng âm thanh mạnh hơn
-          playSound("explosion");
-          setTimeout(() => playSound("explosion"), 200);
-          setTimeout(() => playSound("blackholeDestroy"), 400);
-
-          // Thêm hiệu ứng hạt ngay tại vị trí tạo supernova
-          for (let i = 0; i < 24; i++) {
-            const angle = (i / 24) * Math.PI * 2;
-            const speed = 5 + Math.random() * 10;
-            particles.push(
-              new Particle(superX, superY, Math.random() * 4 + 2, "#ffffff", {
-                x: Math.cos(angle) * speed,
-                y: Math.sin(angle) * speed,
-              })
-            );
-          }
-        }
-      });
       break;
 
     case "lightningStorm":

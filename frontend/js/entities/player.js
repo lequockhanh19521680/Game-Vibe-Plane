@@ -2,10 +2,10 @@ class Player extends ColoredEntity {
   constructor(x, y, radius, color) {
     const config = {
       friction: GAME_CONFIG.player.friction,
-      maxSpeed: 20 // Reasonable max speed for player
+      maxSpeed: 20, // Reasonable max speed for player
     };
     super(x, y, radius, color, { x: 0, y: 0 }, config);
-    
+
     this.trail = [];
     this.shieldActive = false;
     this.shieldTimer = 0;
@@ -13,7 +13,8 @@ class Player extends ColoredEntity {
     this.thunderShieldActive = false;
     this.thunderShieldTimer = 0;
     this.thunderShieldDuration = GAME_CONFIG.player.thunderShieldDuration;
-    this.thunderShieldRadius = this.radius * GAME_CONFIG.player.thunderShieldRadiusMultiplier;
+    this.thunderShieldRadius =
+      this.radius * GAME_CONFIG.player.thunderShieldRadiusMultiplier;
     this.thunderBolts = [];
     this.thunderTimer = 0;
   }
@@ -217,7 +218,7 @@ class Player extends ColoredEntity {
     this.updateShields();
   }
 
-  updateTrail() {
+  updateTrail() {}
 
   activateShield() {
     this.shieldActive = true;

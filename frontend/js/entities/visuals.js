@@ -66,8 +66,7 @@ class Fragment {
   update() {
     this.x += this.velocity.x;
     this.y += this.velocity.y;
-    this.velocity.x *= GAME_CONFIG.fragments.airResistance;
-    this.velocity.y *= GAME_CONFIG.fragments.airResistance;
+
     this.rotation += this.rotationSpeed;
 
     this.life--;
@@ -123,8 +122,7 @@ class MissileFragment {
   update() {
     this.x += this.velocity.x;
     this.y += this.velocity.y;
-    this.velocity.x *= GAME_CONFIG.fragments.airResistance;
-    this.velocity.y *= GAME_CONFIG.fragments.airResistance;
+
     this.rotation += this.rotationSpeed;
 
     this.life--;
