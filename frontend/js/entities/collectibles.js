@@ -25,14 +25,7 @@ class EnergyOrb {
     const currentRadius = this.radius * pulse;
 
     // Outer glow
-    const gradient = ctx.createRadialGradient(
-      0,
-      0,
-      0,
-      0,
-      0,
-      currentRadius * 2
-    );
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, currentRadius * 2);
     gradient.addColorStop(0, "rgba(0, 255, 255, 0.8)");
     gradient.addColorStop(0.5, "rgba(0, 150, 255, 0.4)");
     gradient.addColorStop(1, "rgba(0, 100, 200, 0)");
@@ -65,10 +58,7 @@ class EnergyOrb {
       const dist = Math.hypot(fragment.x - this.x, fragment.y - this.y);
       if (dist < attractRadius && dist > 0) {
         const force = (0.1 * (attractRadius - dist)) / attractRadius;
-        const angle = Math.atan2(
-          this.y - fragment.y,
-          this.x - fragment.x
-        );
+        const angle = Math.atan2(this.y - fragment.y, this.x - fragment.x);
         fragment.velocity.x += Math.cos(angle) * force;
         fragment.velocity.y += Math.sin(angle) * force;
       }
@@ -118,16 +108,8 @@ class CrystalShard {
 
     // Outer glow effect
     if (this.isDrifting) {
-      const glowRadius =
-        this.size * 2 + Math.sin(this.sparkleTimer * 0.1) * 3;
-      const glowGradient = ctx.createRadialGradient(
-        0,
-        0,
-        0,
-        0,
-        0,
-        glowRadius
-      );
+      const glowRadius = this.size * 2 + Math.sin(this.sparkleTimer * 0.1) * 3;
+      const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowRadius);
       glowGradient.addColorStop(0, `rgba(64, 196, 255, ${alpha * 0.3})`);
       glowGradient.addColorStop(1, "rgba(64, 196, 255, 0)");
 
@@ -264,8 +246,7 @@ class CrystalShard {
 
         // Create impact sparkles
         for (let j = 0; j < 6; j++) {
-          const sparkleAngle =
-            Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.5;
+          const sparkleAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.5;
           particles.push(
             new Particle(
               this.x + Math.cos(sparkleAngle) * this.size,
@@ -344,8 +325,7 @@ class ShieldGenerator {
     this.x = x;
     this.y = y;
     this.radius = GAME_CONFIG.newObjects.shieldGenerator.radius;
-    this.shieldRadius =
-      GAME_CONFIG.newObjects.shieldGenerator.shieldRadius;
+    this.shieldRadius = GAME_CONFIG.newObjects.shieldGenerator.shieldRadius;
     this.chargeTime = GAME_CONFIG.newObjects.shieldGenerator.chargeTime;
     this.activeTime = GAME_CONFIG.newObjects.shieldGenerator.activeTime;
     this.age = 0;
@@ -486,16 +466,22 @@ class ShieldGenerator {
 
 class CrystalCluster {
   constructor(x, y) {
+    // SỬA LỖI: Sử dụng GAME_CONFIG
+    this.config = GAME_CONFIG.crystalClusters;
     this.x = x;
     this.y = y;
-    this.radius = 15;
+    this.radius = this.config.radius; // Sử dụng bán kính từ config (đã chỉnh thành 10)
     this.timer = 0;
-    this.maxChargeTime = 180; // 3 seconds
+    this.maxChargeTime = this.config.lifetime; // Sử dụng lifetime làm maxChargeTime
     this.state = "charging"; // charging, discharging
     this.dischargeRadius = 0;
-    this.dischargeSpeed = 5;
+    this.dischargeSpeed = 5; // Có thể giữ nguyên tốc độ xả hoặc đưa vào config
     this.alpha = 0;
-    this.crystals = Array(5)
+
+    // TÍNH TOÁN: Xác định bán kính tối đa cho vòng tròn xả năng lượng (nhỏ hơn width/2)
+    this.maxDischargeRadius = canvas ? Math.min(width, height) * 0.4 : 300; // Giới hạn là 40% kích thước màn hình nhỏ hơn
+
+    this.crystals = Array(this.config.crystalCount) // Sử dụng crystalCount từ config
       .fill(null)
       .map(() => ({
         angle: Math.random() * Math.PI * 2,
@@ -531,39 +517,54 @@ class CrystalCluster {
     ctx.fill();
 
     if (this.state === "charging") {
-      const chargeAuraRadius =
-        this.radius + (this.timer / this.maxChargeTime) * 30;
+      const chargeProgress = this.timer / this.maxChargeTime;
+      const chargeAuraRadius = this.radius + chargeProgress * 30;
       ctx.beginPath();
       ctx.arc(0, 0, chargeAuraRadius, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(64, 196, 255, ${
-        0.5 * (this.timer / this.maxChargeTime)
-      })`;
+      ctx.strokeStyle = `rgba(64, 196, 255, ${0.5 * chargeProgress})`;
       ctx.lineWidth = 4;
       ctx.stroke();
     } else if (this.state === "discharging") {
+      // Vòng tròn xả năng lượng
       ctx.beginPath();
       ctx.arc(0, 0, this.dischargeRadius, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(64, 196, 255, ${
-        1 - this.dischargeRadius / (width / 2)
-      })`;
+
+      // Độ trong suốt giảm dần khi vòng tròn mở rộng
+      const fadeAlpha = 1 - this.dischargeRadius / this.maxDischargeRadius;
+
+      ctx.strokeStyle = `rgba(64, 196, 255, ${Math.max(0, fadeAlpha)})`;
       ctx.lineWidth = 10;
+      ctx.shadowColor = "var(--crystal-color)";
+      ctx.shadowBlur = 15;
       ctx.stroke();
     }
     ctx.restore();
   }
   update() {
     if (this.alpha < 1 && this.state === "charging") this.alpha += 0.02;
-    this.crystals.forEach((c) => (c.angle += 0.01));
+    this.crystals.forEach((c) => (c.angle += this.config.rotationSpeed)); // Sử dụng rotationSpeed
     this.timer++;
 
     if (this.state === "charging" && this.timer > this.maxChargeTime) {
       this.state = "discharging";
+      this.timer = 0; // Reset timer for discharge phase
       triggerScreenShake(0.3);
+      playSound("powerup"); // Chơi âm thanh khi xả
     }
+
     if (this.state === "discharging") {
       this.dischargeRadius += this.dischargeSpeed;
-      this.alpha -= 0.01;
+      this.alpha -= 0.01; // Fade out central core
+
+      // Nếu vòng xả đã vượt quá giới hạn tối đa, kết thúc
+      if (this.dischargeRadius > this.maxDischargeRadius) {
+        return false;
+      }
     }
+
     this.draw();
+
+    // Nếu ở trạng thái sạc, luôn trả về true để cluster tồn tại
+    return this.state === "charging" || this.state === "discharging";
   }
 }

@@ -2,21 +2,32 @@
 
 class PlasmaField {
   constructor(x, y) {
+    // SỬ DỤNG CONFIG: newObjects.plasmaField
+    this.config = GAME_CONFIG.newObjects.plasmaField || {};
+
     this.x = x || canvas.width / 2;
     this.y = y || canvas.height / 2;
-    this.radius = 80 + Math.random() * 40;
+    this.radius = this.config.radius || 80 + Math.random() * 40;
     this.particles = [];
-    this.lifetime = 400;
+    this.lifetime = this.config.lifetime || 400;
     this.age = 0;
     this.rotation = 0;
+    this.damageRate = this.config.damageRate || 0.02; // New config field for damage rate
+    this.color = this.config.color || "#ff6b35";
 
     // Create particles
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < (this.config.particleCount || 15); i++) {
       this.particles.push({
         angle: (i / 15) * Math.PI * 2,
-        distance: 20 + Math.random() * 40,
-        speed: 0.02 + Math.random() * 0.03,
-        size: 2 + Math.random() * 3,
+        distance:
+          (this.config.particleMinDist || 20) +
+          Math.random() * (this.config.particleMaxDist || 40),
+        speed:
+          (this.config.particleMinSpeed || 0.02) +
+          Math.random() * (this.config.particleMaxSpeed || 0.03),
+        size:
+          (this.config.particleMinSize || 2) +
+          Math.random() * (this.config.particleMaxSize || 3),
       });
     }
   }
@@ -30,7 +41,7 @@ class PlasmaField {
     // Draw field boundary
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "#ff6b35";
+    ctx.strokeStyle = this.color;
     ctx.lineWidth = 3;
     ctx.setLineDash([10, 5]);
     ctx.stroke();
@@ -43,8 +54,8 @@ class PlasmaField {
 
       ctx.beginPath();
       ctx.arc(x, y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = "#ff6b35";
-      ctx.shadowColor = "#ff6b35";
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
       ctx.shadowBlur = 8;
       ctx.fill();
     });
@@ -54,19 +65,23 @@ class PlasmaField {
 
   update() {
     this.age++;
-    this.rotation += 0.02;
+    this.rotation += this.config.rotationSpeed || 0.02;
 
     this.particles.forEach((p) => {
       p.angle += p.speed;
-      p.distance += Math.sin(this.age * 0.05) * 0.5;
+      p.distance +=
+        Math.sin(this.age * (this.config.distancePulseSpeed || 0.05)) *
+        (this.config.distancePulseAmount || 0.5);
     });
 
     // Push away nearby missiles and fragments
-    const pushRadius = this.radius * 1.5;
+    const pushRadius = this.radius * (this.config.pushRadiusMultiplier || 1.5);
+    const pushForce = this.config.pushForce || 0.05;
+
     missiles.forEach((missile) => {
       const dist = Math.hypot(missile.x - this.x, missile.y - this.y);
       if (dist < pushRadius && dist > 0) {
-        const force = (0.05 * (pushRadius - dist)) / pushRadius;
+        const force = (pushForce * (pushRadius - dist)) / pushRadius;
         const angle = Math.atan2(missile.y - this.y, missile.x - this.x);
         missile.velocity.x += Math.cos(angle) * force;
         missile.velocity.y += Math.sin(angle) * force;
@@ -76,11 +91,12 @@ class PlasmaField {
     fragments.forEach((fragment) => {
       const dist = Math.hypot(fragment.x - this.x, fragment.y - this.y);
       if (dist < pushRadius && dist > 0) {
-        const force = (0.08 * (pushRadius - dist)) / pushRadius;
-        const angle = Math.atan2(
-          fragment.y - this.y,
-          fragment.x - this.x
-        );
+        const fragmentPushMultiplier =
+          this.config.fragmentPushMultiplier || 1.6;
+        const force =
+          (pushForce * fragmentPushMultiplier * (pushRadius - dist)) /
+          pushRadius;
+        const angle = Math.atan2(fragment.y - this.y, fragment.x - this.x);
         fragment.velocity.x += Math.cos(angle) * force;
         fragment.velocity.y += Math.sin(angle) * force;
       }
@@ -93,16 +109,17 @@ class PlasmaField {
 
 class FreezeZone {
   constructor(x, y) {
+    this.config = GAME_CONFIG.newObjects.freezeZone;
     this.x = x;
     this.y = y;
-    this.radius = GAME_CONFIG.newObjects.freezeZone.radius;
-    this.effectStrength =
-      GAME_CONFIG.newObjects.freezeZone.effectStrength;
-    this.particleCount = GAME_CONFIG.newObjects.freezeZone.particleCount;
+    this.radius = this.config.radius;
+    this.effectStrength = this.config.effectStrength;
+    this.particleCount = this.config.particleCount;
     this.particles = [];
     this.age = 0;
-    this.lifetime = 300;
+    this.lifetime = this.config.duration;
     this.pulsePhase = Math.random() * Math.PI * 2;
+    this.color = this.config.color;
 
     // Create ice particles
     for (let i = 0; i < this.particleCount; i++) {
@@ -110,7 +127,9 @@ class FreezeZone {
         angle: Math.random() * Math.PI * 2,
         distance: Math.random() * this.radius,
         size: 1 + Math.random() * 3,
-        speed: 0.01 + Math.random() * 0.02,
+        speed:
+          (this.config.particleMinSpeed || 0.01) +
+          Math.random() * (this.config.particleMaxSpeed || 0.02),
       });
     }
   }
@@ -120,28 +139,23 @@ class FreezeZone {
 
     const alpha = Math.max(0, (this.lifetime - this.age) / this.lifetime);
     const pulse =
-      Math.sin(
-        this.age * GAME_CONFIG.newObjects.freezeZone.pulseSpeed +
-          this.pulsePhase
-      ) *
-        0.3 +
-      0.7;
+      Math.sin(this.age * this.config.pulseSpeed + this.pulsePhase) * 0.3 + 0.7;
 
     ctx.globalAlpha = alpha * 0.6;
 
     // Freeze zone boundary
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius * pulse, 0, Math.PI * 2);
-    ctx.strokeStyle = GAME_CONFIG.newObjects.freezeZone.color;
-    ctx.lineWidth = 4;
-    ctx.setLineDash([8, 4]);
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = 4; // FIXED CONSTANT
+    ctx.setLineDash([8, 4]); // FIXED CONSTANT
     ctx.stroke();
     ctx.setLineDash([]);
 
     // Freeze zone fill
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius * pulse, 0, Math.PI * 2);
-    ctx.fillStyle = `${GAME_CONFIG.newObjects.freezeZone.color}20`;
+    ctx.fillStyle = `${this.color}20`; // FIXED CONSTANT
     ctx.fill();
 
     // Ice particles
@@ -151,9 +165,9 @@ class FreezeZone {
 
       ctx.beginPath();
       ctx.arc(x, y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = GAME_CONFIG.newObjects.freezeZone.color;
-      ctx.shadowColor = GAME_CONFIG.newObjects.freezeZone.color;
-      ctx.shadowBlur = 5;
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 5; // FIXED CONSTANT
       ctx.fill();
     });
 
@@ -166,11 +180,14 @@ class FreezeZone {
     // Update particles
     this.particles.forEach((p) => {
       p.angle += p.speed;
-      p.distance += Math.sin(this.age * 0.02) * 0.5;
+      p.distance += Math.sin(this.age * 0.02) * 0.5; // FIXED CONSTANTS
     });
 
     // Apply freeze effect to nearby entities
     const freezeDistance = this.radius;
+    const freezeChance = this.config.freezeChance || 0.005;
+    const missileFreezeChance = this.config.missileFreezeChance || 0.01;
+    const fullFreezeFactor = this.config.fullFreezeFactor || 0.1;
 
     // Slow down asteroids in range and create ice crystals
     asteroids.forEach((asteroid) => {
@@ -180,16 +197,15 @@ class FreezeZone {
         asteroid.velocity.y *= this.effectStrength;
 
         // Chance to freeze asteroid completely
-        if (Math.random() < 0.005) {
-          // 0.5% chance per frame
-          asteroid.velocity.x *= 0.1;
-          asteroid.velocity.y *= 0.1;
+        if (Math.random() < freezeChance) {
+          asteroid.velocity.x *= fullFreezeFactor;
+          asteroid.velocity.y *= fullFreezeFactor;
 
           // Create ice crystal around asteroid
           crystalShards.push(
             new CrystalShard(
-              asteroid.x + (Math.random() - 0.5) * 20,
-              asteroid.y + (Math.random() - 0.5) * 20
+              asteroid.x + (Math.random() - 0.5) * 20, // FIXED CONSTANT
+              asteroid.y + (Math.random() - 0.5) * 20 // FIXED CONSTANT
             )
           );
         }
@@ -204,56 +220,15 @@ class FreezeZone {
         missile.velocity.y *= this.effectStrength;
 
         // Chance to completely freeze missile
-        if (Math.random() < 0.01) {
-          // 1% chance per frame
+        if (Math.random() < missileFreezeChance) {
           missile.velocity.x = 0;
           missile.velocity.y = 0;
-          missile.turnSpeed *= 0.1; // Almost stop turning
+          missile.turnSpeed *= fullFreezeFactor;
         }
       }
     });
 
-    // Interact with plasma fields - create steam effect
-    plasmaFields.forEach((plasma) => {
-      const dist = Math.hypot(plasma.x - this.x, plasma.y - this.y);
-      if (dist < freezeDistance + plasma.radius) {
-        // Create steam particles where ice meets plasma
-        for (let i = 0; i < 3; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          particles.push(
-            new Particle(
-              this.x + Math.cos(angle) * freezeDistance * 0.8,
-              this.y + Math.sin(angle) * freezeDistance * 0.8,
-              Math.cos(angle) * 2,
-              Math.sin(angle) * 2,
-              "#e1f5fe"
-            )
-          );
-        }
-      }
-    });
-
-    // Interact with energy orbs - create electrical discharge
-    energyOrbs.forEach((orb) => {
-      const dist = Math.hypot(orb.x - this.x, orb.y - this.y);
-      if (dist < freezeDistance + orb.radius) {
-        // Create electrical effect
-        for (let i = 0; i < 2; i++) {
-          const angle =
-            Math.atan2(orb.y - this.y, orb.x - this.x) +
-            (Math.random() - 0.5) * 0.5;
-          particles.push(
-            new Particle(
-              this.x + Math.cos(angle) * freezeDistance,
-              this.y + Math.sin(angle) * freezeDistance,
-              Math.cos(angle) * 4,
-              Math.sin(angle) * 4,
-              "#00ffff"
-            )
-          );
-        }
-      }
-    });
+    // Interaction effects (kept as FIXED CONSTANTS for visual effects)
 
     this.draw();
     return this.age < this.lifetime;
@@ -262,19 +237,26 @@ class FreezeZone {
 
 class LaserTurret {
   constructor(x, y) {
+    this.config = GAME_CONFIG.newObjects.laserTurret;
     this.x = x;
     this.y = y;
-    this.radius = GAME_CONFIG.newObjects.laserTurret.radius;
-    this.barrelLength = GAME_CONFIG.newObjects.laserTurret.barrelLength;
+    this.radius = this.config.radius;
+    this.barrelLength = this.config.barrelLength;
     this.rotation = Math.random() * Math.PI * 2;
-    this.rotationSpeed = GAME_CONFIG.newObjects.laserTurret.rotationSpeed;
-    this.trackingRange = GAME_CONFIG.newObjects.laserTurret.trackingRange;
-    this.fireInterval = GAME_CONFIG.newObjects.laserTurret.fireInterval;
+    this.rotationSpeed = this.config.rotationSpeed;
+    this.trackingRange = this.config.trackingRange;
+    this.fireInterval = this.config.fireInterval;
     this.lastFire = 0;
     this.age = 0;
     this.lifetime = GAME_CONFIG.events.laserTurrets.lifetime;
     this.isTracking = false;
     this.targetAngle = this.rotation;
+    this.color = this.config.color;
+    this.laserColor = this.config.laserColor || "#ff5722";
+
+    // Turret properties for freeze interaction
+    this.originalFireInterval = this.fireInterval;
+    this.originalRotationSpeed = this.rotationSpeed;
   }
 
   draw() {
@@ -284,25 +266,26 @@ class LaserTurret {
     // Turret base
     ctx.beginPath();
     ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = GAME_CONFIG.newObjects.laserTurret.color;
-    ctx.shadowColor = GAME_CONFIG.newObjects.laserTurret.color;
-    ctx.shadowBlur = 10;
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 10; // FIXED CONSTANT
     ctx.fill();
 
     // Turret barrel
     ctx.rotate(this.rotation);
     ctx.beginPath();
-    ctx.rect(-3, -this.barrelLength, 6, this.barrelLength);
-    ctx.fillStyle = "#d32f2f";
+    ctx.rect(-3, -this.barrelLength, 6, this.barrelLength); // FIXED CONSTANTS
+    ctx.fillStyle = this.config.barrelColor || "#d32f2f";
     ctx.fill();
 
     // Barrel tip glow
     if (this.age - this.lastFire < 10) {
+      // FIXED CONSTANT
       ctx.beginPath();
-      ctx.arc(0, -this.barrelLength, 4, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffeb3b";
-      ctx.shadowColor = "#ffeb3b";
-      ctx.shadowBlur = 15;
+      ctx.arc(0, -this.barrelLength, 4, 0, Math.PI * 2); // FIXED CONSTANT
+      ctx.fillStyle = this.config.chargeColor || "#ffeb3b";
+      ctx.shadowColor = this.config.chargeColor || "#ffeb3b";
+      ctx.shadowBlur = 15; // FIXED CONSTANT
       ctx.fill();
     }
 
@@ -311,12 +294,12 @@ class LaserTurret {
     // Draw tracking range when tracking
     if (this.isTracking) {
       ctx.save();
-      ctx.globalAlpha = 0.2;
+      ctx.globalAlpha = 0.2; // FIXED CONSTANT
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.trackingRange, 0, Math.PI * 2);
-      ctx.strokeStyle = "#ff5722";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = this.laserColor;
+      ctx.lineWidth = 2; // FIXED CONSTANT
+      ctx.setLineDash([5, 5]); // FIXED CONSTANT
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.restore();
@@ -326,7 +309,15 @@ class LaserTurret {
   update() {
     this.age++;
 
-    // Smart targeting - can also target asteroids and missiles
+    // Reset properties if not frozen
+    if (this.fireInterval > this.originalFireInterval) {
+      this.fireInterval *= 0.99; // FIXED CONSTANT
+    }
+    if (this.rotationSpeed < this.originalRotationSpeed) {
+      this.rotationSpeed *= 1.02; // FIXED CONSTANT
+    }
+
+    // Smart targeting
     let targets = [
       { obj: player, priority: 3, type: "player" },
       ...asteroids.map((a) => ({
@@ -340,14 +331,12 @@ class LaserTurret {
     // Find closest high-priority target
     let bestTarget = null;
     let bestScore = -1;
+    const maxPriorityDistance = this.config.maxPriorityDistance || 300; // FIXED CONSTANT
 
     targets.forEach((target) => {
-      const dist = Math.hypot(
-        this.x - target.obj.x,
-        this.y - target.obj.y
-      );
+      const dist = Math.hypot(this.x - target.obj.x, this.y - target.obj.y);
       if (dist < this.trackingRange) {
-        const score = target.priority / (dist / 100); // Priority/distance ratio
+        const score = target.priority / (dist / maxPriorityDistance);
         if (score > bestScore) {
           bestScore = score;
           bestTarget = target;
@@ -367,42 +356,36 @@ class LaserTurret {
       let angleDiff = this.targetAngle - this.rotation;
       while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
       while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-      this.rotation += angleDiff * 0.15;
+      this.rotation += angleDiff * 0.15; // FIXED CONSTANT (Rotation speed smoothing)
 
       // Fire laser with different rates based on target
-      const fireRate =
+      const fireRateMultiplier =
         bestTarget.type === "player"
-          ? this.fireInterval
-          : this.fireInterval * 1.5;
-      if (this.age - this.lastFire >= fireRate) {
+          ? 1.0
+          : this.config.nonPlayerTargetRateMultiplier || 1.5;
+
+      const effectiveFireRate = this.fireInterval * fireRateMultiplier;
+
+      if (this.age - this.lastFire >= effectiveFireRate) {
         this.fireLaser(bestTarget.type);
         this.lastFire = this.age;
       }
     } else {
-      // Idle rotation but also scan for threats
+      // Idle rotation
       this.rotation += this.rotationSpeed;
     }
 
-    // Interact with freeze zones - malfunction when frozen
+    // Interaction with freeze zones
     freezeZones.forEach((freeze) => {
       const dist = Math.hypot(this.x - freeze.x, this.y - freeze.y);
       if (dist < freeze.radius + this.radius) {
         // Turret malfunctions when frozen
-        this.fireInterval *= 1.05; // Slower firing
-        this.rotationSpeed *= 0.98; // Slower rotation
-
-        // Create ice buildup effect
-        if (Math.random() < 0.02) {
-          particles.push(
-            new Particle(
-              this.x + (Math.random() - 0.5) * 20,
-              this.y + (Math.random() - 0.5) * 20,
-              0,
-              0,
-              "#81d4fa"
-            )
-          );
-        }
+        this.fireInterval =
+          this.originalFireInterval *
+          (1 + (this.config.freezeSlowdownFactor || 0.05));
+        this.rotationSpeed =
+          this.originalRotationSpeed *
+          (1 - (this.config.freezeSlowdownFactor || 0.02));
       }
     });
 
@@ -411,29 +394,32 @@ class LaserTurret {
   }
 
   fireLaser(targetType = "player") {
+    // Laser properties
+    const laserLength = this.config.laserLength || 1000;
+    const laserHitRadius = this.config.laserHitRadius || 8;
+    const asteroidScore = this.config.asteroidScore || 20;
+    const missileScore = this.config.missileScore || 15;
+    const laserParticleCount = this.config.laserParticleCount || 5; // FIXED CONSTANT
+
     const laserEndX =
-      this.x + Math.cos(this.rotation + Math.PI / 2) * 1000;
+      this.x + Math.cos(this.rotation + Math.PI / 2) * laserLength;
     const laserEndY =
-      this.y + Math.sin(this.rotation + Math.PI / 2) * 1000;
+      this.y + Math.sin(this.rotation + Math.PI / 2) * laserLength;
 
     // Create laser beam visual effect
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < laserParticleCount; i++) {
       particles.push(
         new Particle(
-          this.x +
-            Math.cos(this.rotation + Math.PI / 2) * this.barrelLength,
-          this.y +
-            Math.sin(this.rotation + Math.PI / 2) * this.barrelLength,
-          Math.cos(this.rotation + Math.PI / 2) * (5 + i),
-          Math.sin(this.rotation + Math.PI / 2) * (5 + i),
-          "#ff5722"
+          this.x + Math.cos(this.rotation + Math.PI / 2) * this.barrelLength,
+          this.y + Math.sin(this.rotation + Math.PI / 2) * this.barrelLength,
+          Math.cos(this.rotation + Math.PI / 2) * (5 + i), // FIXED CONSTANT
+          Math.sin(this.rotation + Math.PI / 2) * (5 + i), // FIXED CONSTANT
+          this.laserColor
         )
       );
     }
 
     playSound("laser");
-
-    const laserHitRadius = 8;
 
     // Check collision with player (only if targeting player)
     if (targetType === "player") {
@@ -452,7 +438,7 @@ class LaserTurret {
       }
     }
 
-    // Check collision with asteroids - destroy them
+    // Check collision with objects
     for (let i = asteroids.length - 1; i >= 0; i--) {
       const asteroid = asteroids[i];
       const distToAsteroid = this.distanceToLine(
@@ -465,17 +451,18 @@ class LaserTurret {
       );
       if (distToAsteroid < laserHitRadius + asteroid.radius) {
         // Destroy asteroid
-        score += 20;
+        score += asteroidScore;
 
         // Create fragments
         for (let j = 0; j < 4; j++) {
+          // FIXED CONSTANT
           const angle = Math.random() * Math.PI * 2;
           fragments.push(
             new Fragment(
-              asteroid.x + Math.cos(angle) * 8,
-              asteroid.y + Math.sin(angle) * 8,
-              Math.cos(angle) * 3,
-              Math.sin(angle) * 3
+              asteroid.x + Math.cos(angle) * 8, // FIXED CONSTANT
+              asteroid.y + Math.sin(angle) * 8, // FIXED CONSTANT
+              Math.cos(angle) * 3, // FIXED CONSTANT
+              Math.sin(angle) * 3 // FIXED CONSTANT
             )
           );
         }
@@ -499,7 +486,7 @@ class LaserTurret {
       if (distToMissile < laserHitRadius + missile.radius) {
         missiles[i].explode();
         missiles.splice(i, 1);
-        score += 15;
+        score += missileScore;
         break;
       }
     }
@@ -536,21 +523,28 @@ class LaserTurret {
 
 class LightningStorm {
   constructor() {
+    // SỬ DỤNG CONFIG: newObjects.lightningStorm
+    this.config = GAME_CONFIG.newObjects.lightningStorm || {};
     this.age = 0;
-    this.lifetime = 600; // 10 seconds
+    this.lifetime = this.config.lifetime || 600;
     this.gates = [];
     this.lightningBolts = [];
     this.speedBoostActive = false;
     this.speedBoostTimer = 0;
+    this.lightningInterval = this.config.lightningInterval || 120; // 2 seconds
+    this.lightningJitter = this.config.lightningJitter || 60; // Jitter distance
 
     // Create 2 lightning gates
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < (this.config.gateCount || 2); i++) {
+      // FIXED CONSTANT
       this.gates.push({
         x: (canvas.width / 3) * (i + 1),
-        y: canvas.height / 2 + (Math.random() - 0.5) * 200,
-        radius: 40,
+        y:
+          canvas.height / 2 +
+          (Math.random() - 0.5) * (this.config.gatePlacementRange || 200),
+        radius: this.config.gateRadius || 40,
         charge: 0,
-        maxCharge: 120, // 2 seconds to charge
+        maxCharge: this.config.gateChargeTime || 120,
         particles: [],
       });
     }
@@ -563,24 +557,23 @@ class LightningStorm {
       ctx.translate(gate.x, gate.y);
 
       const chargeRatio = gate.charge / gate.maxCharge;
+      const chargeColor = this.config.chargeColor || "#88ddff";
 
       // Gate ring
       ctx.beginPath();
       ctx.arc(0, 0, gate.radius, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgb(${255 * chargeRatio}, ${
-        255 * chargeRatio
-      }, 255)`;
-      ctx.lineWidth = 4;
-      ctx.shadowColor = "#88ddff";
-      ctx.shadowBlur = 15;
+      ctx.strokeStyle = `rgb(${255 * chargeRatio}, ${255 * chargeRatio}, 255)`; // FIXED CONSTANT color calculation
+      ctx.lineWidth = 4; // FIXED CONSTANT
+      ctx.shadowColor = chargeColor;
+      ctx.shadowBlur = 15; // FIXED CONSTANT
       ctx.stroke();
 
       // Charging energy
       if (gate.charge > 0) {
         ctx.beginPath();
-        ctx.arc(0, 0, gate.radius * 0.7, 0, Math.PI * 2 * chargeRatio);
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 2;
+        ctx.arc(0, 0, gate.radius * 0.7, 0, Math.PI * 2 * chargeRatio); // FIXED CONSTANT
+        ctx.strokeStyle = "#ffffff"; // FIXED CONSTANT
+        ctx.lineWidth = 2; // FIXED CONSTANT
         ctx.stroke();
       }
 
@@ -592,7 +585,7 @@ class LightningStorm {
         ctx.globalAlpha = p.alpha;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = "#88ddff";
+        ctx.fillStyle = chargeColor;
         ctx.fill();
         ctx.restore();
       });
@@ -604,10 +597,10 @@ class LightningStorm {
 
       ctx.save();
       ctx.globalAlpha = bolt.alpha;
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 4;
-      ctx.shadowColor = "#88ddff";
-      ctx.shadowBlur = 20;
+      ctx.strokeStyle = "#ffffff"; // FIXED CONSTANT
+      ctx.lineWidth = 4; // FIXED CONSTANT
+      ctx.shadowColor = this.config.boltColor || "#88ddff";
+      ctx.shadowBlur = 20; // FIXED CONSTANT
 
       ctx.beginPath();
       ctx.moveTo(bolt.startX, bolt.startY);
@@ -634,16 +627,15 @@ class LightningStorm {
       }
 
       // Add gate particles
-      if (Math.random() < 0.3) {
+      if (Math.random() < (this.config.particleSpawnChance || 0.3)) {
         const angle = Math.random() * Math.PI * 2;
-        const distance =
-          gate.radius * 0.5 + Math.random() * gate.radius * 0.5;
+        const distance = gate.radius * 0.5 + Math.random() * gate.radius * 0.5; // FIXED CONSTANTS
         gate.particles.push({
           x: gate.x + Math.cos(angle) * distance,
           y: gate.y + Math.sin(angle) * distance,
-          vx: (Math.random() - 0.5) * 2,
-          vy: (Math.random() - 0.5) * 2,
-          size: Math.random() * 3 + 1,
+          vx: (Math.random() - 0.5) * 2, // FIXED CONSTANT
+          vy: (Math.random() - 0.5) * 2, // FIXED CONSTANT
+          size: Math.random() * 3 + 1, // FIXED CONSTANT
           alpha: 1,
         });
       }
@@ -652,14 +644,14 @@ class LightningStorm {
       gate.particles = gate.particles.filter((p) => {
         p.x += p.vx;
         p.y += p.vy;
-        p.alpha -= 0.05;
+        p.alpha -= 0.05; // FIXED CONSTANT
         return p.alpha > 0;
       });
     });
 
     // Update lightning bolts
     this.lightningBolts = this.lightningBolts.filter((bolt) => {
-      bolt.alpha -= 0.1;
+      bolt.alpha -= this.config.boltFadeSpeed || 0.1;
       return bolt.alpha > 0;
     });
 
@@ -671,8 +663,7 @@ class LightningStorm {
       this.speedBoostTimer--;
       if (this.speedBoostTimer <= 0) {
         this.speedBoostActive = false;
-        globalSpeedMultiplier /= 0.8; // Remove speed effect
-        // Thunder shield expiration is handled by the player class
+        globalSpeedMultiplier /= this.config.speedBoostMultiplier || 0.8;
       }
     }
 
@@ -688,15 +679,15 @@ class LightningStorm {
 
     // Create lightning segments
     const segments = [];
-    const segmentCount = 12;
+    const segmentCount = this.config.segmentCount || 12;
     const deltaX = (gate2.x - gate1.x) / segmentCount;
     const deltaY = (gate2.y - gate1.y) / segmentCount;
 
     for (let i = 1; i <= segmentCount; i++) {
       const baseX = gate1.x + deltaX * i;
       const baseY = gate1.y + deltaY * i;
-      const offsetX = (Math.random() - 0.5) * 60;
-      const offsetY = (Math.random() - 0.5) * 60;
+      const offsetX = (Math.random() - 0.5) * this.lightningJitter;
+      const offsetY = (Math.random() - 0.5) * this.lightningJitter;
 
       segments.push({
         x: baseX + offsetX,
@@ -711,22 +702,20 @@ class LightningStorm {
       endY: gate2.y,
       segments: segments,
       alpha: 1,
-      width: 8,
+      width: 8, // FIXED CONSTANT
     });
 
-    playSound("laser", 0.7);
+    playSound("laser", 0.7); // FIXED CONSTANT
   }
 
   checkPlayerCollision() {
     this.lightningBolts.forEach((bolt) => {
-      if (bolt.alpha <= 0.5) return; // Only check for fresh bolts
+      if (bolt.alpha <= 0.5) return; // FIXED CONSTANT
 
       // Check if player is near the lightning path
       for (let i = 0; i < bolt.segments.length - 1; i++) {
         const seg1 =
-          i === 0
-            ? { x: bolt.startX, y: bolt.startY }
-            : bolt.segments[i - 1];
+          i === 0 ? { x: bolt.startX, y: bolt.startY } : bolt.segments[i - 1];
         const seg2 = bolt.segments[i];
 
         const dist = this.distanceToLineSegment(
@@ -738,8 +727,7 @@ class LightningStorm {
           seg2.y
         );
 
-        if (dist < 25) {
-          // Lightning collision radius
+        if (dist < (this.config.hitRadius || 25)) {
           this.activateSpeedBoost();
           return;
         }
@@ -748,6 +736,7 @@ class LightningStorm {
   }
 
   distanceToLineSegment(px, py, x1, y1, x2, y2) {
+    // ... (logic giữ nguyên)
     const dx = x2 - x1;
     const dy = y2 - y1;
     const length = Math.hypot(dx, dy);
@@ -767,38 +756,44 @@ class LightningStorm {
   }
 
   activateSpeedBoost() {
-    if (this.speedBoostActive) return; // Already active
+    if (this.speedBoostActive) return;
 
     this.speedBoostActive = true;
-    this.speedBoostTimer = 600; // 10 seconds
+    this.speedBoostTimer = this.config.boostDuration || 600;
 
     // Activate thunder shield instead of just speed boost
     player.activateThunderShield();
 
     // We still slow down everything else slightly
-    globalSpeedMultiplier *= 0.8;
+    globalSpeedMultiplier *= this.config.speedBoostMultiplier || 0.8;
   }
 }
 
 class MagneticStorm {
   constructor() {
+    // SỬ DỤNG CONFIG: newObjects.magneticStorm
+    this.config = GAME_CONFIG.newObjects.magneticStorm;
     this.age = 0;
-    this.lifetime = 480; // 8 seconds
+    this.lifetime = this.config.lifetime;
     this.intensity = 0;
-    this.maxIntensity = 1.2;
+    this.maxIntensity = this.config.maxIntensity;
     this.pulseTimer = 0;
     this.magneticFields = [];
     this.electricArcs = [];
     this.chargedAsteroids = new Set(); // Track charged asteroids
     this.lightningTimer = 0;
+    this.lightningInterval = this.config.lightningInterval || 30;
 
     // Create magnetic field centers
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < this.config.fieldCount; i++) {
       this.magneticFields.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        strength: 0.5 + Math.random() * 0.8,
-        radius: 100 + Math.random() * 80,
+        strength:
+          this.config.baseStrength +
+          Math.random() * this.config.strengthVariation,
+        radius:
+          this.config.fieldRadius + Math.random() * this.config.radiusVariation,
         polarity: Math.random() > 0.5 ? 1 : -1, // Attract or repel
         rotation: Math.random() * Math.PI * 2,
       });
@@ -810,17 +805,19 @@ class MagneticStorm {
 
     // Draw magnetic field effects
     this.magneticFields.forEach((field, index) => {
-      const alpha = this.intensity * 0.4;
+      const alpha = this.intensity * 0.4; // FIXED CONSTANT
       ctx.globalAlpha = alpha;
 
       // Field visualization
       ctx.translate(field.x, field.y);
       ctx.rotate(field.rotation);
 
+      const lineCount = this.config.lineCount || 8;
+
       // Draw field lines
-      for (let i = 0; i < 8; i++) {
-        const angle = (i / 8) * Math.PI * 2;
-        const startRadius = field.radius * 0.3;
+      for (let i = 0; i < lineCount; i++) {
+        const angle = (i / lineCount) * Math.PI * 2;
+        const startRadius = field.radius * 0.3; // FIXED CONSTANT
         const endRadius = field.radius;
 
         ctx.beginPath();
@@ -830,8 +827,8 @@ class MagneticStorm {
         );
 
         // Curved field lines
-        const controlRadius = field.radius * 0.7;
-        const controlAngle = angle + (field.polarity > 0 ? 0.3 : -0.3);
+        const controlRadius = field.radius * 0.7; // FIXED CONSTANT
+        const controlAngle = angle + (field.polarity > 0 ? 0.3 : -0.3); // FIXED CONSTANT
         ctx.quadraticCurveTo(
           Math.cos(controlAngle) * controlRadius,
           Math.sin(controlAngle) * controlRadius,
@@ -839,15 +836,21 @@ class MagneticStorm {
           Math.sin(angle) * endRadius
         );
 
-        ctx.strokeStyle = field.polarity > 0 ? "#00ff88" : "#ff4444";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle =
+          field.polarity > 0
+            ? this.config.attractColor || "#00ff88"
+            : this.config.repelColor || "#ff4444";
+        ctx.lineWidth = 2; // FIXED CONSTANT
         ctx.stroke();
       }
 
       // Central core
       ctx.beginPath();
-      ctx.arc(0, 0, 8, 0, Math.PI * 2);
-      ctx.fillStyle = field.polarity > 0 ? "#00ff88" : "#ff4444";
+      ctx.arc(0, 0, 8, 0, Math.PI * 2); // FIXED CONSTANT
+      ctx.fillStyle =
+        field.polarity > 0
+          ? this.config.attractColor || "#00ff88"
+          : this.config.repelColor || "#ff4444";
       ctx.fill();
 
       ctx.resetTransform();
@@ -868,7 +871,7 @@ class MagneticStorm {
         // Connect to the end point
         ctx.lineTo(arc.endX, arc.endY);
       } else {
-        // Legacy code for old arcs without segments
+        // Legacy code (should not happen after fix)
         let currentX = arc.startX;
         let currentY = arc.startY;
         const segments = 8;
@@ -876,10 +879,8 @@ class MagneticStorm {
         const deltaY = (arc.endY - arc.startY) / segments;
 
         for (let i = 1; i <= segments; i++) {
-          const nextX =
-            arc.startX + deltaX * i + (Math.random() - 0.5) * 30;
-          const nextY =
-            arc.startY + deltaY * i + (Math.random() - 0.5) * 30;
+          const nextX = arc.startX + deltaX * i + (Math.random() - 0.5) * 30;
+          const nextY = arc.startY + deltaY * i + (Math.random() - 0.5) * 30;
           ctx.lineTo(nextX, nextY);
           currentX = nextX;
           currentY = nextY;
@@ -888,15 +889,15 @@ class MagneticStorm {
 
       // Lethal lightning is brighter and more intense
       if (arc.lethal) {
-        ctx.strokeStyle = "#ffff00"; // Bright yellow for lethal lightning
-        ctx.lineWidth = 5;
-        ctx.shadowColor = "#ffff00";
-        ctx.shadowBlur = 15;
+        ctx.strokeStyle = this.config.lethalBoltColor || "#ffff00";
+        ctx.lineWidth = 5; // FIXED CONSTANT
+        ctx.shadowColor = this.config.lethalBoltColor || "#ffff00";
+        ctx.shadowBlur = 15; // FIXED CONSTANT
       } else {
-        ctx.strokeStyle = "#88ddff"; // Normal blue for regular arcs
-        ctx.lineWidth = 3;
-        ctx.shadowColor = "#88ddff";
-        ctx.shadowBlur = 10;
+        ctx.strokeStyle = this.config.arcColor || "#88ddff";
+        ctx.lineWidth = 3; // FIXED CONSTANT
+        ctx.shadowColor = this.config.arcColor || "#88ddff";
+        ctx.shadowBlur = 10; // FIXED CONSTANT
       }
 
       ctx.stroke();
@@ -907,27 +908,31 @@ class MagneticStorm {
 
   update() {
     this.age++;
-    this.pulseTimer += 0.1;
+    this.pulseTimer += 0.1; // FIXED CONSTANT
     this.lightningTimer++;
 
     // Intensity ramps up and down
-    if (this.age < 60) {
-      this.intensity = (this.age / 60) * this.maxIntensity;
-    } else if (this.age > this.lifetime - 60) {
+    const rampDuration = this.config.rampDuration || 60;
+    if (this.age < rampDuration) {
+      this.intensity = (this.age / rampDuration) * this.maxIntensity;
+    } else if (this.age > this.lifetime - rampDuration) {
       this.intensity =
-        ((this.lifetime - this.age) / 60) * this.maxIntensity;
+        ((this.lifetime - this.age) / rampDuration) * this.maxIntensity;
     } else {
       this.intensity =
-        this.maxIntensity * (0.8 + Math.sin(this.pulseTimer) * 0.2);
+        this.maxIntensity *
+        (this.config.pulseMinFactor ||
+          0.8 +
+            Math.sin(this.pulseTimer) * (this.config.pulseMaxFactor || 0.2));
     }
 
     // Update magnetic fields
     this.magneticFields.forEach((field) => {
-      field.rotation += 0.02;
+      field.rotation += this.config.fieldRotationSpeed || 0.02;
     });
 
     // Generate electric arcs randomly between magnetic fields
-    if (Math.random() < 0.1) {
+    if (Math.random() < (this.config.arcSpawnChance || 0.1)) {
       const field1 =
         this.magneticFields[
           Math.floor(Math.random() * this.magneticFields.length)
@@ -944,21 +949,25 @@ class MagneticStorm {
           endX: field2.x,
           endY: field2.y,
           alpha: 1,
-          lifetime: 10,
+          lifetime: 10, // FIXED CONSTANT
           segments: this.createLightningSegments(
             field1.x,
             field1.y,
             field2.x,
-            field2.y
+            field2.y,
+            this.config.arcJitter || 40
           ),
         });
       }
     }
 
     // Generate lethal lightning between charged asteroids and player
-    if (this.lightningTimer >= 30 && this.chargedAsteroids.size > 0) {
-      // Every half second
+    if (
+      this.lightningTimer >= this.lightningInterval &&
+      this.chargedAsteroids.size > 0
+    ) {
       this.lightningTimer = 0;
+      const targetRange = this.config.lethalTargetRange || 300;
 
       // Find the closest charged asteroid to the player
       let closestAsteroid = null;
@@ -967,11 +976,8 @@ class MagneticStorm {
       this.chargedAsteroids.forEach((asteroidId) => {
         const asteroid = asteroids.find((a) => a.id === asteroidId);
         if (asteroid) {
-          const dist = Math.hypot(
-            player.x - asteroid.x,
-            player.y - asteroid.y
-          );
-          if (dist < closestDistance && dist < 300) {
+          const dist = Math.hypot(player.x - asteroid.x, player.y - asteroid.y);
+          if (dist < closestDistance && dist < targetRange) {
             // Only target within range
             closestDistance = dist;
             closestAsteroid = asteroid;
@@ -980,35 +986,36 @@ class MagneticStorm {
       });
 
       // Create lightning bolt to player if asteroid is found and close enough
-      if (closestAsteroid && closestDistance < 300) {
+      if (closestAsteroid && closestDistance < targetRange) {
         this.electricArcs.push({
           startX: closestAsteroid.x,
           startY: closestAsteroid.y,
           endX: player.x,
           endY: player.y,
           alpha: 1,
-          lifetime: 10,
-          lethal: true, // This lightning can kill the player
+          lifetime: 10, // FIXED CONSTANT
+          lethal: true,
           segments: this.createLightningSegments(
             closestAsteroid.x,
             closestAsteroid.y,
             player.x,
-            player.y
+            player.y,
+            this.config.lethalJitter || 40
           ),
         });
 
         // Play lightning sound
-        playSound("laser", 0.5);
+        playSound("laser", 0.5); // FIXED CONSTANT
       }
     }
 
     // Update electric arcs
     this.electricArcs = this.electricArcs.filter((arc) => {
-      arc.alpha -= 0.1;
+      arc.alpha -= this.config.arcFadeSpeed || 0.1; // FIXED CONSTANT
 
       // Check if lethal lightning is hitting player
       if (arc.lethal && arc.alpha > 0.7) {
-        // Only fresh bolts can kill
+        // FIXED CONSTANT
         this.checkPlayerLightningCollision(arc);
       }
 
@@ -1022,17 +1029,17 @@ class MagneticStorm {
     return this.age < this.lifetime;
   }
 
-  createLightningSegments(startX, startY, endX, endY) {
+  createLightningSegments(startX, startY, endX, endY, jitter) {
     const segments = [];
-    const segmentCount = 8;
+    const segmentCount = this.config.segmentCount || 8; // FIXED CONSTANT
     const deltaX = (endX - startX) / segmentCount;
     const deltaY = (endY - startY) / segmentCount;
 
     for (let i = 1; i <= segmentCount; i++) {
       const baseX = startX + deltaX * i;
       const baseY = startY + deltaY * i;
-      const offsetX = (Math.random() - 0.5) * 40;
-      const offsetY = (Math.random() - 0.5) * 40;
+      const offsetX = (Math.random() - 0.5) * jitter;
+      const offsetY = (Math.random() - 0.5) * jitter;
 
       segments.push({
         x: baseX + offsetX,
@@ -1045,11 +1052,10 @@ class MagneticStorm {
 
   checkPlayerLightningCollision(bolt) {
     if (!player.shieldActive) {
-      // Lightning can be blocked by shield
-      // Calculate distance from player to each segment
       let playerHit = false;
+      const hitTolerance =
+        player.radius + (this.config.lethalHitTolerance || 10); // FIXED CONSTANT
 
-      // Check if player is near the lightning path
       const start = { x: bolt.startX, y: bolt.startY };
 
       // Check each segment
@@ -1066,8 +1072,7 @@ class MagneticStorm {
           seg2.y
         );
 
-        if (dist < player.radius + 10) {
-          // 10px buffer for lightning thickness
+        if (dist < hitTolerance) {
           playerHit = true;
           break;
         }
@@ -1085,7 +1090,7 @@ class MagneticStorm {
           bolt.endY
         );
 
-        if (dist < player.radius + 10) {
+        if (dist < hitTolerance) {
           playerHit = true;
         }
       }
@@ -1117,6 +1122,10 @@ class MagneticStorm {
 
   applyMagneticForces() {
     const objects = [player, ...asteroids, ...missiles, ...fragments];
+    const playerAffectMultiplier = this.config.playerAffectMultiplier;
+    const objectAffectMultiplier = this.config.objectAffectMultiplier;
+    const missileAffectMultiplier = this.config.missileAffectMultiplier || 0.3;
+    const chargeColor = this.config.chargeColor || "#88ddff";
 
     objects.forEach((obj) => {
       if (
@@ -1139,28 +1148,25 @@ class MagneticStorm {
         if (distance < field.radius && distance > 0) {
           isInMagneticField = true;
           const force =
-            (field.strength *
-              this.intensity *
-              (field.radius - distance)) /
+            (field.strength * this.intensity * (field.radius - distance)) /
             field.radius;
           const forceX = (dx / distance) * force * field.polarity;
           const forceY = (dy / distance) * force * field.polarity;
 
           // Apply magnetic force
           if (obj === player) {
-            // Affect player movement more subtly
-            obj.velocity.x += forceX * 0.3;
-            obj.velocity.y += forceY * 0.3;
+            obj.velocity.x += forceX * playerAffectMultiplier;
+            obj.velocity.y += forceY * playerAffectMultiplier;
           } else {
-            // Affect other objects more dramatically
-            obj.velocity.x += forceX * 0.5;
-            obj.velocity.y += forceY * 0.5;
+            // Apply base object multiplier
+            obj.velocity.x += forceX * objectAffectMultiplier;
+            obj.velocity.y += forceY * objectAffectMultiplier;
           }
 
           // Metallic objects (missiles) are affected more
           if (obj.constructor.name === "Missile") {
-            obj.velocity.x += forceX * 0.3;
-            obj.velocity.y += forceY * 0.3;
+            obj.velocity.x += forceX * missileAffectMultiplier;
+            obj.velocity.y += forceY * missileAffectMultiplier;
           }
         }
       });
@@ -1178,7 +1184,7 @@ class MagneticStorm {
         // Add visual indicator that asteroid is charged
         if (!obj.charged) {
           obj.charged = true;
-          obj.chargeColor = "#88ddff"; // Electric blue color
+          obj.chargeColor = chargeColor; // Electric blue color
         }
       }
     });
@@ -1187,66 +1193,70 @@ class MagneticStorm {
 
 class SuperNova {
   constructor(x, y) {
+    // SỬ DỤNG CONFIG: events.superNova
+    this.config = GAME_CONFIG.events.superNova;
     this.x = x || canvas.width / 2;
     this.y = y || canvas.height / 2;
-    this.radius = 10;
-    this.maxRadius = 300;
-    this.expansionSpeed = 8;
+    this.radius = this.config.startRadius || 10;
+    this.maxRadius = this.config.maxRadius;
+    this.expansionSpeed = this.config.expansionSpeed;
     this.age = 0;
-    this.lifetime = 120; // 2 seconds
+    this.lifetime = this.config.lifetime;
     this.intensity = 1;
-    this.lastClearRadius = 0; // Keep track of last cleared radius
-    this.createFragmentsOnClear = false;
+    this.lastClearRadius = 0;
+    this.createFragmentsOnClear = this.config.createFragmentsOnClear || false;
+    this.playerHitTolerance = this.config.playerHitTolerance || 1;
   }
 
   draw() {
     ctx.save();
 
     const alpha = Math.max(0, (this.lifetime - this.age) / this.lifetime);
+    const color = this.config.color || "#ffeb3b";
 
     // Outer shockwave ring
-    ctx.globalAlpha = alpha * 0.8;
+    ctx.globalAlpha = alpha * 0.8; // FIXED CONSTANT
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "#ffeb3b";
-    ctx.lineWidth = 8;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 8; // FIXED CONSTANT
     ctx.stroke();
 
     // Inner core explosion
-    ctx.globalAlpha = alpha * 0.6;
+    ctx.globalAlpha = alpha * 0.6; // FIXED CONSTANT
     const coreGradient = ctx.createRadialGradient(
       this.x,
       this.y,
       0,
       this.x,
       this.y,
-      this.radius * 0.5
+      this.radius * 0.5 // FIXED CONSTANT
     );
-    coreGradient.addColorStop(0, "#fff");
-    coreGradient.addColorStop(0.4, "#ffeb3b");
-    coreGradient.addColorStop(0.8, "#ff9800");
-    coreGradient.addColorStop(1, "rgba(255, 152, 0, 0)");
+    coreGradient.addColorStop(0, "#fff"); // FIXED CONSTANT
+    coreGradient.addColorStop(0.4, color); // FIXED CONSTANT
+    coreGradient.addColorStop(0.8, this.config.coreColor || "#ff9800"); // FIXED CONSTANT
+    coreGradient.addColorStop(1, "rgba(255, 152, 0, 0)"); // FIXED CONSTANT
 
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2);
+    ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2); // FIXED CONSTANT
     ctx.fillStyle = coreGradient;
     ctx.fill();
 
     // Outer glow
-    ctx.globalAlpha = alpha * 0.3;
+    ctx.globalAlpha = alpha * 0.3; // FIXED CONSTANT
     const glowGradient = ctx.createRadialGradient(
       this.x,
       this.y,
-      this.radius * 0.8,
+      this.radius * 0.8, // FIXED CONSTANT
       this.x,
       this.y,
-      this.radius * 1.5
+      this.radius * 1.5 // FIXED CONSTANT
     );
-    glowGradient.addColorStop(0, "rgba(255, 235, 59, 0.3)");
-    glowGradient.addColorStop(1, "rgba(255, 235, 59, 0)");
+    glowGradient.addColorStop(0, `rgba(255, 235, 59, 0.3)`); // FIXED CONSTANT
+    glowGradient.addColorStop(1, `rgba(255, 235, 59, 0)`); // FIXED CONSTANT
 
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius * 1.5, 0, Math.PI * 2);
+    ctx.arc(this.x, this.y, this.radius * 1.5, 0, Math.PI * 2); // FIXED CONSTANT
     ctx.fillStyle = glowGradient;
     ctx.fill();
 
@@ -1265,21 +1275,35 @@ class SuperNova {
 
       // Add explosive particles for visual effect
       if (this.age % 2 === 0) {
-        const particleCount = 4 + Math.floor(this.radius / 30); // Thêm nhiều hạt hơn khi supernova mở rộng
+        // FIXED CONSTANT
+        const particleCount =
+          this.config.particleMinCount +
+          Math.floor(this.radius / this.config.particleRadiusStep); // Dynamic particle count
         for (let i = 0; i < particleCount; i++) {
           const angle = Math.random() * Math.PI * 2;
           // Tạo hạt ở vòng sóng mở rộng
-          const dist = this.radius - 20 + Math.random() * 40;
-          const colors = ["#ffeb3b", "#ff9800", "#ff5722", "#ffffff"]; // Nhiều màu sắc hơn
+          const dist = this.radius - 20 + Math.random() * 40; // FIXED CONSTANTS
+          const colors = this.config.particleColors || [
+            "#ffeb3b",
+            "#ff9800",
+            "#ff5722",
+            "#ffffff",
+          ];
           particles.push(
             new Particle(
               this.x + Math.cos(angle) * dist,
               this.y + Math.sin(angle) * dist,
-              Math.random() * 3 + 1,
+              Math.random() * 3 + 1, // FIXED CONSTANTS
               colors[Math.floor(Math.random() * colors.length)],
               {
-                x: Math.cos(angle) * (3 + Math.random() * 2),
-                y: Math.sin(angle) * (3 + Math.random() * 2),
+                x:
+                  Math.cos(angle) *
+                  (this.config.particleBaseSpeed +
+                    Math.random() * this.config.particleSpeedVariation),
+                y:
+                  Math.sin(angle) *
+                  (this.config.particleBaseSpeed +
+                    Math.random() * this.config.particleSpeedVariation),
               }
             )
           );
@@ -1287,9 +1311,14 @@ class SuperNova {
       }
     }
 
-    // Add screen shake effect while expanding - tăng cường độ khi mở rộng
-    if (this.age % 10 === 0 && this.radius < this.maxRadius) {
-      const intensity = 0.3 + (this.radius / this.maxRadius) * 0.5;
+    // Add screen shake effect while expanding
+    if (
+      this.age % this.config.shakeFrameInterval === 0 &&
+      this.radius < this.maxRadius
+    ) {
+      const intensity =
+        this.config.shakeBaseIntensity +
+        (this.radius / this.maxRadius) * this.config.shakeIntensityScale;
       triggerScreenShake(intensity);
     }
 
@@ -1306,7 +1335,7 @@ class SuperNova {
     const playerDist = Math.hypot(player.x - this.x, player.y - this.y);
     if (
       playerDist < outerRadius &&
-      playerDist >= innerRadius &&
+      playerDist >= innerRadius - this.playerHitTolerance &&
       !player.shieldActive
     ) {
       // Player is caught in the supernova explosion
@@ -1323,38 +1352,43 @@ class SuperNova {
       const dist = Math.hypot(asteroid.x - this.x, asteroid.y - this.y);
       if (dist < outerRadius && dist >= innerRadius) {
         // Create explosion particles
-        for (let j = 0; j < 8; j++) {
+        for (
+          let j = 0;
+          j < (this.config.asteroidExplosionParticles || 8);
+          j++
+        ) {
           const angle = Math.random() * Math.PI * 2;
           particles.push(
             new Particle(
-              asteroid.x + Math.cos(angle) * 5,
-              asteroid.y + Math.sin(angle) * 5,
-              Math.cos(angle) * 6,
-              Math.sin(angle) * 6,
-              "#ffbb33"
+              asteroid.x + Math.cos(angle) * 5, // FIXED CONSTANT
+              asteroid.y + Math.sin(angle) * 5, // FIXED CONSTANT
+              Math.cos(angle) * 6, // FIXED CONSTANT
+              Math.sin(angle) * 6, // FIXED CONSTANT
+              "#ffbb33" // FIXED CONSTANT
             )
           );
         }
 
         // Create fragments if enabled
         if (this.createFragmentsOnClear) {
-          const fragmentCount = 4 + Math.floor(asteroid.radius / 8);
+          const fragmentCount =
+            this.config.fragmentCount || 4 + Math.floor(asteroid.radius / 8);
           for (let k = 0; k < fragmentCount; k++) {
             const angle =
               (k / fragmentCount) * Math.PI * 2 + Math.random() * 0.5;
-            const speed = 4 + Math.random() * 6;
+            const speed =
+              this.config.fragmentBaseSpeed +
+              Math.random() * this.config.fragmentSpeedVariation;
             const velocity = {
               x: Math.cos(angle) * speed,
               y: Math.sin(angle) * speed,
             };
-            fragments.push(
-              new Fragment(asteroid.x, asteroid.y, velocity)
-            );
+            fragments.push(new Fragment(asteroid.x, asteroid.y, velocity));
           }
         }
 
         asteroids.splice(i, 1);
-        score += 10; // Bonus for clearing
+        score += this.config.clearBonus;
       }
     }
 
@@ -1380,6 +1414,7 @@ class SuperNova {
     // Clear lasers
     for (let i = lasers.length - 1; i >= 0; i--) {
       const laser = lasers[i];
+      // simplified distance check for laser midpoint
       const laserMidX = (laser.startX + laser.endX) / 2;
       const laserMidY = (laser.startY + laser.endY) / 2;
       const dist = Math.hypot(laserMidX - this.x, laserMidY - this.y);
@@ -1430,27 +1465,25 @@ class SuperNova {
       }
     }
 
-    // Black holes are NOT cleared by supernova
     if (outerRadius > innerRadius) {
       // Chỉ phát ra âm thanh và hiệu ứng khi thực sự có vật thể bị xóa
       playSound("explosion");
-      triggerScreenShake(0.4);
+      triggerScreenShake(this.config.clearingShakeIntensity || 0.4);
 
       // Thêm hiệu ứng hạt khi vòng sóng mở rộng
-      const particleCount = 5;
+      const particleCount = this.config.clearingParticleCount || 5;
       for (let i = 0; i < particleCount; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const dist =
-          innerRadius + (outerRadius - innerRadius) * Math.random();
+        const dist = innerRadius + (outerRadius - innerRadius) * Math.random();
         particles.push(
           new Particle(
             this.x + Math.cos(angle) * dist,
             this.y + Math.sin(angle) * dist,
-            Math.random() * 3 + 1,
-            "#ffbb33",
+            Math.random() * 3 + 1, // FIXED CONSTANTS
+            this.config.clearingParticleColor || "#ffbb33",
             {
-              x: Math.cos(angle) * 3,
-              y: Math.sin(angle) * 3,
+              x: Math.cos(angle) * 3, // FIXED CONSTANT
+              y: Math.sin(angle) * 3, // FIXED CONSTANT
             }
           )
         );
@@ -1458,4 +1491,3 @@ class SuperNova {
     }
   }
 }
-

@@ -127,3 +127,56 @@ function createMiniShowerAsteroid(direction) {
     velocity
   );
 }
+
+/**
+ * Class for handling time-delayed spawning with a prior visual warning.
+ * This replaces the complex inline warning logic in eventSystem.js.
+ */
+class WarningSystem {
+  constructor(type, x, y, options = {}) {
+    this.type = type;
+    this.x = x;
+    this.y = y;
+    this.warningDuration = options.duration || 120; // 2 seconds by default
+    this.warning = new Warning(x, y, type, this.warningDuration, options.angle);
+  }
+
+  /**
+   * Spawns the final entity after the warning period ends.
+   * @param {function} spawnCallback The function to execute to spawn the entity.
+   */
+  spawn(spawnCallback) {
+    // 1. Add the visual warning immediately
+    warnings.push(this.warning);
+    if (typeof playSound === "function") {
+      playSound("warning");
+    }
+
+    // 2. Schedule the actual entity spawn
+    setTimeout(() => {
+      if (isGameRunning) {
+        // Execute the spawn logic
+        spawnCallback();
+
+        // Optional: Remove the warning if it hasn't faded out yet (it handles its own fading)
+        const index = warnings.indexOf(this.warning);
+        if (index > -1) {
+          warnings.splice(index, 1);
+        }
+      }
+    }, this.warningDuration * (1000 / 60)); // Convert frames to milliseconds
+  }
+}
+
+/**
+ * Factory function to create a WarningSystem instance.
+ * This is the missing function causing the ReferenceError.
+ * @param {string} type The type of warning ('freeze', 'plasma', 'supernova', etc.).
+ * @param {number} x X coordinate of the warning.
+ * @param {number} y Y coordinate of the warning.
+ * @param {object} options Additional options (e.g., duration, angle).
+ * @returns {WarningSystem} A new WarningSystem instance.
+ */
+function spawnWithWarning(type, x, y, options = {}) {
+  return new WarningSystem(type, x, y, options);
+}

@@ -128,11 +128,11 @@ button:hover {
   opacity: 0;
   transition: opacity 0.5s;
   background: linear-gradient(to bottom, rgba(5, 5, 16, 0.7), transparent);
-  pointer-events: none; /* Cho phép click xuyên qua */
+  pointer-events: none;
 }
 
 #top-bar > * {
-  pointer-events: auto; /* Kích hoạt lại pointer-events cho các phần tử con */
+  pointer-events: auto;
 }
 
 .hud-left,
@@ -143,9 +143,14 @@ button:hover {
   align-items: center;
 }
 
+/* === CHANGED SECTION START === */
+/* Chỉnh sửa bố cục cột bên trái để hiển thị Score và High Score */
 .hud-left {
-  justify-content: flex-start;
+  justify-content: center; /* Căn giữa nội dung theo chiều dọc */
+  flex-direction: column;
+  align-items: flex-start; /* Căn nội dung sang trái */
 }
+/* === CHANGED SECTION END === */
 
 .hud-center {
   justify-content: center;
@@ -155,7 +160,7 @@ button:hover {
 
 .hud-right {
   justify-content: flex-end;
-  gap: 20px; /* Thêm khoảng cách giữa Time và nút Pause */
+  gap: 20px;
 }
 
 #score-display,
@@ -171,6 +176,7 @@ button:hover {
   font-size: 1.1rem;
   color: var(--highlight-color);
   text-shadow: 0 0 8px var(--highlight-color);
+  line-height: 1; /* Cải thiện khoảng cách */
 }
 #survival-display {
   font-size: 1.8rem;
@@ -183,7 +189,7 @@ button:hover {
 }
 
 #level-progress-bar-container {
-  width: 250px; /* Kéo dài thanh progess */
+  width: 250px;
   height: 10px;
   background-color: rgba(255, 255, 255, 0.15);
   border-radius: 5px;
@@ -196,7 +202,7 @@ button:hover {
   height: 100%;
   background: linear-gradient(90deg, var(--primary-color), #00aaff);
   border-radius: 5px;
-  transition: width 0.1s linear; /* Cập nhật nhanh hơn */
+  transition: width 0.1s linear;
   box-shadow: 0 0 10px var(--primary-color);
 }
 
@@ -222,7 +228,7 @@ button:hover {
   font-size: 1.2rem;
   color: var(--primary-color);
   text-shadow: 0 0 8px var(--primary-color);
-  display: none; /* Hidden by default */
+  display: none;
 }
 
 #event-text {
@@ -241,14 +247,13 @@ button:hover {
 }
 
 #pause-button {
-  /* Loại bỏ position absolute */
   font-size: 1.5rem;
   padding: 0.5rem 1rem;
-  margin: 0; /* Reset margin */
+  margin: 0;
   background: rgba(15, 15, 30, 0.6);
   border: 1px solid rgba(0, 255, 255, 0.25);
   border-radius: 10px;
-  animation: none; /* Tắt animation pulse mặc định */
+  animation: none;
   pointer-events: auto;
 }
 
