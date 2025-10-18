@@ -747,3 +747,6 @@ function triggerRandomEvent() {
       break;
   }
 }
+
+// Expose to global scope for access from game.js
+window.triggerRandomEvent = triggerRandomEvent;
