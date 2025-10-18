@@ -1,19 +1,43 @@
 // Collectible entities - power-ups and bonuses
 
+// Class EnergyOrb đã được cập nhật để sử dụng cấu hình từ GAME_CONFIG.newObjects.energyOrb
 class EnergyOrb {
   constructor(x, y) {
+    // Lấy cấu hình từ GAME_CONFIG để đảm bảo tùy chỉnh
+    const config = GAME_CONFIG.newObjects.energyOrb;
+
     this.x = x || Math.random() * canvas.width;
     this.y = y || Math.random() * canvas.height;
-    this.radius = 6 + Math.random() * 2;
+
+    // Sử dụng config.baseRadius (đã giảm)
+    this.radius = config.baseRadius + Math.random();
+
+    // Sử dụng config.baseVelocity (đã giảm)
     this.velocity = {
-      x: (Math.random() - 0.5) * 2,
-      y: (Math.random() - 0.5) * 2,
+      x: (Math.random() - 0.5) * config.baseVelocity * 2,
+      y: (Math.random() - 0.5) * config.baseVelocity * 2,
     };
+
     this.rotation = 0;
-    this.rotationSpeed = 0.01 + Math.random() * 0.01;
+    this.rotationSpeed = config.rotationSpeed + Math.random() * 0.01;
+
     this.pulsePhase = Math.random() * Math.PI * 2;
-    this.lifetime = 300 + Math.random() * 200;
+
+    // Sử dụng config.minLifetime và config.maxLifetime (đã tăng)
+    this.lifetime =
+      config.minLifetime +
+      Math.random() * (config.maxLifetime - config.minLifetime);
+
     this.age = 0;
+
+    // Log khi EnergyOrb xuất hiện để tiện debug
+    console.log(
+      `EnergyOrb xuất hiện tại: (${this.x.toFixed(0)}, ${this.y.toFixed(
+        0
+      )}) | Bán kính: ${this.radius.toFixed(
+        1
+      )} | Tuổi thọ: ${this.lifetime.toFixed(0)} frames`
+    );
   }
 
   draw() {
@@ -21,8 +45,15 @@ class EnergyOrb {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rotation);
 
-    const pulse = Math.sin(this.age * 0.1 + this.pulsePhase) * 0.3 + 1;
-    const currentRadius = this.radius * pulse;
+    // NEW: Hiệu ứng tăng dần kích thước trong 30 khung hình đầu tiên (Ramp-up)
+    const initialRampDuration = 30; // Thời gian ramp-up: 30 frames (0.5 giây)
+    const initialScale = Math.min(1, this.age / initialRampDuration);
+
+    // Đã giảm tốc độ mở rộng/nhịp đập từ 0.1 xuống 0.04 để chậm hơn.
+    const pulse = Math.sin(this.age * 0.04 + this.pulsePhase) * 0.3 + 1;
+
+    // Áp dụng initialScale để kích thước bắt đầu từ 0
+    const currentRadius = this.radius * pulse * initialScale;
 
     // Outer glow
     const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, currentRadius * 2);
@@ -47,17 +78,22 @@ class EnergyOrb {
   }
 
   update() {
+    const config = GAME_CONFIG.newObjects.energyOrb;
+
     this.age++;
     this.rotation += this.rotationSpeed;
     this.x += this.velocity.x;
     this.y += this.velocity.y;
 
-    // Attract nearby fragments
-    const attractRadius = this.radius * 3;
+    // Attract nearby fragments - Sử dụng config.fragmentAttractRadiusFactor
+    const attractRadius = this.radius * config.fragmentAttractRadiusFactor;
     fragments.forEach((fragment) => {
       const dist = Math.hypot(fragment.x - this.x, fragment.y - this.y);
       if (dist < attractRadius && dist > 0) {
-        const force = (0.1 * (attractRadius - dist)) / attractRadius;
+        // Sử dụng config.fragmentAttractForce
+        const force =
+          (config.fragmentAttractForce * (attractRadius - dist)) /
+          attractRadius;
         const angle = Math.atan2(this.y - fragment.y, this.x - fragment.x);
         fragment.velocity.x += Math.cos(angle) * force;
         fragment.velocity.y += Math.sin(angle) * force;

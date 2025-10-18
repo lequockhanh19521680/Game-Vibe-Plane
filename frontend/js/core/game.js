@@ -156,6 +156,7 @@ function animate() {
     levelProgressBar.style.width = `${Math.min(100, progressPercentage)}%`;
   }
 
+  // VÒNG LẶP UPDATE TỐI ƯU: Đưa tất cả các mảng vào một mảng cha và xử lý update
   [
     particles,
     lasers,
@@ -172,7 +173,6 @@ function animate() {
     quantumPortals,
     shieldGenerators,
     freezeZones,
-    // laserTurrets removed
     superNovas,
     wormholes,
     magneticStorms,
@@ -182,9 +182,24 @@ function animate() {
   );
   player.update(); // Update player last to draw over everything
 
-  // --- Filter dead entities ---
-  missiles = missiles.filter((m) => !m.isDead);
+  // --- Filter dead entities & Apply Hard Limits (Optimization) ---
+
+  // Lọc và giới hạn Fragments
   fragments = fragments.filter((f) => f.life > 0 && f.y < height + 50);
+  if (fragments.length > GAME_CONFIG.advanced.maxFragments) {
+    // Nếu vượt quá giới hạn, cắt bỏ các phần tử cũ nhất (đầu mảng)
+    fragments.splice(0, fragments.length - GAME_CONFIG.advanced.maxFragments);
+  }
+
+  // Lọc và giới hạn Particles
+  particles = particles.filter((p) => p.alpha > 0);
+  if (particles.length > GAME_CONFIG.advanced.maxParticles) {
+    // Nếu vượt quá giới hạn, cắt bỏ các phần tử cũ nhất (đầu mảng)
+    particles.splice(0, particles.length - GAME_CONFIG.advanced.maxParticles);
+  }
+
+  // Lọc các vật thể khác (giữ nguyên logic cũ)
+  missiles = missiles.filter((m) => !m.isDead);
   asteroids = asteroids.filter(
     (a) => a.x > -50 && a.x < width + 50 && a.y > -50 && a.y < height + 50
   );
@@ -293,6 +308,21 @@ function animate() {
     }
   }
 
+  // THÊM LOGIC SPAWN ENERGY ORB: Energy Orb xuất hiện định kỳ
+  if (score > 1000) {
+    // Bắt đầu spawn Energy Orb sau 1000 điểm
+    timers.energyOrb = (timers.energyOrb || 0) + 1;
+    if (timers.energyOrb % 1500 === 0) {
+      // Mỗi 1500 frames (khoảng 25 giây)
+      energyOrbs.push(
+        new EnergyOrb(
+          Math.random() * width,
+          Math.random() * height * 0.6 // Giới hạn ở 60% màn hình để không quá gần Player
+        )
+      );
+    }
+  }
+
   // --- CẬP NHẬT LOGIC SPAWN MISSILE VỚI DIRECTIONAL WARNING ---
   if (score > GAME_CONFIG.missiles.spawnScore) {
     timers.missile++;
@@ -320,6 +350,7 @@ function animate() {
           missileAngle = Math.PI; // Move left
           spawnX = width + spawnOffset;
           spawnY = warningY;
+          missileAngle = Math.PI;
           break;
         case "top":
           warningX =
@@ -328,6 +359,7 @@ function animate() {
           missileAngle = Math.PI / 2; // Move down
           spawnX = warningX;
           spawnY = -spawnOffset;
+          missileAngle = Math.PI / 2;
           break;
         case "bottom":
           warningX =
@@ -336,6 +368,7 @@ function animate() {
           missileAngle = -Math.PI / 2; // Move up
           spawnX = warningX;
           spawnY = height + spawnOffset;
+          missileAngle = -Math.PI / 2;
           break;
       }
 
@@ -531,11 +564,15 @@ function animate() {
   // Fragment vs Player collisions (now just visual effects, not lethal)
   for (let i = fragments.length - 1; i >= 0; i--) {
     const fragment = fragments[i];
-    if (
-      fragment.lethal &&
-      Math.hypot(player.x - fragment.x, player.y - fragment.y) <
-        player.radius + fragment.radius
-    ) {
+
+    // TỐI ƯU VA CHẠM: Sử dụng Bounding Box đơn giản cho các mảnh vỡ nhỏ
+    const isOverlapping =
+      player.x < fragment.x + fragment.radius &&
+      player.x + player.radius > fragment.x - fragment.radius &&
+      player.y < fragment.y + fragment.radius &&
+      player.y + player.radius > fragment.y - fragment.radius;
+
+    if (fragment.lethal && isOverlapping) {
       // Create spark visual effect instead of ending game
       for (let j = 0; j < 8; j++) {
         const angle = Math.random() * Math.PI * 2;
@@ -571,6 +608,7 @@ function animate() {
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const f = fragments[i];
       const a = asteroids[j];
+      // TỐI ƯU VA CHẠM: Giữ nguyên Math.hypot cho độ chính xác khi vật thể lớn
       if (f && a && Math.hypot(f.x - a.x, f.y - a.y) < f.radius + a.radius) {
         // Create explosion particles
         for (let k = 0; k < GAME_CONFIG.fragments.explosionParticles; k++) {
@@ -644,7 +682,16 @@ function animate() {
   for (let i = energyOrbs.length - 1; i >= 0; i--) {
     const orb = energyOrbs[i];
     const dist = Math.hypot(player.x - orb.x, player.y - orb.y);
-    if (dist < orb.radius + player.radius) {
+
+    // ĐIỀU CHỈNH LỖI: Kiểm tra va chạm với cả lá chắn
+    const isCollected = dist < orb.radius + player.radius;
+    const isBlocked =
+      dist < orb.radius + player.thunderShieldRadius &&
+      player.thunderShieldActive;
+    const isShielded =
+      dist < orb.radius + player.radius * 2.5 && player.shieldActive; // Bán kính lá chắn thường là 2.5 lần bán kính player
+
+    if (isCollected || isBlocked || isShielded) {
       // Positive effect - boost score
       score += 50;
       playSound("powerup");

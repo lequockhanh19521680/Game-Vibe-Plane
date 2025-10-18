@@ -456,10 +456,6 @@ function triggerRandomEvent() {
       handleLightningStormEvent();
       break;
 
-    case "mineFieldDetonation":
-      handleMineFieldDetonationEvent();
-      break;
-
     case "wormholePortal":
       handleWormholePortalEvent();
       break;
@@ -732,33 +728,6 @@ function triggerRandomEvent() {
 
     playSound("warning");
     triggerScreenShake(0.4);
-  }
-
-  function handleMineFieldDetonationEvent() {
-    const config = GAME_CONFIG.events.mineFieldDetonation;
-    eventActive.type = "mineFieldDetonation";
-    showEventText("💥 COSMIC MINE FIELD!");
-
-    // Create mines in a grid pattern
-    const gridSize = config.gridSize;
-    const spacingX = width / (gridSize + 1);
-    const spacingY = height / (gridSize + 1);
-
-    let mineIndex = 0;
-    for (let i = 1; i <= gridSize; i++) {
-      for (let j = 1; j <= gridSize; j++) {
-        if (mineIndex >= config.mineCount) break;
-
-        const x = spacingX * i + (Math.random() - 0.5) * spacingX * 0.3;
-        const y = spacingY * j + (Math.random() - 0.5) * spacingY * 0.3;
-
-        cosmicMines.push(new CosmicMine(x, y));
-        mineIndex++;
-      }
-    }
-
-    playSound("warning");
-    triggerScreenShake(0.2);
   }
 
   function handleWormholePortalEvent() {

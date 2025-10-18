@@ -227,9 +227,9 @@ class Player {
     // Increase player speed slightly while thunder shield is active
     globalSpeedMultiplier *= 0.8;
 
-    // Visual effect
-    for (let i = 0; i < 24; i++) {
-      const angle = (i / 24) * Math.PI * 2;
+    // Visual effect: Giảm số lượng hạt ban đầu
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 2;
       particles.push(
         new Particle(
           this.x + Math.cos(angle) * this.radius * 2,
@@ -259,8 +259,8 @@ class Player {
         // Create lightning effect to the asteroid
         this.createLightningStrike(ast.x, ast.y);
 
-        // Create explosion particles
-        for (let j = 0; j < 8; j++) {
+        // Create explosion particles: Giảm số lượng hạt nổ
+        for (let j = 0; j < 4; j++) {
           const angle = Math.random() * Math.PI * 2;
           particles.push(
             new Particle(

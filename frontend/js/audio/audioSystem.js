@@ -1097,66 +1097,6 @@ function createPulsarBurstSound() {
   }, 400);
 }
 
-// Create supernova sound
-function createSuperNovaSound() {
-  // Âm thanh chính, dịu hơn
-  createSound(
-    80, // Tần số thấp hơn
-    2.0, // Kéo dài hơn
-    "sine", // Sóng sine mượt mà hơn
-    GAME_CONFIG.audio.volumes.supernova * 0.7, // Giảm âm lượng
-    true,
-    {
-      attack: 0.8, // Tăng attack để âm thanh vào từ từ
-      decay: 1.0,
-      sustain: true,
-      sustainLevel: 0.5,
-      frequencySlide: 60, // Tăng dần tần số
-      modulate: true,
-      modFreq: 0.3,
-      modDepth: 20,
-    }
-  );
-
-  // Hiệu ứng phụ, tạo cảm giác loé sáng
-  setTimeout(() => {
-    createSound(
-      400,
-      1.0,
-      "triangle",
-      GAME_CONFIG.audio.volumes.supernova * 0.5,
-      true,
-      {
-        attack: 0.1,
-        decay: 0.8,
-        frequencySlide: -100,
-      }
-    );
-  }, 500);
-
-  // Âm thanh tan rã
-  setTimeout(() => {
-    // Dispersing energy particles
-    for (let i = 0; i < 5; i++) {
-      setTimeout(() => {
-        const pan = (Math.random() - 0.5) * 1.5;
-        createSound(
-          300 + i * 150,
-          0.5,
-          "sine",
-          GAME_CONFIG.audio.volumes.supernova * 0.3,
-          true,
-          {
-            attack: 0.1,
-            decay: 0.4,
-            spatial: true,
-            pan: pan,
-          }
-        );
-      }, i * 100);
-    }
-  }, 1200);
-}
 // Subtle cosmic background ambience
 function startSpaceAmbience() {
   if (spaceAmbientInterval) clearInterval(spaceAmbientInterval);

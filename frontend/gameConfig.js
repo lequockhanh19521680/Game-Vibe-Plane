@@ -64,16 +64,16 @@ const GAME_CONFIG = {
     warningDelay: 3000,
 
     baseRadius: 8,
-    baseMaxRadius: 50,
+    baseMaxRadius: 40, // ĐÃ ĐIỀU CHỈNH: Nhỏ hơn
     radiusIncreasePerLevel: 15,
 
     baseGravityRadius: 120,
     gravityRadiusIncreasePerLevel: 30,
 
-    baseStrength: 0.02,
+    baseStrength: 0.015, // ĐÃ ĐIỀU CHỈNH: Giảm lực hút
     strengthIncreasePerLevel: 0.018,
 
-    baseGrowthRate: 0.025,
+    baseGrowthRate: 0.018, // ĐÃ ĐIỀU CHỈNH: Chậm lớn hơn
     growthRateIncreasePerLevel: 0.03,
 
     playerForceMultiplier: 1.8,
@@ -93,10 +93,10 @@ const GAME_CONFIG = {
     warningDelay: 2500,
 
     radius: 5,
-    baseSpeed: 0.18,
+    baseSpeed: 0.15, // ĐÃ ĐIỀU CHỈNH: Chậm hơn
     speedIncreasePerLevel: 0.025,
 
-    baseTurnSpeed: 0.02,
+    baseTurnSpeed: 0.015, // ĐÃ ĐIỀU CHỈNH: Quay chậm hơn, dễ né hơn
     turnSpeedIncreasePerLevel: 0.02,
 
     speedUpTime: 350,
@@ -128,7 +128,7 @@ const GAME_CONFIG = {
     targetChanceIncreasePerLevel: 0.08,
     maxTargetChance: 0.85,
 
-    warningTime: 240, // ĐÃ ĐIỀU CHỈNH: Dễ hơn
+    warningTime: 300, // ĐÃ ĐIỀU CHỈNH: Tăng thời gian cảnh báo để dễ né hơn
     beamDuration: 10, // ĐÃ ĐIỀU CHỈNH: Dễ hơn
     staggerDelay: 150,
 
@@ -167,9 +167,9 @@ const GAME_CONFIG = {
   laserMines: {
     spawnScore: 8000,
     spawnInterval: 500,
-    warningDuration: 100,
+    warningDuration: 150, // ĐÃ ĐIỀU CHỈNH: Tăng thời gian cảnh báo
     radius: 10,
-    chargeTime: 120,
+    chargeTime: 180, // ĐÃ ĐIỀU CHỈNH: Tăng thời gian tích lũy (chậm nổ hơn)
     fireDuration: 15,
     patterns: ["cross", "diagonal", "star"],
     beamWidth: 10,
@@ -188,6 +188,11 @@ const GAME_CONFIG = {
     colors: ["#40c4ff", "#81d4fa"],
     pulseSpeed: 0.15,
     rotationSpeed: 0.02,
+    // THÊM CẤU HÌNH XẢ NĂNG LƯỢNG (discharge)
+    chargeTime: 90, // Thời gian tích lũy năng lượng
+    dischargeTime: 30, // Thời gian xả năng lượng (gây sát thương)
+    dischargeRadius: 150, // Bán kính va chạm và bán kính hiệu ứng hình ảnh
+    dischargeColor: "#40c4ff", // Màu của vòng năng lượng khi xả
   },
 
   // =============================================================================
@@ -217,8 +222,8 @@ const GAME_CONFIG = {
     speedZone: { speedMultiplier: 1.4 },
     laserSwarm: { laserCount: 3, targetChance: 0.6, delay: 400 },
     laserGrid: {
-      gridSize: 3, // ĐÃ ĐIỀU CHỈNH: Dễ hơn
-      delay: 350, // ĐÃ ĐIỀU CHỈNH: Dễ hơn
+      gridSize: 3, // FIX LỖI: Thuộc tính này bị thiếu, gây lỗi Uncaught TypeError
+      delay: 350,
     },
     asteroidRain: {
       count: 18,
@@ -354,6 +359,17 @@ const GAME_CONFIG = {
       shieldColor: "#4fc3f7",
     },
 
+    // CẤU HÌNH ENERGY ORB (ĐÃ THÊM VÀ SỬA LỖI baseRadius)
+    energyOrb: {
+      baseRadius: 2.5, // FIX LỖI: Thuộc tính này bị thiếu, gây lỗi Uncaught TypeError
+      baseVelocity: 1.0,
+      minLifetime: 500,
+      maxLifetime: 800,
+      rotationSpeed: 0.01,
+      fragmentAttractRadiusFactor: 3,
+      fragmentAttractForce: 0.1,
+    },
+
     // CẤU HÌNH FREEZE ZONE (ĐÃ CHUYỂN CÁC CONST TỪ hazards.js)
     freezeZone: {
       radius: 100,
@@ -413,6 +429,8 @@ const GAME_CONFIG = {
       asteroidFragmentCount: 4,
       fragmentSpawnOffset: 8,
       fragmentSpeed: 3,
+      fragmentBaseSpeed: 4,
+      fragmentSpeedVariation: 6,
     },
 
     // CẤU HÌNH MAGNETIC STORM (ĐÃ CHUYỂN CÁC CONST TỪ hazards.js)
@@ -589,7 +607,11 @@ const GAME_CONFIG = {
       mineIntensity: 0.2,
       crystalIntensity: 0.3,
     },
-    particles: { explosionCount: 6, explosionSpeed: 6, fadeSpeed: 0.02 },
+    particles: {
+      explosionCount: 6,
+      explosionSpeed: 6,
+      fadeSpeed: 0.02,
+    },
     nebula: { count: 5, minRadius: 100, maxRadius: 300, opacity: 0.05 },
     stars: { layers: 3, starsPerLayer: 80, maxRadius: 1.5 },
   },
@@ -598,7 +620,7 @@ const GAME_CONFIG = {
   // UI SETTINGS - Cài đặt giao diện
   // =============================================================================
   ui: {
-    eventText: { duration: 2000, fontSize: "2.5rem" },
+    eventText: { duration: 500, fontSize: "1.5rem" }, // Đã điều chỉnh
     warning: {
       radius: 30,
       pulseIntensity: 15,
@@ -625,8 +647,8 @@ const GAME_CONFIG = {
   // ADVANCED SETTINGS - Cài đặt nâng cao
   // =============================================================================
   advanced: {
-    maxParticles: 100,
-    maxFragments: 50,
+    maxParticles: 300, // TĂNG: Tăng giới hạn hạt
+    maxFragments: 150, // TĂNG: Tăng giới hạn mảnh vỡ
     collisionPrecision: 1,
     targetFPS: 60,
     localStorageKey: "stellarDriftHighScore",

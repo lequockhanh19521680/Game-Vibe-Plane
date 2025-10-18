@@ -4,16 +4,21 @@ class Particle extends ColoredEntity {
   constructor(x, y, radius, color, velocity) {
     super(x, y, radius, color, velocity);
     this.alpha = 1;
+    // Sử dụng kích thước đơn giản cho hiệu suất vẽ cao hơn
+    this.size = radius * 2;
   }
   draw() {
     ctx.save();
+    // VẼ TỐI ƯU: Sử dụng fillRect thay vì arc/fill (nhanh hơn nhiều)
     ctx.globalAlpha = this.alpha;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.shadowColor = this.color;
-    ctx.shadowBlur = 10;
     ctx.fillStyle = this.color;
-    ctx.fill();
+    // Vẽ hình chữ nhật nhỏ tại vị trí hạt (làm tròn để trông giống hạt)
+    ctx.fillRect(
+      this.x - this.radius,
+      this.y - this.radius,
+      this.size,
+      this.size
+    );
     ctx.restore();
   }
   update() {
@@ -31,8 +36,7 @@ class Fragment {
     this.radius =
       GAME_CONFIG.fragments.minRadius +
       Math.random() *
-        (GAME_CONFIG.fragments.maxRadius -
-          GAME_CONFIG.fragments.minRadius);
+        (GAME_CONFIG.fragments.maxRadius - GAME_CONFIG.fragments.minRadius);
     this.velocity = velocity;
     this.color = GAME_CONFIG.fragments.color;
     this.life =
@@ -44,6 +48,33 @@ class Fragment {
     this.rotationSpeed =
       (Math.random() - 0.5) * GAME_CONFIG.fragments.rotationSpeed;
     this.lethal = false; // Regular fragments are not lethal
+  }
+  // Thêm phương thức draw/update bị thiếu cho Fragment
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+    ctx.beginPath();
+    ctx.rect(-this.radius / 2, -this.radius / 2, this.radius, this.radius);
+    ctx.fillStyle = this.color;
+    // Loại bỏ shadowBlur để tăng hiệu suất
+    ctx.fill();
+    ctx.restore();
+  }
+
+  update() {
+    this.x += this.velocity.x;
+    this.y += this.velocity.y;
+    this.velocity.x *= GAME_CONFIG.fragments.airResistance;
+    this.velocity.y *= GAME_CONFIG.fragments.airResistance;
+    this.rotation += this.rotationSpeed;
+
+    this.life--;
+    this.alpha = Math.max(0, this.life / 120);
+
+    this.draw();
+    // Fragment không cần return giá trị, việc lọc được thực hiện trong game.js
   }
 }
 
@@ -75,15 +106,10 @@ class MissileFragment {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rotation);
     ctx.beginPath();
-    ctx.rect(
-      -this.radius / 2,
-      -this.radius / 2,
-      this.radius,
-      this.radius
-    );
+    // VẼ TỐI ƯU: Sử dụng rect thay vì fill để vẽ hình vuông/chữ nhật
+    ctx.rect(-this.radius / 2, -this.radius / 2, this.radius, this.radius);
     ctx.fillStyle = this.color;
-    ctx.shadowColor = this.color;
-    ctx.shadowBlur = 8;
+    // Loại bỏ shadowBlur để tăng hiệu suất
     ctx.fill();
     // Add danger glow for lethal fragments
     if (this.lethal) {
@@ -97,48 +123,15 @@ class MissileFragment {
   update() {
     this.x += this.velocity.x;
     this.y += this.velocity.y;
-    this.velocity.y += GAME_CONFIG.fragments.gravity;
     this.velocity.x *= GAME_CONFIG.fragments.airResistance;
     this.velocity.y *= GAME_CONFIG.fragments.airResistance;
     this.rotation += this.rotationSpeed;
 
     this.life--;
-    this.alpha = Math.max(0, this.life / 120);
-
-    return this.life <= 0;
-  }
-
-  draw() {
-    ctx.save();
-    ctx.globalAlpha = this.alpha;
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.rotation);
-    ctx.beginPath();
-    ctx.rect(
-      -this.radius / 2,
-      -this.radius / 2,
-      this.radius,
-      this.radius
-    );
-    ctx.fillStyle = this.color;
-    ctx.shadowColor = this.color;
-    ctx.shadowBlur = 5;
-    ctx.fill();
-    ctx.restore();
-  }
-
-  update() {
-    this.x += this.velocity.x;
-    this.y += this.velocity.y;
-    this.velocity.y += GAME_CONFIG.fragments.gravity;
-    this.velocity.x *= GAME_CONFIG.fragments.airResistance;
-    this.velocity.y *= GAME_CONFIG.fragments.airResistance;
-    this.rotation += this.rotationSpeed;
-
-    this.life--;
-    this.alpha = Math.max(0, this.life / 150);
+    this.alpha = Math.max(0, this.life / 120); // Dùng 120 frames làm thời gian sống mặc định
 
     this.draw();
+    // MissileFragment không cần return giá trị, việc lọc được thực hiện trong game.js
   }
 }
 
@@ -150,10 +143,14 @@ class Star extends CircularEntity {
     this.alpha = 0.5 + layer * 0.5;
   }
   draw() {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    // VẼ TỐI ƯU: Không cần save/restore/begin/close path cho mỗi ngôi sao
     ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
-    ctx.fill();
+    ctx.fillRect(
+      this.x - this.radius,
+      this.y - this.radius,
+      this.radius * 2,
+      this.radius * 2
+    );
   }
   update() {
     this.y += this.velocity * globalSpeedMultiplier;
