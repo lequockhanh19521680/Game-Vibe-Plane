@@ -15,6 +15,22 @@ function showEventText(text) {
   displayEventText(text);
 }
 
+function resetEventSystem() {
+  eventTextQueue.length = 0;
+
+  if (currentEventTimeout) {
+    clearTimeout(currentEventTimeout);
+    currentEventTimeout = null;
+  }
+  isShowingEventText = false;
+
+  if (typeof uiElements !== "undefined" && uiElements.eventText) {
+    uiElements.eventText.style.opacity = "0";
+    uiElements.eventText.style.textShadow = "none";
+    uiElements.eventText.style.animation = "none";
+  }
+}
+
 function displayEventText(text) {
   // Clear any existing timeout
   if (currentEventTimeout) {
@@ -440,10 +456,6 @@ function triggerRandomEvent() {
       handleLightningStormEvent();
       break;
 
-    case "voidStorm":
-      handleVoidStormEvent();
-      break;
-
     case "mineFieldDetonation":
       handleMineFieldDetonationEvent();
       break;
@@ -503,7 +515,7 @@ function triggerRandomEvent() {
 
             warningSystem.spawn(() => {
               const plasma = new PlasmaField(x, y);
-              plasma.radius = radius * (config.radiusMultiplier || 1.2);
+              plasma.radius = radius; // <-- Gán trực tiếp radius đã tính toán
               plasma.damageRate = config.damageRate || 0.04;
               plasmaFields.push(plasma);
 

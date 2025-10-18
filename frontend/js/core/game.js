@@ -47,6 +47,11 @@ function init() {
     mine: 0,
     crystal: 0,
   };
+
+  if (typeof resetEventSystem === "function") {
+    resetEventSystem();
+  }
+
   player = new Player(
     width / 2,
     height * 0.8,
@@ -688,7 +693,7 @@ function animate() {
       player.activateShield();
 
       // Show shield activation message
-      showEventText("Crystal Shield Activated! (10s)");
+      showEventText("Crystal Shield Activated!");
 
       // Crystal absorption effect
       for (let j = 0; j < 12; j++) {
@@ -852,7 +857,7 @@ function animate() {
     lastDifficultyLevel = difficultyLevel;
 
     // Show difficulty increase message
-    showEventText(`🌀 LEVEL ${difficultyLevel + 1} 🌀`);
+    showEventText(`LEVEL ${difficultyLevel + 1}`);
     playSound("powerup");
 
     // Chaos Manifest event removed as requested
@@ -1366,10 +1371,12 @@ function triggerRandomEvent() {
               });
 
               warningSystem.spawn(() => {
-                const plasma = new PlasmaField(x, y);
-                plasma.radius = radius * (plasmaConfig.radiusMultiplier || 1.2);
-                plasma.damageRate = plasmaConfig.damageRate || 0.04;
-                plasmaFields.push(plasma);
+                if (isGameRunning) {
+                  const plasma = new PlasmaField(x, y);
+                  plasma.radius = radius;
+                  plasma.damageRate = plasmaConfig.damageRate || 0.04;
+                  plasmaFields.push(plasma);
+                }
               });
             }
           }, timing * fieldStagger);
@@ -1624,7 +1631,7 @@ function triggerRandomEvent() {
 
     case "lightningStorm":
       eventActive.type = "lightningStorm";
-      showEventText("⚡ THUNDER SHIELD OPPORTUNITY! ⚡");
+      showEventText("⚡ THUNDER SHIELD! ⚡");
 
       // Create lightning storm
       lightningStorms.push(new LightningStorm());

@@ -128,12 +128,8 @@ class Player {
           for (let j = 1; j <= segments; j++) {
             const segLength = (j / segments) * length;
             const jitter = length * 0.15 * (j < segments ? 1 : 0);
-            x =
-              Math.cos(angle) * segLength +
-              (Math.random() - 0.5) * jitter;
-            y =
-              Math.sin(angle) * segLength +
-              (Math.random() - 0.5) * jitter;
+            x = Math.cos(angle) * segLength + (Math.random() - 0.5) * jitter;
+            y = Math.sin(angle) * segLength + (Math.random() - 0.5) * jitter;
             ctx.lineTo(x, y);
           }
 
@@ -172,10 +168,7 @@ class Player {
 
     // Keep player within screen bounds
     this.x = Math.max(this.radius, Math.min(width - this.radius, this.x));
-    this.y = Math.max(
-      this.radius,
-      Math.min(height - this.radius, this.y)
-    );
+    this.y = Math.max(this.radius, Math.min(height - this.radius, this.y));
 
     this.trail.push({
       x: this.x,
@@ -214,7 +207,6 @@ class Player {
 
       if (this.thunderShieldTimer <= 0) {
         this.thunderShieldActive = false;
-        showEventText("⚡ Thunder Shield Deactivated ⚡");
       }
     }
 
@@ -252,7 +244,6 @@ class Player {
       );
     }
 
-    showEventText("⚡ THUNDER SHIELD ACTIVATED! ⚡");
     playSound("powerup");
   }
 
