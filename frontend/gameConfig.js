@@ -567,7 +567,7 @@ const GAME_CONFIG = {
   // SCORING SYSTEM
   // =============================================================================
   scoring: {
-    movementMultiplier: 0.4,
+    movementMultiplier: 0.2,
     asteroidDestroy: 25,
     survivalBonus: 0,
     baseMovementThreshold: 5,
