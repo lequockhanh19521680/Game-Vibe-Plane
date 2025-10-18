@@ -1,18 +1,19 @@
-class Player {
+class Player extends ColoredEntity {
   constructor(x, y, radius, color) {
-    this.x = x;
-    this.y = y;
-    this.radius = radius;
-    this.color = color;
+    const config = {
+      friction: GAME_CONFIG.player.friction,
+      maxSpeed: 20 // Reasonable max speed for player
+    };
+    super(x, y, radius, color, { x: 0, y: 0 }, config);
+    
     this.trail = [];
-    this.velocity = { x: 0, y: 0 };
     this.shieldActive = false;
     this.shieldTimer = 0;
-    this.shieldDuration = 600; // 10 seconds at 60fps
+    this.shieldDuration = GAME_CONFIG.player.shieldDuration;
     this.thunderShieldActive = false;
     this.thunderShieldTimer = 0;
-    this.thunderShieldDuration = 600; // 10 seconds at 60fps
-    this.thunderShieldRadius = this.radius * 3.5; // Range of the thunder shield
+    this.thunderShieldDuration = GAME_CONFIG.player.thunderShieldDuration;
+    this.thunderShieldRadius = this.radius * GAME_CONFIG.player.thunderShieldRadiusMultiplier;
     this.thunderBolts = [];
     this.thunderTimer = 0;
   }
@@ -153,13 +154,9 @@ class Player {
 
     ctx.restore();
   }
-  update() {
-    // Apply velocity from external forces like gravity
-    this.x += this.velocity.x;
-    this.y += this.velocity.y;
-    // Dampen velocity over time (friction)
-    this.velocity.x *= GAME_CONFIG.player.friction;
-    this.velocity.y *= GAME_CONFIG.player.friction;
+  updateLogic() {
+    // Apply velocity from external forces like gravity (handled by parent class)
+    super.updateLogic();
 
     // Responsive but smooth controls for precision feel
     const ease = GAME_CONFIG.player.responsiveness;
@@ -186,7 +183,9 @@ class Player {
       this.trail[i].radius -= 0.1;
       if (this.trail[i].alpha <= 0) this.trail.splice(i, 1);
     }
+  }
 
+  updateShields() {
     // Update regular shield
     if (this.shieldActive) {
       this.shieldTimer--;
@@ -210,8 +209,15 @@ class Player {
       }
     }
 
-    this.draw();
+    // Trail and shield updates are handled in afterUpdate
   }
+
+  afterUpdate() {
+    this.updateTrail();
+    this.updateShields();
+  }
+
+  updateTrail() {
 
   activateShield() {
     this.shieldActive = true;

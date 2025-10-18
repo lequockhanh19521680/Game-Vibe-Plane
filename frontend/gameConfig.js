@@ -1,13 +1,32 @@
 // =============================================================================
 // STELLAR DRIFT: SINGULARITY - GAME CONFIGURATION
 // =============================================================================
-// Game Designer Config File - Điều chỉnh tất cả thông số game tại đây
-// Version: Điều chỉnh để khởi đầu có nhiều thiên thạch chậm như tutorial
+// Centralized configuration file for all game parameters
+// Version: Refactored for better organization and maintainability
 // =============================================================================
 
 const GAME_CONFIG = {
   // =============================================================================
-  // PLAYER SETTINGS - Cài đặt người chơi
+  // CORE GAME SETTINGS
+  // =============================================================================
+  core: {
+    targetFPS: 60,
+    maxParticles: 300,
+    maxFragments: 150,
+    collisionPrecision: 1,
+    localStorageKey: "stellarDriftHighScore",
+  },
+
+  // =============================================================================
+  // CANVAS AND RENDERING
+  // =============================================================================
+  canvas: {
+    backgroundColor: "#050510",
+    cursorVisible: false,
+  },
+
+  // =============================================================================
+  // PLAYER SETTINGS
   // =============================================================================
   player: {
     radius: 15,
@@ -15,128 +34,143 @@ const GAME_CONFIG = {
     friction: 0.95,
     trailLength: 20,
     trailFadeSpeed: 0.05,
+    shieldDuration: 600, // 10 seconds at 60fps
+    thunderShieldDuration: 600,
+    thunderShieldRadiusMultiplier: 3.5,
   },
 
   // =============================================================================
-  // DIFFICULTY PROGRESSION - Hệ thống khó dần
+  // DIFFICULTY PROGRESSION
   // =============================================================================
   difficulty: {
-    // Level 1: Dễ, thiên thạch xuất hiện thường xuyên để luyện tập
     baseSpawnInterval: 80,
     minSpawnInterval: 20,
     spawnDecreaseStep: 1.0,
-
     baseSpeed: 0.5,
     speedIncreaseStep: 0.05,
     microSpeedIncrease: 0.01,
-
     levelUpInterval: 30,
     microProgressInterval: 900,
-
     scorePerLevel: 3000,
   },
 
   // =============================================================================
-  // ASTEROID SETTINGS - Cài đặt thiên thạch
+  // ENTITY CONFIGURATIONS
   // =============================================================================
-  asteroids: {
-    minRadius: 12,
-    maxRadius: 40,
-    baseSpeed: 1.0,
-    speedVariation: 1.0,
-    speedIncreasePerLevel: 0.4,
-    fragmentSpeed: 0.99,
-    colors: ["#ff4444", "#ffbb33", "#99cc00"],
-    spawnPatterns: {
-      topDown: 0.7,
-      slightAngle: 0.2,
-      diagonal: 0.1,
+  entities: {
+    // Asteroid Configuration
+    asteroids: {
+      minRadius: 12,
+      maxRadius: 40,
+      baseSpeed: 1.0,
+      speedVariation: 1.0,
+      speedIncreasePerLevel: 0.4,
+      fragmentSpeed: 0.99,
+      colors: ["#ff4444", "#ffbb33", "#99cc00"],
+      shapeComplexity: { min: 7, max: 12 },
+      rotationSpeed: { min: -0.05, max: 0.05 },
+      wobbleAmount: 0.5,
+      wobbleSpeed: 0.1,
+      changeDirectionInterval: { min: 60, max: 240 },
+      spawnPatterns: {
+        topDown: 0.7,
+        slightAngle: 0.2,
+        diagonal: 0.1,
+      },
+    },
+
+    // Black Hole Configuration
+    blackHoles: {
+      spawnScore: 3000,
+      spawnInterval: 1000,
+      warningDuration: 180,
+      warningDelay: 3000,
+      baseRadius: 8,
+      baseMaxRadius: 40,
+      radiusIncreasePerLevel: 15,
+      baseGravityRadius: 120,
+      gravityRadiusIncreasePerLevel: 30,
+      baseStrength: 0.015,
+      strengthIncreasePerLevel: 0.018,
+      baseGrowthRate: 0.018,
+      growthRateIncreasePerLevel: 0.03,
+      playerForceMultiplier: 1.8,
+      shakeThreshold: 0.7,
+      shakeIntensity: 0.05,
+      temporaryLifetime: 200,
+    },
+
+    // Missile Configuration
+    missiles: {
+      spawnScore: 1500,
+      spawnInterval: 700,
+      warningDuration: 150,
+      warningDelay: 2500,
+      radius: 5,
+      baseSpeed: 0.15,
+      speedIncreasePerLevel: 0.025,
+      baseTurnSpeed: 0.015,
+      turnSpeedIncreasePerLevel: 0.02,
+      speedUpTime: 350,
+      speedUpMultiplier: 1.9,
+      turnSpeedUpMultiplier: 1.6,
+      lifetime: 450,
+      fragmentCount: 8,
+      fragmentCountOnImpact: 5,
+      velocity: {
+        friction: 0.92,
+      },
+    },
+
+    // Laser Configuration
+    lasers: {
+      spawnScore: 4500,
+      baseInterval: 450,
+      intervalDecreasePerLevel: 25,
+      minInterval: 60,
+      maxConcurrent: 1,
+      lasersPerLevel: 3,
+      baseTargetChance: 0.1,
+      targetChanceIncreasePerLevel: 0.08,
+      maxTargetChance: 0.85,
+      warningTime: 300,
+      beamDuration: 10,
+      staggerDelay: 150,
+      playerHitRadius: 7.5,
+    },
+
+    // Laser Mine Configuration
+    laserMines: {
+      spawnScore: 8000,
+      spawnInterval: 500,
+      warningDuration: 150,
+      radius: 10,
+      chargeTime: 180,
+      fireDuration: 15,
+      patterns: ["cross", "diagonal", "star"],
+      beamWidth: 10,
+      warningOpacity: 0.3,
+    },
+
+    // Crystal Cluster Configuration
+    crystalClusters: {
+      spawnScore: 2000,
+      spawnInterval: 800,
+      radius: 10,
+      lifetime: 300,
+      crystalCount: 6,
+      colors: ["#40c4ff", "#81d4fa"],
+      pulseSpeed: 0.15,
+      rotationSpeed: 0.02,
+      chargeTime: 90,
+      dischargeTime: 30,
+      dischargeRadius: 150,
+      dischargeColor: "#40c4ff",
     },
   },
 
   // =============================================================================
-  // BLACK HOLE SETTINGS - Cài đặt hố đen
-  // =============================================================================
-  blackHoles: {
-    spawnScore: 3000,
-    spawnInterval: 1000,
-    warningDuration: 180,
-    warningDelay: 3000,
-
-    baseRadius: 8,
-    baseMaxRadius: 40, // ĐÃ ĐIỀU CHỈNH: Nhỏ hơn
-    radiusIncreasePerLevel: 15,
-
-    baseGravityRadius: 120,
-    gravityRadiusIncreasePerLevel: 30,
-
-    baseStrength: 0.015, // ĐÃ ĐIỀU CHỈNH: Giảm lực hút
-    strengthIncreasePerLevel: 0.018,
-
-    baseGrowthRate: 0.018, // ĐÃ ĐIỀU CHỈNH: Chậm lớn hơn
-    growthRateIncreasePerLevel: 0.03,
-
-    playerForceMultiplier: 1.8,
-    shakeThreshold: 0.7,
-    shakeIntensity: 0.05,
-
-    temporaryLifetime: 200,
-  },
-
-  // =============================================================================
-  // MISSILE SETTINGS - Cài đặt tên lửa
-  // =============================================================================
-  missiles: {
-    spawnScore: 1500,
-    spawnInterval: 700,
-    warningDuration: 150,
-    warningDelay: 2500,
-
-    radius: 5,
-    baseSpeed: 0.15, // ĐÃ ĐIỀU CHỈNH: Chậm hơn
-    speedIncreasePerLevel: 0.025,
-
-    baseTurnSpeed: 0.015, // ĐÃ ĐIỀU CHỈNH: Quay chậm hơn, dễ né hơn
-    turnSpeedIncreasePerLevel: 0.02,
-
-    speedUpTime: 350,
-    speedUpMultiplier: 1.9,
-    turnSpeedUpMultiplier: 1.6,
-
-    lifetime: 450,
-    fragmentCount: 8,
-    fragmentCountOnImpact: 5,
-
-    velocity: {
-      friction: 0.92,
-    },
-  },
-
-  // =============================================================================
-  // LASER SETTINGS (CHUNG) - Cài đặt laser
-  // =============================================================================
-  lasers: {
-    spawnScore: 4500,
-    baseInterval: 450,
-    intervalDecreasePerLevel: 25,
-    minInterval: 60,
-
-    maxConcurrent: 1,
-    lasersPerLevel: 3,
-
-    baseTargetChance: 0.1,
-    targetChanceIncreasePerLevel: 0.08,
-    maxTargetChance: 0.85,
-
-    warningTime: 300, // ĐÃ ĐIỀU CHỈNH: Tăng thời gian cảnh báo để dễ né hơn
-    beamDuration: 10, // ĐÃ ĐIỀU CHỈNH: Dễ hơn
-    staggerDelay: 150,
-
-    playerHitRadius: 7.5,
-  },
-
-  // =============================================================================
-  // FRAGMENT SETTINGS - Cài đặt mảnh vỡ
+  // FRAGMENT SYSTEM
   // =============================================================================
   fragments: {
     minRadius: 2,
@@ -162,46 +196,11 @@ const GAME_CONFIG = {
   },
 
   // =============================================================================
-  // LASER MINE SETTINGS - Cài đặt mìn laser
-  // =============================================================================
-  laserMines: {
-    spawnScore: 8000,
-    spawnInterval: 500,
-    warningDuration: 150, // ĐÃ ĐIỀU CHỈNH: Tăng thời gian cảnh báo
-    radius: 10,
-    chargeTime: 180, // ĐÃ ĐIỀU CHỈNH: Tăng thời gian tích lũy (chậm nổ hơn)
-    fireDuration: 15,
-    patterns: ["cross", "diagonal", "star"],
-    beamWidth: 10,
-    warningOpacity: 0.3,
-  },
-
-  // =============================================================================
-  // CRYSTAL CLUSTER SETTINGS - Cài đặt cụm pha lê
-  // =============================================================================
-  crystalClusters: {
-    spawnScore: 2000,
-    spawnInterval: 800,
-    radius: 10, // ĐÃ ĐIỀU CHỈNH: Nhỏ hơn
-    lifetime: 300,
-    crystalCount: 6,
-    colors: ["#40c4ff", "#81d4fa"],
-    pulseSpeed: 0.15,
-    rotationSpeed: 0.02,
-    // THÊM CẤU HÌNH XẢ NĂNG LƯỢNG (discharge)
-    chargeTime: 90, // Thời gian tích lũy năng lượng
-    dischargeTime: 30, // Thời gian xả năng lượng (gây sát thương)
-    dischargeRadius: 150, // Bán kính va chạm và bán kính hiệu ứng hình ảnh
-    dischargeColor: "#40c4ff", // Màu của vòng năng lượng khi xả
-  },
-
-  // =============================================================================
-  // EVENT SYSTEM - Hệ thống sự kiện
+  // EVENT SYSTEM
   // =============================================================================
   events: {
     interval: 4000,
     duration: 5000,
-
     unlockThresholds: {
       crystalRain: 500,
       shieldGenerator: 1000,
@@ -217,14 +216,11 @@ const GAME_CONFIG = {
       superNova: 12000,
       voidRifts: 15000,
     },
-
+    // Event-specific configurations
     denseField: { spawnInterval: 35 },
     speedZone: { speedMultiplier: 1.4 },
     laserSwarm: { laserCount: 3, targetChance: 0.6, delay: 400 },
-    laserGrid: {
-      gridSize: 3, // FIX LỖI: Thuộc tính này bị thiếu, gây lỗi Uncaught TypeError
-      delay: 350,
-    },
+    laserGrid: { gridSize: 3, delay: 350 },
     asteroidRain: {
       count: 18,
       delay: 180,
@@ -241,6 +237,12 @@ const GAME_CONFIG = {
       speed: 1.5,
       centerVariation: 50,
     },
+    asteroidBelt: {
+      count: 20,
+      beltRadius: 300,
+      rotationSpeed: 0.02,
+      asteroidSpeed: 1.5,
+    },
     missileBarrage: { count: 5, delay: 500 },
     blackHoleChain: { count: 3, delay: 1000, warningDelay: 2000 },
     gravitationalAnomaly: { blackHoleCount: 2 },
@@ -256,8 +258,6 @@ const GAME_CONFIG = {
       shieldRadius: 80,
       chargeTime: 60,
     },
-
-    // CẤU HÌNH SUPER NOVA (ĐÃ CHUYỂN CÁC CONST TỪ hazards.js)
     superNova: {
       maxRadius: 200,
       expansionSpeed: 10,
@@ -276,8 +276,6 @@ const GAME_CONFIG = {
       glowOuterRadiusFactor: 1.5,
       coreColor: "#ff9800",
       color: "#ffeb3b",
-
-      // Particle and Shake Settings
       particleSpawnInterval: 2,
       particleMaxRadius: 3,
       particleSpawnDistMin: 20,
@@ -297,11 +295,9 @@ const GAME_CONFIG = {
       fragmentSpeed: 3,
       fragmentBaseSpeed: 4,
       fragmentSpeedVariation: 6,
-
-      particleMinCount: 4, // Min count in SuperNova update logic
-      particleRadiusStep: 30, // Radius step for particle count increase
+      particleMinCount: 4,
+      particleRadiusStep: 30,
     },
-
     freezeZone: { count: 4, radius: 100, slowFactor: 0.3, duration: 200 },
     magneticStorm: {
       lifetime: 480,
@@ -310,12 +306,6 @@ const GAME_CONFIG = {
       fieldRadius: 120,
       playerAffectMultiplier: 0.3,
       objectAffectMultiplier: 0.5,
-    },
-    asteroidBelt: {
-      count: 20,
-      beltRadius: 300,
-      rotationSpeed: 0.02,
-      asteroidSpeed: 1.5,
     },
     laserTurrets: {
       count: 4,
@@ -339,16 +329,19 @@ const GAME_CONFIG = {
   },
 
   // =============================================================================
-  // NEW OBJECTS - Cấu hình chi tiết cho các vật thể mới
+  // SPECIAL OBJECTS
   // =============================================================================
-  newObjects: {
-    wormhole: {
-      radius: 25,
-      attractRadius: 100,
-      attractForce: 0.15,
-      teleportRadius: 20,
-      color: "#9c27b0",
-      rotationSpeed: 0.1,
+  specialObjects: {
+    energyOrb: {
+      baseRadius: 2.5,
+      baseVelocity: 1.0,
+      minLifetime: 500,
+      maxLifetime: 800,
+      rotationSpeed: 0.01,
+      fragmentAttractRadiusFactor: 3,
+      fragmentAttractForce: 0.1,
+      spawnInterval: 1500,
+      spawnThreshold: 1000,
     },
     shieldGenerator: {
       radius: 15,
@@ -358,22 +351,9 @@ const GAME_CONFIG = {
       color: "#2196f3",
       shieldColor: "#4fc3f7",
     },
-
-    // CẤU HÌNH ENERGY ORB (ĐÃ THÊM VÀ SỬA LỖI baseRadius)
-    energyOrb: {
-      baseRadius: 2.5, // FIX LỖI: Thuộc tính này bị thiếu, gây lỗi Uncaught TypeError
-      baseVelocity: 1.0,
-      minLifetime: 500,
-      maxLifetime: 800,
-      rotationSpeed: 0.01,
-      fragmentAttractRadiusFactor: 3,
-      fragmentAttractForce: 0.1,
-    },
-
-    // CẤU HÌNH FREEZE ZONE (ĐÃ CHUYỂN CÁC CONST TỪ hazards.js)
     freezeZone: {
       radius: 100,
-      effectStrength: 0.3, // Slow factor (0.3 = 30% speed remaining)
+      effectStrength: 0.3,
       particleCount: 20,
       color: "#81d4fa",
       pulseSpeed: 0.05,
@@ -386,15 +366,13 @@ const GAME_CONFIG = {
       shadowBlur: 5,
       distancePulseSpeed: 0.02,
       distancePulseAmount: 0.5,
-      freezeChance: 0.005, // 0.5% chance for full freeze
-      missileFreezeChance: 0.01, // 1% chance for missile full freeze
-      fullFreezeFactor: 0.1, // Velocity factor when fully frozen
+      freezeChance: 0.005,
+      missileFreezeChance: 0.01,
+      fullFreezeFactor: 0.1,
       crystalSpawnDistance: 20,
       crystalSpawnFactor: 0.7,
-      duration: 300, // Used as lifetime for the object
+      duration: 300,
     },
-
-    // CẤU HÌNH LASER TURRET (ĐÃ CHUYỂN CÁC CONST TỪ hazards.js)
     laserTurret: {
       radius: 20,
       barrelLength: 30,
@@ -432,8 +410,6 @@ const GAME_CONFIG = {
       fragmentBaseSpeed: 4,
       fragmentSpeedVariation: 6,
     },
-
-    // CẤU HÌNH MAGNETIC STORM (ĐÃ CHUYỂN CÁC CONST TỪ hazards.js)
     magneticStorm: {
       lifetime: 480,
       maxIntensity: 1.2,
@@ -457,7 +433,7 @@ const GAME_CONFIG = {
       objectAffectMultiplier: 0.5,
       missileAffectMultiplier: 0.3,
       lethalHitTolerance: 10,
-      chargeColor: "#88ddff", // Electric blue color
+      chargeColor: "#88ddff",
       arcColor: "#88ddff",
       lethalBoltColor: "#ffff00",
       lethalBoltLineWidth: 5,
@@ -474,8 +450,6 @@ const GAME_CONFIG = {
       lethalJitter: 40,
       lethalBoltSoundVolume: 0.5,
     },
-
-    // CẤU HÌNH LIGHTNING STORM (ĐÃ CHUYỂN CÁC CONST TỪ hazards.js)
     lightningStorm: {
       lifetime: 600,
       gateCount: 2,
@@ -486,7 +460,6 @@ const GAME_CONFIG = {
       speedBoostMultiplier: 0.8,
       boostDuration: 600,
       segmentCount: 12,
-
       chargeColor: "#88ddff",
       ringLineWidth: 4,
       ringShadowBlur: 15,
@@ -503,13 +476,10 @@ const GAME_CONFIG = {
       boltShadowBlur: 20,
       boltSoundVolume: 0.7,
       particleFadeSpeed: 0.05,
-
       particleSpawnMinDistFactor: 0.5,
       particleSpawnMaxDistFactor: 0.5,
       boltWidth: 8,
     },
-
-    // CẤU HÌNH PLASMA FIELD (ĐÃ CHUYỂN CÁC CONST TỪ hazards.js)
     plasmaField: {
       radius: 80,
       lifetime: 400,
@@ -538,7 +508,7 @@ const GAME_CONFIG = {
   },
 
   // =============================================================================
-  // AUDIO SETTINGS - Cài đặt âm thanh (ĐÃ CẬP NHẬT)
+  // AUDIO SETTINGS
   // =============================================================================
   audio: {
     masterVolume: 1.0,
@@ -548,7 +518,6 @@ const GAME_CONFIG = {
       laser: 0.15,
       missile: 0.1,
       collision: 0.15,
-
       buttonHover: 0.1,
       warning: 0.12,
       score: 0.08,
@@ -560,7 +529,6 @@ const GAME_CONFIG = {
       shield: 0.15,
       freeze: 0.15,
       supernova: 0.25,
-
       blackholeGrowth: 0.02,
       blackholeDestroy: 0.04,
       plasmaStorm: 0.07,
@@ -588,7 +556,7 @@ const GAME_CONFIG = {
   },
 
   // =============================================================================
-  // VISUAL SETTINGS - Cài đặt hình ảnh
+  // VISUAL SETTINGS
   // =============================================================================
   visual: {
     colors: {
@@ -611,16 +579,19 @@ const GAME_CONFIG = {
       explosionCount: 6,
       explosionSpeed: 6,
       fadeSpeed: 0.02,
+      deathMultiplier: 8,
+      maxSize: 3,
+      deathSpeedMultiplier: 1.7,
     },
     nebula: { count: 5, minRadius: 100, maxRadius: 300, opacity: 0.05 },
     stars: { layers: 3, starsPerLayer: 80, maxRadius: 1.5 },
   },
 
   // =============================================================================
-  // UI SETTINGS - Cài đặt giao diện
+  // UI SETTINGS
   // =============================================================================
   ui: {
-    eventText: { duration: 500, fontSize: "1.5rem" }, // Đã điều chỉnh
+    eventText: { duration: 500, fontSize: "1.5rem" },
     warning: {
       radius: 30,
       pulseIntensity: 15,
@@ -628,10 +599,13 @@ const GAME_CONFIG = {
       fadeInTime: 20,
       fadeOutTime: 20,
     },
+    gameOverDelay: 1000,
+    topBarOpacity: "1",
+    topBarHiddenOpacity: "0",
   },
 
   // =============================================================================
-  // SCORING SYSTEM - Hệ thống điểm số
+  // SCORING SYSTEM
   // =============================================================================
   scoring: {
     movementMultiplier: 0.4,
@@ -644,11 +618,278 @@ const GAME_CONFIG = {
   },
 
   // =============================================================================
-  // ADVANCED SETTINGS - Cài đặt nâng cao
+  // DEPRECATED/LEGACY CONFIGURATIONS (kept for backward compatibility)
   // =============================================================================
+  // These will be gradually phased out
+  asteroids: {
+    minRadius: 12,
+    maxRadius: 40,
+    baseSpeed: 1.0,
+    speedVariation: 1.0,
+    speedIncreasePerLevel: 0.4,
+    fragmentSpeed: 0.99,
+    colors: ["#ff4444", "#ffbb33", "#99cc00"],
+    spawnPatterns: {
+      topDown: 0.7,
+      slightAngle: 0.2,
+      diagonal: 0.1,
+    },
+  },
+  blackHoles: {
+    spawnScore: 3000,
+    spawnInterval: 1000,
+    warningDuration: 180,
+    warningDelay: 3000,
+    baseRadius: 8,
+    baseMaxRadius: 40,
+    radiusIncreasePerLevel: 15,
+    baseGravityRadius: 120,
+    gravityRadiusIncreasePerLevel: 30,
+    baseStrength: 0.015,
+    strengthIncreasePerLevel: 0.018,
+    baseGrowthRate: 0.018,
+    growthRateIncreasePerLevel: 0.03,
+    playerForceMultiplier: 1.8,
+    shakeThreshold: 0.7,
+    shakeIntensity: 0.05,
+    temporaryLifetime: 200,
+  },
+  missiles: {
+    spawnScore: 1500,
+    spawnInterval: 700,
+    warningDuration: 150,
+    warningDelay: 2500,
+    radius: 5,
+    baseSpeed: 0.15,
+    speedIncreasePerLevel: 0.025,
+    baseTurnSpeed: 0.015,
+    turnSpeedIncreasePerLevel: 0.02,
+    speedUpTime: 350,
+    speedUpMultiplier: 1.9,
+    turnSpeedUpMultiplier: 1.6,
+    lifetime: 450,
+    fragmentCount: 8,
+    fragmentCountOnImpact: 5,
+    velocity: {
+      friction: 0.92,
+    },
+  },
+  lasers: {
+    spawnScore: 4500,
+    baseInterval: 450,
+    intervalDecreasePerLevel: 25,
+    minInterval: 60,
+    maxConcurrent: 1,
+    lasersPerLevel: 3,
+    baseTargetChance: 0.1,
+    targetChanceIncreasePerLevel: 0.08,
+    maxTargetChance: 0.85,
+    warningTime: 300,
+    beamDuration: 10,
+    staggerDelay: 150,
+    playerHitRadius: 7.5,
+  },
+  laserMines: {
+    spawnScore: 8000,
+    spawnInterval: 500,
+    warningDuration: 150,
+    radius: 10,
+    chargeTime: 180,
+    fireDuration: 15,
+    patterns: ["cross", "diagonal", "star"],
+    beamWidth: 10,
+    warningOpacity: 0.3,
+  },
+  crystalClusters: {
+    spawnScore: 2000,
+    spawnInterval: 800,
+    radius: 10,
+    lifetime: 300,
+    crystalCount: 6,
+    colors: ["#40c4ff", "#81d4fa"],
+    pulseSpeed: 0.15,
+    rotationSpeed: 0.02,
+    chargeTime: 90,
+    dischargeTime: 30,
+    dischargeRadius: 150,
+    dischargeColor: "#40c4ff",
+  },
+  newObjects: {
+    energyOrb: {
+      baseRadius: 2.5,
+      baseVelocity: 1.0,
+      minLifetime: 500,
+      maxLifetime: 800,
+      rotationSpeed: 0.01,
+      fragmentAttractRadiusFactor: 3,
+      fragmentAttractForce: 0.1,
+    },
+    shieldGenerator: {
+      radius: 15,
+      shieldRadius: 80,
+      chargeTime: 60,
+      activeTime: 180,
+      color: "#2196f3",
+      shieldColor: "#4fc3f7",
+    },
+    freezeZone: {
+      radius: 100,
+      effectStrength: 0.3,
+      particleCount: 20,
+      color: "#81d4fa",
+      pulseSpeed: 0.05,
+      pulseMinFactor: 0.3,
+      pulseMaxFactor: 0.7,
+      drawAlpha: 0.6,
+      lineWidth: 4,
+      lineDash: [8, 4],
+      fillAlphaHex: "20",
+      shadowBlur: 5,
+      distancePulseSpeed: 0.02,
+      distancePulseAmount: 0.5,
+      freezeChance: 0.005,
+      missileFreezeChance: 0.01,
+      fullFreezeFactor: 0.1,
+      crystalSpawnDistance: 20,
+      crystalSpawnFactor: 0.7,
+      duration: 300,
+    },
+    laserTurret: {
+      radius: 20,
+      barrelLength: 30,
+      rotationSpeed: 0.05,
+      trackingRange: 200,
+      fireInterval: 90,
+      laserDamage: 1,
+      color: "#ff5722",
+      laserColor: "#ff5722",
+      baseShadowBlur: 10,
+      barrelWidth: 6,
+      barrelColor: "#d32f2f",
+      chargeColor: "#ffeb3b",
+      glowDuration: 10,
+      tipRadius: 4,
+      chargeShadowBlur: 15,
+      trackingAlpha: 0.2,
+      trackingLineWidth: 2,
+      trackingLineDash: [5, 5],
+      trackingSpeed: 0.15,
+      laserLength: 1000,
+      laserHitRadius: 8,
+      asteroidScore: 20,
+      missileScore: 15,
+      maxPriorityDistance: 300,
+      nonPlayerTargetRateMultiplier: 1.5,
+      freezeSlowdownFactor: 0.05,
+      unfreezeFireFactor: 0.99,
+      unfreezeRotationFactor: 1.02,
+      laserParticleCount: 5,
+      particleVelocityBase: 5,
+      asteroidFragmentCount: 4,
+      fragmentSpawnOffset: 8,
+      fragmentSpeed: 3,
+      fragmentBaseSpeed: 4,
+      fragmentSpeedVariation: 6,
+    },
+    magneticStorm: {
+      lifetime: 480,
+      maxIntensity: 1.2,
+      fieldCount: 4,
+      baseStrength: 0.5,
+      strengthVariation: 0.8,
+      fieldRadius: 100,
+      radiusVariation: 80,
+      lightningInterval: 30,
+      fieldDrawAlpha: 0.4,
+      rampDuration: 60,
+      pulseSpeed: 0.1,
+      pulseMinFactor: 0.8,
+      pulseMaxFactor: 0.2,
+      fieldRotationSpeed: 0.02,
+      arcSpawnChance: 0.1,
+      lethalTargetRange: 300,
+      arcFadeSpeed: 0.1,
+      lethalCollisionMinAlpha: 0.7,
+      playerAffectMultiplier: 0.3,
+      objectAffectMultiplier: 0.5,
+      missileAffectMultiplier: 0.3,
+      lethalHitTolerance: 10,
+      chargeColor: "#88ddff",
+      arcColor: "#88ddff",
+      lethalBoltColor: "#ffff00",
+      lethalBoltLineWidth: 5,
+      lethalBoltShadowBlur: 15,
+      arcLineWidth: 3,
+      arcShadowBlur: 10,
+      lineCount: 8,
+      startRadiusFactor: 0.3,
+      controlRadiusFactor: 0.7,
+      controlAngleOffset: 0.3,
+      fieldLineWidth: 2,
+      coreRadius: 8,
+      arcJitter: 40,
+      lethalJitter: 40,
+      lethalBoltSoundVolume: 0.5,
+    },
+    lightningStorm: {
+      lifetime: 600,
+      gateCount: 2,
+      gatePlacementRange: 200,
+      gateRadius: 40,
+      gateChargeTime: 120,
+      lightningJitter: 60,
+      speedBoostMultiplier: 0.8,
+      boostDuration: 600,
+      segmentCount: 12,
+      chargeColor: "#88ddff",
+      ringLineWidth: 4,
+      ringShadowBlur: 15,
+      chargeInnerRadiusFactor: 0.7,
+      chargeLineWidth: 2,
+      particleSpawnChance: 0.3,
+      particleVelocity: 2,
+      particleMaxSize: 3,
+      boltFadeSpeed: 0.1,
+      collisionMinAlpha: 0.5,
+      hitRadius: 25,
+      boltColor: "#ffffff",
+      boltLineWidth: 4,
+      boltShadowBlur: 20,
+      boltSoundVolume: 0.7,
+      particleFadeSpeed: 0.05,
+      particleSpawnMinDistFactor: 0.5,
+      particleSpawnMaxDistFactor: 0.5,
+      boltWidth: 8,
+    },
+    plasmaField: {
+      radius: 80,
+      lifetime: 400,
+      damageRate: 0.02,
+      color: "#ff6b35",
+      particleCount: 15,
+      particleMinDist: 20,
+      particleMaxDist: 40,
+      particleMinSpeed: 0.02,
+      particleMaxSpeed: 0.03,
+      particleMinSize: 2,
+      particleMaxSize: 3,
+      drawAlpha: 0.6,
+      lineWidth: 3,
+      lineDash: [10, 5],
+      shadowBlur: 8,
+      rotationSpeed: 0.02,
+      rotationAcceleration: 0,
+      distancePulseSpeed: 0.05,
+      distancePulseAmount: 0.5,
+      pushRadiusMultiplier: 1.5,
+      pushForce: 0.05,
+      missilePushMultiplier: 1.0,
+      fragmentPushMultiplier: 1.6,
+    },
+  },
   advanced: {
-    maxParticles: 300, // TĂNG: Tăng giới hạn hạt
-    maxFragments: 150, // TĂNG: Tăng giới hạn mảnh vỡ
+    maxParticles: 300,
+    maxFragments: 150,
     collisionPrecision: 1,
     targetFPS: 60,
     localStorageKey: "stellarDriftHighScore",
