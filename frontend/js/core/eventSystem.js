@@ -108,7 +108,6 @@ function triggerRandomEvent() {
 
     // ADVANCED THREATS (Lower weights = rarer)
     { type: "plasmaStorm", weight: 10 },
-    { type: "gravityWaveCascade", weight: 8 },
     { type: "temporalChaos", weight: 7 },
     { type: "lightningNetwork", weight: 7 },
     { type: "voidStorm", weight: 6 },
@@ -441,19 +440,6 @@ function triggerRandomEvent() {
       handleLightningStormEvent();
       break;
 
-    // NEW CREATIVE EVENTS
-    case "gravityWaveCascade":
-      handleGravityWaveCascadeEvent();
-      break;
-
-    case "temporalChaos":
-      handleTemporalChaosEvent();
-      break;
-
-    case "lightningNetwork":
-      handleLightningNetworkEvent();
-      break;
-
     case "voidStorm":
       handleVoidStormEvent();
       break;
@@ -734,110 +720,6 @@ function triggerRandomEvent() {
 
     playSound("warning");
     triggerScreenShake(0.4);
-  }
-
-  // NEW CREATIVE EVENT HANDLERS
-
-  function handleGravityWaveCascadeEvent() {
-    const config = GAME_CONFIG.events.gravityWaveCascade;
-    eventActive.type = "gravityWaveCascade";
-    showEventText("🌊 GRAVITY WAVE CASCADE!");
-
-    // Create multiple gravity waves in sequence
-    for (let i = 0; i < config.count; i++) {
-      setTimeout(() => {
-        if (isGameRunning) {
-          const x = Math.random() * width;
-          const y = Math.random() * height;
-          gravityWaves.push(new GravityWave(x, y));
-          playSound("warning", 0.5);
-          triggerScreenShake(0.2);
-        }
-      }, i * config.delay);
-    }
-  }
-
-  function handleTemporalChaosEvent() {
-    const config = GAME_CONFIG.events.temporalChaos;
-    eventActive.type = "temporalChaos";
-    showEventText("⏰ TEMPORAL CHAOS EVENT!");
-
-    // Create slow zones
-    for (let i = 0; i < config.slowZoneCount; i++) {
-      const x = Math.random() * width;
-      const y = Math.random() * height;
-      timeDistortions.push(new TimeDistortion(x, y, false)); // Slow
-    }
-
-    // Create fast zones
-    for (let i = 0; i < config.fastZoneCount; i++) {
-      const x = Math.random() * width;
-      const y = Math.random() * height;
-      timeDistortions.push(new TimeDistortion(x, y, true)); // Fast
-    }
-
-    playSound("warning");
-    triggerScreenShake(0.3);
-  }
-
-  function handleLightningNetworkEvent() {
-    const config = GAME_CONFIG.events.lightningNetwork;
-    eventActive.type = "lightningNetwork";
-    showEventText("⚡ LIGHTNING NETWORK ACTIVE!");
-
-    // Create lightning orbs in a network pattern with warnings first
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const count = config.count || 5;
-    const spacing = config.spacing || 150;
-
-    // DIRECT SPAWN (NO WARNING) - Testing fix for invisible lightning
-    for (let i = 0; i < count; i++) {
-      setTimeout(() => {
-        if (isGameRunning) {
-          const angle = (i / count) * Math.PI * 2;
-          const x = centerX + Math.cos(angle) * spacing;
-          const y = centerY + Math.sin(angle) * spacing;
-
-          // SPAWN IMMEDIATELY WITHOUT WARNING
-          const lightning = new ChainLightning(x, y);
-          chainLightnings.push(lightning);
-
-          // Play sound
-          if (typeof playSound === "function") {
-            playSound("thunder", 0.5);
-          }
-        }
-      }, i * 500); // Stagger spawn every 0.5 seconds
-    }
-
-    triggerScreenShake(0.4);
-  }
-
-  function handleVoidStormEvent() {
-    const config = GAME_CONFIG.events.voidStorm;
-    eventActive.type = "voidStorm";
-    showEventText("🌀 VOID STORM DETECTED!");
-
-    // Create void rifts in pairs for teleportation chaos
-    for (let i = 0; i < (config.riftCount || 4) / 2; i++) {
-      setTimeout(() => {
-        if (isGameRunning) {
-          const x1 = Math.random() * width;
-          const y1 = Math.random() * height;
-          const x2 = Math.random() * width;
-          const y2 = Math.random() * height;
-
-          const rift1 = new VoidRift(x1, y1);
-          const rift2 = new VoidRift(x2, y2, rift1);
-
-          voidRifts.push(rift1, rift2);
-          playSound("wormhole", 0.4);
-        }
-      }, i * (config.spawnDelay || 1500));
-    }
-
-    triggerScreenShake(0.3);
   }
 
   function handleMineFieldDetonationEvent() {
