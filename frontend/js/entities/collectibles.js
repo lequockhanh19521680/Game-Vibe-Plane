@@ -29,15 +29,6 @@ class EnergyOrb {
       Math.random() * (config.maxLifetime - config.minLifetime);
 
     this.age = 0;
-
-    // Log khi EnergyOrb xuất hiện để tiện debug
-    console.log(
-      `EnergyOrb xuất hiện tại: (${this.x.toFixed(0)}, ${this.y.toFixed(
-        0
-      )}) | Bán kính: ${this.radius.toFixed(
-        1
-      )} | Tuổi thọ: ${this.lifetime.toFixed(0)} frames`
-    );
   }
 
   draw() {
@@ -445,18 +436,17 @@ class CrystalCluster {
     this.config = GAME_CONFIG.crystalClusters;
     this.x = x;
     this.y = y;
-    this.radius = this.config.radius; // Sử dụng bán kính từ config (đã chỉnh thành 10)
+    this.radius = this.config.radius;
     this.timer = 0;
-    this.maxChargeTime = this.config.lifetime; // Sử dụng lifetime làm maxChargeTime
-    this.state = "charging"; // charging, discharging
+    this.maxChargeTime = this.config.lifetime;
+    this.state = "charging";
     this.dischargeRadius = 0;
-    this.dischargeSpeed = 5; // Có thể giữ nguyên tốc độ xả hoặc đưa vào config
+    this.dischargeSpeed = 5;
     this.alpha = 0;
 
-    // TÍNH TOÁN: Xác định bán kính tối đa cho vòng tròn xả năng lượng (nhỏ hơn width/2)
-    this.maxDischargeRadius = canvas ? Math.min(width, height) * 0.4 : 300; // Giới hạn là 40% kích thước màn hình nhỏ hơn
+    this.maxDischargeRadius = canvas ? Math.min(width, height) * 0.4 : 300;
 
-    this.crystals = Array(this.config.crystalCount) // Sử dụng crystalCount từ config
+    this.crystals = Array(this.config.crystalCount)
       .fill(null)
       .map(() => ({
         angle: Math.random() * Math.PI * 2,

@@ -539,10 +539,25 @@ function animate() {
     }
   }
 
+  for (const cluster of crystalClusters) {
+    if (cluster.state !== "discharging") continue;
+
+    const dist = Math.hypot(player.x - cluster.x, player.y - cluster.y);
+    const collisionDist = cluster.dischargeRadius + player.radius;
+    console.log("Checking crystal cluster collision:", dist, collisionDist);
+    if (dist >= collisionDist) continue;
+
+    if (!player.shieldActive) {
+      endGame("crystal cluster collision");
+      return;
+    }
+
+    cluster.state = "fading";
+  }
+
   for (let i = fragments.length - 1; i >= 0; i--) {
     const fragment = fragments[i];
 
-    // TỐI ƯU VA CHẠM: Sử dụng Bounding Box đơn giản cho các mảnh vỡ nhỏ
     const isOverlapping =
       player.x < fragment.x + fragment.radius &&
       player.x + player.radius > fragment.x - fragment.radius &&
