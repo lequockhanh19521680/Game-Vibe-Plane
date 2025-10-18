@@ -105,13 +105,41 @@ function togglePause() {
 }
 
 // --- Event Listeners ---
-startButton.addEventListener("click", () => {
+startButton.addEventListener("click", (e) => {
+  // Prevent default if button is disabled
+  if (startButton.classList.contains('disabled') || startButton.disabled) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Focus on name input to guide user
+    if (window.playerNameUI) {
+      window.playerNameUI.show();
+    }
+    
+    // Show a brief message
+    if (typeof showEventText === 'function') {
+      showEventText('Please enter your name first!');
+    }
+    
+    return false;
+  }
+  
   playSound("buttonHover");
   
-  // Check if player has a valid name
+  // Double-check if player has a valid name
   if (window.playerNameUI && !window.playerNameUI.hasValidName()) {
     window.playerNameUI.show();
+    
+    if (typeof showEventText === 'function') {
+      showEventText('Please enter a valid name!');
+    }
+    
     return;
+  }
+  
+  // Save the name before starting
+  if (window.playerNameUI) {
+    window.playerNameUI.saveName();
   }
   
   startGame();
