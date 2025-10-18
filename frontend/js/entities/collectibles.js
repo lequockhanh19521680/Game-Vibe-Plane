@@ -363,6 +363,10 @@ class ShieldGenerator {
       this.isActive = true;
       this.age = 0;
       playSound("shield");
+
+      if (typeof showEventText === "function") {
+        showEventText("Shield Generator Active!");
+      }
     }
 
     if (this.isActive) {
@@ -421,6 +425,9 @@ class ShieldGenerator {
       }
 
       if (this.age >= this.activeTime) {
+        if (typeof showEventText === "function") {
+          showEventText("Shield Generator Depleted");
+        }
         return false; // Remove generator
       }
     }
@@ -515,6 +522,10 @@ class CrystalCluster {
       this.timer = 0; // Reset timer for discharge phase
       triggerScreenShake(0.3);
       playSound("powerup"); // Chơi âm thanh khi xả
+
+      if (typeof showEventText === "function") {
+        showEventText("Crystal Discharge!");
+      }
     }
 
     if (this.state === "discharging") {

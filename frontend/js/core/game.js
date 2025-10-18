@@ -541,10 +541,27 @@ function animate() {
 
   for (const cluster of crystalClusters) {
     if (cluster.state !== "discharging") continue;
+    // Nếu cluster có alpha hoặc fading theo tuổi/lifetime, bỏ qua khi đã mờ
+    let alpha = 1;
+    if (
+      typeof cluster.lifetime === "number" &&
+      typeof cluster.age === "number"
+    ) {
+      alpha = Math.max(0, (cluster.lifetime - cluster.age) / cluster.lifetime);
+    } else if (typeof cluster.alpha === "number") {
+      alpha = cluster.alpha;
+    }
+    if (alpha <= 0.45) continue;
 
     const dist = Math.hypot(player.x - cluster.x, player.y - cluster.y);
     const collisionDist = cluster.dischargeRadius + player.radius;
-    console.log("Checking crystal cluster collision:", dist, collisionDist);
+    console.log(
+      "Checking crystal cluster collision:",
+      dist,
+      collisionDist,
+      "alpha",
+      alpha
+    );
     if (dist >= collisionDist) continue;
 
     if (!player.shieldActive) {
@@ -711,8 +728,25 @@ function animate() {
 
   // PlasmaFields vs Player - Damage over time
   for (const plasma of plasmaFields) {
+    // Bỏ qua plasma đã gần hết (alpha quá nhỏ)
+    const alpha = Math.max(0, (plasma.lifetime - plasma.age) / plasma.lifetime);
+    if (alpha < 0.05) {
+      // Debug: plasma đã mờ, không va chạm
+      // console.log('Skip plasma', plasma, 'alpha', alpha);
+      continue;
+    }
     const dist = Math.hypot(player.x - plasma.x, player.y - plasma.y);
     if (dist < plasma.radius + player.radius) {
+      // Debug: plasma gây va chạm
+      console.log("Plasma collision:", {
+        x: plasma.x,
+        y: plasma.y,
+        age: plasma.age,
+        lifetime: plasma.lifetime,
+        alpha,
+        dist,
+        radius: plasma.radius,
+      });
       // Damage player gradually
       if (Math.random() < 0.02) {
         // 2% chance per frame
@@ -732,7 +766,9 @@ function animate() {
       player.activateShield();
 
       // Show shield activation message
-      showEventText("Crystal Shield Activated!");
+      if (typeof showEventText === "function") {
+        showEventText("Crystal Shield Activated!");
+      }
 
       // Crystal absorption effect
       for (let j = 0; j < 12; j++) {
@@ -825,13 +861,12 @@ function animate() {
         // Create fragments from destroyed asteroid
         for (let k = 0; k < 5; k++) {
           const angle = Math.random() * Math.PI * 2;
-          const speed = 2 + Math.random() * 3;
           fragments.push(
             new Fragment(
               asteroid.x + Math.cos(angle) * 10,
               asteroid.y + Math.sin(angle) * 10,
-              Math.cos(angle) * speed,
-              Math.sin(angle) * speed
+              Math.cos(angle),
+              Math.sin(angle)
             )
           );
         }
@@ -896,7 +931,9 @@ function animate() {
     lastDifficultyLevel = difficultyLevel;
 
     // Show difficulty increase message
-    showEventText(`LEVEL ${difficultyLevel + 1}`);
+    if (typeof showEventText === "function") {
+      showEventText(`LEVEL ${difficultyLevel + 1}`);
+    }
     playSound("powerup");
 
     // Progressive difficulty scaling
@@ -955,14 +992,8 @@ function endGame(reason = "unknown") {
   return;
 }
 
-function showEventText(text) {
-  uiElements.eventText.innerText = text;
-  uiElements.eventText.style.fontSize = GAME_CONFIG.ui.eventText.fontSize;
-  uiElements.eventText.style.opacity = "1";
-  setTimeout(() => {
-    uiElements.eventText.style.opacity = "0";
-  }, GAME_CONFIG.ui.eventText.duration);
-}
+// REMOVED: The problematic showEventText function has been removed.
+// The code now relies on the queue-based showEventText in eventSystem.js
 
 // Chaos Manifest event removed as requested
 function triggerChaosEvent(level) {
@@ -1004,7 +1035,9 @@ function triggerRandomEvent() {
   switch (randomEventType) {
     case "denseField":
       eventActive.type = "denseField";
-      showEventText("Asteroid Storm!");
+      if (typeof showEventText === "function") {
+        showEventText("Asteroid Storm!");
+      }
 
       // Spawn immediate wave of asteroids
       for (let i = 0; i < 15; i++) {
@@ -1037,12 +1070,16 @@ function triggerRandomEvent() {
     case "speedZone":
       eventActive.type = "speedZone";
       globalSpeedMultiplier *= GAME_CONFIG.events.speedZone.speedMultiplier;
-      showEventText("Difficulty Spike!");
+      if (typeof showEventText === "function") {
+        showEventText("Difficulty Spike!");
+      }
       break;
     case "instantMissiles":
       if (score > 3000) {
         eventActive.type = "instantMissiles";
-        showEventText("⚠️ INSTANT MISSILE LAUNCH! ⚠️");
+        if (typeof showEventText === "function") {
+          showEventText("⚠️ INSTANT MISSILE LAUNCH! ⚠️");
+        }
         playSound("warning");
 
         // Spawn 2 missiles with directional warnings
@@ -1116,7 +1153,9 @@ function triggerRandomEvent() {
         }
       } else {
         eventActive.type = "denseField";
-        showEventText("Asteroid Storm!");
+        if (typeof showEventText === "function") {
+          showEventText("Asteroid Storm!");
+        }
       }
       break;
     case "laserSwarm":
@@ -1130,11 +1169,15 @@ function triggerRandomEvent() {
           }
         }, i * GAME_CONFIG.events.laserSwarm.delay);
       }
-      showEventText("Laser Swarm!");
+      if (typeof showEventText === "function") {
+        showEventText("Laser Swarm!");
+      }
       break;
     case "gravitationalAnomaly":
       eventActive.type = "gravitationalAnomaly";
-      showEventText("⚠️ GRAVITATIONAL ANOMALY DETECTED ⚠️");
+      if (typeof showEventText === "function") {
+        showEventText("⚠️ GRAVITATIONAL ANOMALY DETECTED ⚠️");
+      }
 
       // Create warning indicators first
       for (
@@ -1176,12 +1219,16 @@ function triggerRandomEvent() {
       break;
     case "asteroidCircle":
       eventActive.type = "asteroidCircle";
-      showEventText("Asteroid Circle Formation!");
+      if (typeof showEventText === "function") {
+        showEventText("Asteroid Circle Formation!");
+      }
       triggerAsteroidCircle();
       break;
     case "asteroidRain":
       eventActive.type = "asteroidRain";
-      showEventText("Asteroid Rain!");
+      if (typeof showEventText === "function") {
+        showEventText("Asteroid Rain!");
+      }
       for (let i = 0; i < GAME_CONFIG.events.asteroidRain.count; i++) {
         setTimeout(() => {
           if (isGameRunning) {
@@ -1210,7 +1257,9 @@ function triggerRandomEvent() {
       break;
     case "missileBarrage":
       eventActive.type = "missileBarrage";
-      showEventText("🚀 MISSILE BARRAGE INCOMING! 🚀");
+      if (typeof showEventText === "function") {
+        showEventText("🚀 MISSILE BARRAGE INCOMING! 🚀");
+      }
 
       // Create directional warnings from multiple sides for missile barrage
       const sides = ["left", "right", "top", "bottom"];
@@ -1294,7 +1343,9 @@ function triggerRandomEvent() {
           }
         }, i * GAME_CONFIG.events.laserGrid.delay);
       }
-      showEventText("Laser Grid!");
+      if (typeof showEventText === "function") {
+        showEventText("Laser Grid!");
+      }
       break;
     case "blackHoleChain":
       for (let i = 0; i < GAME_CONFIG.events.blackHoleChain.count; i++) {
@@ -1314,12 +1365,16 @@ function triggerRandomEvent() {
           }
         }, i * GAME_CONFIG.events.blackHoleChain.delay);
       }
-      showEventText("Black Hole Chain!");
+      if (typeof showEventText === "function") {
+        showEventText("Black Hole Chain!");
+      }
       break;
 
     case "freezeZone":
       eventActive.type = "freezeZone";
-      showEventText("❄️ FREEZE ZONES IMMINENT ❄️");
+      if (typeof showEventText === "function") {
+        showEventText("❄️ FREEZE ZONES IMMINENT ❄️");
+      }
 
       for (let i = 0; i < GAME_CONFIG.events.freezeZone.count; i++) {
         setTimeout(() => {
@@ -1345,7 +1400,9 @@ function triggerRandomEvent() {
     // --- BỔ SUNG LOGIC CẢNH BÁO MAGNETIC STORM THEO YÊU CẦU ---
     case "magneticStorm":
       eventActive.type = "magneticStorm";
-      showEventText("⚠️ MAGNETIC STORM INCOMING! ⚠️ (3s)");
+      if (typeof showEventText === "function") {
+        showEventText("⚠️ MAGNETIC STORM INCOMING! ⚠️ (3s)");
+      }
 
       // Tạo WarningSystem với thời gian 3 giây (180 frames)
       const magneticWarningSystem = spawnWithWarning(
@@ -1361,7 +1418,9 @@ function triggerRandomEvent() {
         if (isGameRunning) {
           // Kích hoạt Magnetic Storm sau khi cảnh báo kết thúc
           magneticStorms.push(new MagneticStorm());
-          showEventText("⚡ MAGNETIC STORM ACTIVE ⚡");
+          if (typeof showEventText === "function") {
+            showEventText("⚡ MAGNETIC STORM ACTIVE ⚡");
+          }
           playSound("warning");
           triggerScreenShake(0.3);
         }
@@ -1371,13 +1430,17 @@ function triggerRandomEvent() {
 
     case "asteroidBelt":
       eventActive.type = "asteroidBelt";
-      showEventText("Asteroid Belt!");
+      if (typeof showEventText === "function") {
+        showEventText("Asteroid Belt!");
+      }
       triggerAsteroidBelt();
       break;
 
     case "plasmaStorm":
       eventActive.type = "plasmaStorm";
-      showEventText("⚠️ PLASMA INFERNO IMMINENT ⚠️");
+      if (typeof showEventText === "function") {
+        showEventText("⚠️ PLASMA INFERNO IMMINENT ⚠️");
+      }
 
       // Plasma storm logic simplified to use spawnWithWarning for all fields
       const plasmaConfig = GAME_CONFIG.events.plasmaStorm || {};
@@ -1424,7 +1487,9 @@ function triggerRandomEvent() {
 
       setTimeout(() => {
         if (isGameRunning) {
-          showEventText("🔥 PLASMA INFERNO UNLEASHED 🔥");
+          if (typeof showEventText === "function") {
+            showEventText("🔥 PLASMA INFERNO UNLEASHED 🔥");
+          }
           triggerScreenShake(plasmaConfig.shakeIntensity || 0.8);
           playSound("explosion");
         }
@@ -1433,7 +1498,9 @@ function triggerRandomEvent() {
 
     case "crystalRain":
       eventActive.type = "crystalRain";
-      showEventText("Cosmic Crystal Storm!");
+      if (typeof showEventText === "function") {
+        showEventText("Cosmic Crystal Storm!");
+      }
 
       // Create clusters of drifting crystals
       for (let cluster = 0; cluster < 4; cluster++) {
@@ -1511,7 +1578,9 @@ function triggerRandomEvent() {
 
     case "quantumTunnels":
       eventActive.type = "quantumTunnels";
-      showEventText("Quantum Portal Pair!");
+      if (typeof showEventText === "function") {
+        showEventText("Quantum Portal Pair!");
+      }
 
       // Create only 2 portals (1 pair)
       const x1 = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
@@ -1527,7 +1596,9 @@ function triggerRandomEvent() {
 
     case "gravityWells":
       eventActive.type = "gravityWells";
-      showEventText("Gravity Well Field!");
+      if (typeof showEventText === "function") {
+        showEventText("Gravity Well Field!");
+      }
       for (let i = 0; i < GAME_CONFIG.events.gravityWells.count; i++) {
         const x = 100 + Math.random() * (canvas.width - 200);
         const y = 100 + Math.random() * (canvas.height - 200);
@@ -1548,7 +1619,9 @@ function triggerRandomEvent() {
 
     case "meteorBombardment":
       eventActive.type = "meteorBombardment";
-      showEventText("⚠️ METEOR BOMBARDMENT IMMINENT ⚠️");
+      if (typeof showEventText === "function") {
+        showEventText("⚠️ METEOR BOMBARDMENT IMMINENT ⚠️");
+      }
 
       // Meteor warning logic simplified to use spawnWithWarning
       const meteorConfig = GAME_CONFIG.events.meteorBombardment;
@@ -1593,7 +1666,9 @@ function triggerRandomEvent() {
 
     case "voidRifts":
       eventActive.type = "voidRifts";
-      showEventText("⚠️ Void Rifts Detected ⚠️");
+      if (typeof showEventText === "function") {
+        showEventText("⚠️ Void Rifts Detected ⚠️");
+      }
 
       for (let i = 0; i < GAME_CONFIG.events.voidRifts.count; i++) {
         const x = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
@@ -1619,7 +1694,9 @@ function triggerRandomEvent() {
 
     case "lightningStorm":
       eventActive.type = "lightningStorm";
-      showEventText("⚡ THUNDER SHIELD! ⚡");
+      if (typeof showEventText === "function") {
+        showEventText("⚡ THUNDER SHIELD! ⚡");
+      }
 
       // Create lightning storm
       lightningStorms.push(new LightningStorm());

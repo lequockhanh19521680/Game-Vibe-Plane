@@ -224,6 +224,11 @@ class Player extends ColoredEntity {
     this.shieldActive = true;
     this.shieldTimer = this.shieldDuration;
     playSound("shield");
+
+    // Show shield activation message
+    if (typeof showEventText === "function") {
+      showEventText("Shield Activated!");
+    }
   }
 
   activateThunderShield() {
@@ -252,6 +257,11 @@ class Player extends ColoredEntity {
     }
 
     playSound("powerup");
+
+    // Show thunder shield activation message
+    if (typeof showEventText === "function") {
+      showEventText("⚡ Thunder Shield Active ⚡");
+    }
   }
 
   checkThunderShieldCollisions() {

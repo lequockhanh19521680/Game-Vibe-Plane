@@ -2,7 +2,6 @@
 
 class PlasmaField {
   constructor(x, y) {
-    // SỬ DỤNG CONFIG: newObjects.plasmaField
     this.config = GAME_CONFIG.newObjects.plasmaField || {};
 
     this.x = x || canvas.width / 2;
