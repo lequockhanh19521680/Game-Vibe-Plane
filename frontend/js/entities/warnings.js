@@ -17,8 +17,7 @@ class Warning extends Entity {
 
     // Pulsing warning circle
     const pulse =
-      Math.sin(this.timer * GAME_CONFIG.ui.warning.pulseSpeed) * 0.5 +
-      0.5;
+      Math.sin(this.timer * GAME_CONFIG.ui.warning.pulseSpeed) * 0.5 + 0.5;
     const currentRadius =
       this.radius + pulse * GAME_CONFIG.ui.warning.pulseIntensity;
 
@@ -43,6 +42,10 @@ class Warning extends Entity {
       case "plasma":
         warningColor = "#ff6600"; // Orange for plasma
         warningSymbol = "🔥";
+        break;
+      case "magnetic": // New type for Magnetic Storm
+        warningColor = "#88ddff"; // Electric blue
+        warningSymbol = "⚡";
         break;
       default:
         warningColor = "#f48fb1"; // Pink for missiles and others
@@ -77,6 +80,77 @@ class Warning extends Entity {
     ) {
       this.alpha =
         (this.duration - this.timer) / GAME_CONFIG.ui.warning.fadeOutTime;
+    } else {
+      this.alpha = 1;
+    }
+
+    this.draw();
+  }
+}
+
+// New Directional Warning class for Missile/Laser Turrets/Edge Hazards
+class DirectionalWarning extends Entity {
+  constructor(x, y, type, angle, duration = 120) {
+    super(x, y);
+    this.type = type; // e.g., 'missile'
+    this.angle = angle; // Radians, direction of travel
+    this.duration = duration;
+    this.timer = 0;
+    this.size = 25; // Arrow size
+    this.alpha = 0;
+  }
+
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle); // Rotate to point in the direction of travel
+
+    // Pulsing effect
+    const pulse = Math.sin(this.timer * 0.3) * 0.1 + 0.9;
+    const arrowColor = this.type === "missile" ? "#f48fb1" : "#ff4444";
+    const finalSize = this.size * pulse;
+
+    // Outer glow
+    ctx.beginPath();
+    ctx.arc(0, 0, finalSize * 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 0, 0, ${this.alpha * 0.1})`;
+    ctx.fill();
+
+    // Arrow Head
+    ctx.beginPath();
+    ctx.moveTo(finalSize, 0);
+    ctx.lineTo(-finalSize * 0.5, finalSize * 0.5);
+    ctx.lineTo(-finalSize * 0.5, -finalSize * 0.5);
+    ctx.closePath();
+
+    ctx.fillStyle = arrowColor;
+    ctx.shadowColor = arrowColor;
+    ctx.shadowBlur = 10;
+    ctx.fill();
+
+    // Missile Icon at the center
+    ctx.globalAlpha = this.alpha;
+    ctx.fillStyle = "#fff";
+    ctx.font = "12px Exo 2";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("🚀", 0, 0);
+
+    ctx.restore();
+  }
+
+  update() {
+    this.timer++;
+
+    // Fade in and out
+    const fadeInTime = GAME_CONFIG.ui.warning.fadeInTime;
+    const fadeOutTime = GAME_CONFIG.ui.warning.fadeOutTime;
+
+    if (this.timer < fadeInTime) {
+      this.alpha = this.timer / fadeInTime;
+    } else if (this.timer > this.duration - fadeOutTime) {
+      this.alpha = (this.duration - this.timer) / fadeOutTime;
     } else {
       this.alpha = 1;
     }

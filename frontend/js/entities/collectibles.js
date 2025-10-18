@@ -229,7 +229,8 @@ class CrystalShard {
         if (speed > 0) continue;
 
         // Calculate restitution (crystal is bouncy)
-        const restitution = 0.8;
+        // ĐIỀU CHỈNH: Giảm độ nảy (restitution) xuống gần 0 để triệt tiêu hiệu ứng "nảy nảy"
+        const restitution = 0.05; // Giảm từ 0.8 xuống 0.05
         const impulse = (2 * speed) / (this.mass + asteroid.radius);
 
         // Apply impulse to crystal (asteroid mass is much larger)
@@ -298,21 +299,24 @@ class CrystalShard {
     this.y += this.velocity.y;
 
     // Bounce off screen edges to keep crystals contained
+    // ĐIỀU CHỈNH: Giảm độ nảy của tường (damping) xuống 0.2 để nó gần như dừng lại
+    const wallDamping = 0.2; // Giảm từ 0.7 xuống 0.2
+
     if (this.x < this.size) {
       this.x = this.size;
-      this.velocity.x = Math.abs(this.velocity.x) * 0.7; // Bounce back with damping
+      this.velocity.x = Math.abs(this.velocity.x) * wallDamping;
     }
     if (this.x > canvas.width - this.size) {
       this.x = canvas.width - this.size;
-      this.velocity.x = -Math.abs(this.velocity.x) * 0.7;
+      this.velocity.x = -Math.abs(this.velocity.x) * wallDamping;
     }
     if (this.y < this.size) {
       this.y = this.size;
-      this.velocity.y = Math.abs(this.velocity.y) * 0.7;
+      this.velocity.y = Math.abs(this.velocity.y) * wallDamping;
     }
     if (this.y > canvas.height - this.size) {
       this.y = canvas.height - this.size;
-      this.velocity.y = -Math.abs(this.velocity.y) * 0.7;
+      this.velocity.y = -Math.abs(this.velocity.y) * wallDamping;
     }
 
     this.draw();

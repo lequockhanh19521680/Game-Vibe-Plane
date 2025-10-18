@@ -133,12 +133,25 @@ function createMiniShowerAsteroid(direction) {
  * This replaces the complex inline warning logic in eventSystem.js.
  */
 class WarningSystem {
+  // Added options parameter to constructor
   constructor(type, x, y, options = {}) {
     this.type = type;
     this.x = x;
     this.y = y;
     this.warningDuration = options.duration || 120; // 2 seconds by default
-    this.warning = new Warning(x, y, type, this.warningDuration, options.angle);
+
+    // NEW LOGIC: Use DirectionalWarning if angle is provided or type is missile
+    if (options.angle !== undefined || type === "missile") {
+      this.warning = new DirectionalWarning(
+        x,
+        y,
+        type,
+        options.angle !== undefined ? options.angle : 0,
+        this.warningDuration
+      );
+    } else {
+      this.warning = new Warning(x, y, type, this.warningDuration);
+    }
   }
 
   /**
@@ -178,5 +191,11 @@ class WarningSystem {
  * @returns {WarningSystem} A new WarningSystem instance.
  */
 function spawnWithWarning(type, x, y, options = {}) {
+  // Use a longer warning duration for magnetic storm (3 seconds as requested)
+  if (type === "magnetic") {
+    options.duration = options.duration || 180; // 3 seconds = 180 frames
+  } else if (type === "missile") {
+    options.duration = options.duration || GAME_CONFIG.missiles.warningDuration;
+  }
   return new WarningSystem(type, x, y, options);
 }

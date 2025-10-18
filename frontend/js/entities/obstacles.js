@@ -377,30 +377,38 @@ class BlackHole {
   }
 }
 class Missile {
-  constructor() {
-    // Diverse spawn patterns for missiles
+  // Cập nhật constructor để chấp nhận vị trí spawn và góc
+  constructor(x, y, angle) {
     const spawnPattern = Math.random();
-    if (spawnPattern < 0.4) {
-      // Side spawn (40%)
+
+    if (x !== undefined && y !== undefined && angle !== undefined) {
+      // Case 1: Spawned via WarningSystem, use provided values
+      this.x = x;
+      this.y = y;
+      this.angle = angle;
+      // Determine fromLeft based on angle for trail/initial logic (0 = right, PI = left)
+      this.fromLeft = this.angle === 0;
+    } else if (spawnPattern < 0.4) {
+      // Case 2: Random Side spawn (40%) - Original Logic
       this.fromLeft = Math.random() > 0.5;
       this.x = this.fromLeft ? -20 : width + 20;
       this.y = Math.random() * height;
       this.angle = this.fromLeft ? 0 : Math.PI;
     } else if (spawnPattern < 0.7) {
-      // Top/Bottom spawn (30%)
+      // Case 3: Random Top/Bottom spawn (30%) - Original Logic
       this.fromTop = Math.random() > 0.5;
       this.x = Math.random() * width;
       this.y = this.fromTop ? -20 : height + 20;
       this.angle = this.fromTop ? Math.PI / 2 : -Math.PI / 2;
       this.fromLeft = false; // For trail purposes
     } else if (spawnPattern < 0.85) {
-      // Corner spawn (15%)
+      // Case 4: Random Corner spawn (15%) - Original Logic
       this.x = Math.random() < 0.5 ? -20 : width + 20;
       this.y = Math.random() < 0.5 ? -20 : height + 20;
       this.angle = Math.atan2(height / 2 - this.y, width / 2 - this.x);
       this.fromLeft = this.x < 0;
     } else {
-      // Random edge spawn (15%)
+      // Case 5: Random Edge spawn (15%) - Original Logic
       const edge = Math.floor(Math.random() * 4);
       switch (edge) {
         case 0: // Top
@@ -439,7 +447,10 @@ class Missile {
     this.lifeTimer = 0;
     this.hasSpedUp = false;
     this.isDead = false;
-    this.velocity = { x: 0, y: 0 };
+    this.velocity = {
+      x: Math.cos(this.angle) * this.speed, // Set initial velocity based on angle
+      y: Math.sin(this.angle) * this.speed,
+    };
   }
   draw() {
     this.trail.forEach((p) => {

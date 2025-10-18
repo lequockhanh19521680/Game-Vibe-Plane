@@ -276,49 +276,84 @@ function animate() {
     if (timers.blackHole % GAME_CONFIG.blackHoles.spawnInterval === 0) {
       const bhX = Math.random() * width * 0.8 + width * 0.1;
       const bhY = Math.random() * height * 0.8;
-      // Show warning first
-      warnings.push(
-        new Warning(
-          bhX,
-          bhY,
-          "blackhole",
-          GAME_CONFIG.blackHoles.warningDuration
-        )
-      );
-      playSound("warning");
-      // Create black hole after warning period
-      setTimeout(() => {
-        if (isGameRunning) {
-          blackHoles.push(new BlackHole(bhX, bhY));
-          playSound("blackhole");
-        }
-      }, GAME_CONFIG.blackHoles.warningDelay);
+      // Use spawnWithWarning for Black Hole
+      const warningSystem = spawnWithWarning("blackhole", bhX, bhY, {
+        duration: GAME_CONFIG.blackHoles.warningDuration,
+      });
+
+      warningSystem.spawn(() => {
+        blackHoles.push(new BlackHole(bhX, bhY));
+        playSound("blackhole");
+      });
     }
   }
+
+  // --- CẬP NHẬT LOGIC SPAWN MISSILE VỚI DIRECTIONAL WARNING ---
   if (score > GAME_CONFIG.missiles.spawnScore) {
     timers.missile++;
     if (timers.missile % GAME_CONFIG.missiles.spawnInterval === 0) {
-      // Show warning at edges where missile will spawn
-      const fromLeft = Math.random() > 0.5;
-      const warningX = fromLeft ? 50 : width - 50;
-      const warningY = Math.random() * height;
-      warnings.push(
-        new Warning(
-          warningX,
-          warningY,
-          "missile",
-          GAME_CONFIG.missiles.warningDuration
-        )
-      );
-      playSound("warning");
-      // Create missile after warning period
-      setTimeout(() => {
-        if (isGameRunning) {
-          missiles.push(new Missile());
+      // Determine spawn side and position
+      const sides = ["left", "right", "top", "bottom"];
+      const side = sides[Math.floor(Math.random() * sides.length)];
+      let warningX, warningY, missileAngle, spawnX, spawnY;
+      const warningOffset = 50; // Warning position inside canvas
+      const spawnOffset = 30; // Missile spawn position outside canvas
+
+      switch (side) {
+        case "left":
+          warningX = warningOffset;
+          warningY =
+            Math.random() * (height - 2 * warningOffset) + warningOffset;
+          missileAngle = 0; // Move right
+          spawnX = -spawnOffset;
+          spawnY = warningY;
+          break;
+        case "right":
+          warningX = width - warningOffset;
+          warningY =
+            Math.random() * (height - 2 * warningOffset) + warningOffset;
+          missileAngle = Math.PI; // Move left
+          spawnX = width + spawnOffset;
+          spawnY = warningY;
+          break;
+        case "top":
+          warningX =
+            Math.random() * (width - 2 * warningOffset) + warningOffset;
+          warningY = warningOffset;
+          missileAngle = Math.PI / 2; // Move down
+          spawnX = warningX;
+          spawnY = -spawnOffset;
+          break;
+        case "bottom":
+          warningX =
+            Math.random() * (width - 2 * warningOffset) + warningOffset;
+          warningY = height - warningOffset;
+          missileAngle = -Math.PI / 2; // Move up
+          spawnX = warningX;
+          spawnY = height + spawnOffset;
+          break;
+      }
+
+      // Use spawnWithWarning for Directional Warning
+      const warningSystem = spawnWithWarning(
+        "missile", // Type
+        warningX, // Warning X
+        warningY, // Warning Y
+        {
+          angle: missileAngle, // Directional angle
+          duration: GAME_CONFIG.missiles.warningDuration,
         }
-      }, GAME_CONFIG.missiles.warningDelay);
+      );
+
+      // Spawn the Missile using the calculated initial position and angle
+      warningSystem.spawn(() => {
+        // Missile constructor now accepts x, y, angle
+        missiles.push(new Missile(spawnX, spawnY, missileAngle));
+      });
     }
   }
+  // --- END CẬP NHẬT LOGIC SPAWN MISSILE ---
+
   if (score > GAME_CONFIG.lasers.spawnScore) {
     timers.laser++;
     const difficultyLevel = Math.floor(score / scorePerLevel);
@@ -469,17 +504,24 @@ function animate() {
       }
     }
   }
+
+  // --- CHỈNH SỬA LOGIC VA CHẠM CRYSTAL CLUSTER ---
   for (const cc of crystalClusters) {
     if (cc.state === "discharging") {
       const dist = Math.hypot(player.x - cc.x, player.y - cc.y);
-      if (Math.abs(dist - cc.dischargeRadius) < player.radius + 5) {
+
+      // LOGIC MỚI: Nếu khoảng cách nhỏ hơn bán kính xả năng lượng, bị tiêu diệt.
+      if (dist < cc.dischargeRadius + player.radius) {
         if (!player.shieldActive) {
           endGame("crystal cluster collision");
           return;
         }
+        // Nếu có shield, cluster bị phá hủy ngay lập tức
+        cc.state = "fading";
       }
     }
   }
+  // --- END CHỈNH SỬA LOGIC VA CHẠM CRYSTAL CLUSTER ---
 
   // Fragment vs Player collisions (now just visual effects, not lethal)
   for (let i = fragments.length - 1; i >= 0; i--) {
@@ -923,22 +965,26 @@ function triggerRandomEvent() {
       // Spawn immediate wave of asteroids
       for (let i = 0; i < 15; i++) {
         setTimeout(() => {
-          const radius = 15 + Math.random() * 20;
-          const spawnX = Math.random() * canvas.width;
-          const spawnY = -30 - Math.random() * 100;
-          const speed = 2 + Math.random() * 3;
+          if (isGameRunning) {
+            const radius = 15 + Math.random() * 20;
+            const spawnX = Math.random() * canvas.width;
+            const spawnY = -30 - Math.random() * 100;
+            const speed = 2 + Math.random() * 3;
 
-          asteroids.push(
-            new Asteroid(
-              spawnX,
-              spawnY,
-              radius,
-              GAME_CONFIG.asteroids.colors[
-                Math.floor(Math.random() * GAME_CONFIG.asteroids.colors.length)
-              ],
-              { x: (Math.random() - 0.5) * 2, y: speed }
-            )
-          );
+            asteroids.push(
+              new Asteroid(
+                spawnX,
+                spawnY,
+                radius,
+                GAME_CONFIG.asteroids.colors[
+                  Math.floor(
+                    Math.random() * GAME_CONFIG.asteroids.colors.length
+                  )
+                ],
+                { x: (Math.random() - 0.5) * 2, y: speed }
+              )
+            );
+          }
         }, i * 100);
       }
 
@@ -952,157 +998,78 @@ function triggerRandomEvent() {
     case "instantMissiles":
       if (score > 3000) {
         eventActive.type = "instantMissiles";
-        showEventText("⚠️ MISSILES INCOMING ⚠️");
-
-        // Create missile warning indicators
-        class MissileWarning {
-          constructor(duration = 120) {
-            this.missileData = [];
-            this.timer = 0;
-            this.duration = duration;
-
-            // Pre-calculate 2 missile paths
-            for (let i = 0; i < 2; i++) {
-              // Create missile data similar to Missile class
-              const spawnPattern = Math.random();
-              let x,
-                y,
-                angle,
-                fromLeft = false;
-
-              if (spawnPattern < 0.4) {
-                // Side spawn (40%)
-                fromLeft = Math.random() > 0.5;
-                x = fromLeft ? -20 : width + 20;
-                y = Math.random() * height;
-                angle = fromLeft ? 0 : Math.PI;
-              } else if (spawnPattern < 0.7) {
-                // Top/Bottom spawn (30%)
-                const fromTop = Math.random() > 0.5;
-                x = Math.random() * width;
-                y = fromTop ? -20 : height + 20;
-                angle = fromTop ? Math.PI / 2 : -Math.PI / 2;
-              } else if (spawnPattern < 0.85) {
-                // Corner spawn (15%)
-                x = Math.random() < 0.5 ? -20 : width + 20;
-                y = Math.random() < 0.5 ? -20 : height + 20;
-                angle = Math.atan2(height / 2 - y, width / 2 - x);
-                fromLeft = x < 0;
-              } else {
-                // Random edge spawn (15%)
-                const edge = Math.floor(Math.random() * 4);
-                switch (edge) {
-                  case 0: // Top
-                    x = Math.random() * width;
-                    y = -20;
-                    angle = Math.PI / 2;
-                    break;
-                  case 1: // Right
-                    x = width + 20;
-                    y = Math.random() * height;
-                    angle = Math.PI;
-                    break;
-                  case 2: // Bottom
-                    x = Math.random() * width;
-                    y = height + 20;
-                    angle = -Math.PI / 2;
-                    break;
-                  case 3: // Left
-                    x = -20;
-                    y = Math.random() * height;
-                    angle = 0;
-                    break;
-                }
-                fromLeft = x < width / 2;
-              }
-
-              this.missileData.push({
-                x,
-                y,
-                angle,
-                startX: x,
-                startY: y,
-              });
-            }
-          }
-
-          draw() {
-            ctx.save();
-
-            // Calculate alpha based on time
-            let alpha = 1;
-            if (this.timer < 30) {
-              alpha = this.timer / 30; // Fade in
-            } else if (this.timer > this.duration - 30) {
-              alpha = (this.duration - this.timer) / 30; // Fade out
-            }
-
-            ctx.globalAlpha = alpha;
-
-            // Pulse effect for warning
-            const pulse = Math.sin(this.timer * 0.2) * 0.5 + 0.5;
-
-            for (const missile of this.missileData) {
-              // Calculate projected path
-              const pathLength = 200;
-              const endX = missile.x + Math.cos(missile.angle) * pathLength;
-              const endY = missile.y + Math.sin(missile.angle) * pathLength;
-
-              // Draw trajectory line
-              ctx.beginPath();
-              ctx.moveTo(missile.startX, missile.startY);
-              ctx.lineTo(endX, endY);
-              ctx.strokeStyle = `rgba(255, 0, 0, ${0.5 + pulse * 0.5})`;
-              ctx.lineWidth = 2;
-              ctx.setLineDash([5, 8]);
-              ctx.stroke();
-              ctx.setLineDash([]);
-
-              // Draw warning icon at missile position
-              ctx.fillStyle = "#ff0000";
-              ctx.font = "bold 16px Arial";
-              ctx.textAlign = "center";
-              ctx.textBaseline = "middle";
-              ctx.fillText("🚀", missile.startX, missile.startY);
-
-              // Draw danger zone
-              ctx.beginPath();
-              ctx.arc(endX, endY, 30 + pulse * 10, 0, Math.PI * 2);
-              ctx.fillStyle = `rgba(255, 0, 0, ${0.2 * alpha})`;
-              ctx.fill();
-              ctx.strokeStyle = `rgba(255, 0, 0, ${0.7 * alpha})`;
-              ctx.lineWidth = 2;
-              ctx.stroke();
-
-              // Draw warning symbol in danger zone
-              ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`;
-              ctx.font = "bold 18px Arial";
-              ctx.fillText("⚠️", endX, endY);
-            }
-
-            ctx.restore();
-          }
-
-          update() {
-            this.timer++;
-            this.draw();
-            return this.timer < this.duration;
-          }
-        }
-
-        // Add missile warning
-        warnings.push(new MissileWarning(120)); // 2 second warning
-
+        showEventText("⚠️ INSTANT MISSILE LAUNCH! ⚠️");
         playSound("warning");
 
-        // Launch missiles after warning
-        setTimeout(() => {
-          if (isGameRunning) {
-            missiles.push(new Missile());
-            missiles.push(new Missile());
-            showEventText("🚀 MISSILES LAUNCHED! 🚀");
+        // Spawn 2 missiles with directional warnings
+        const instantSides = ["left", "right", "top", "bottom"];
+        const missileCount = 2;
+
+        for (let i = 0; i < missileCount; i++) {
+          // Choose a random side for this missile
+          const side =
+            instantSides[Math.floor(Math.random() * instantSides.length)];
+          let warningX, warningY, warningAngle, spawnX, spawnY, missileAngle;
+          const warningOffset = 50;
+          const spawnOffset = 30;
+
+          switch (side) {
+            case "left":
+              warningX = warningOffset;
+              warningY = 100 + Math.random() * (height - 200);
+              warningAngle = 0; // Arrow pointing right
+              spawnX = -spawnOffset;
+              spawnY = warningY;
+              missileAngle = 0;
+              break;
+            case "right":
+              warningX = width - warningOffset;
+              warningY = 100 + Math.random() * (height - 200);
+              warningAngle = Math.PI; // Arrow pointing left
+              spawnX = width + spawnOffset;
+              spawnY = warningY;
+              missileAngle = Math.PI;
+              break;
+            case "top":
+              warningX = 100 + Math.random() * (width - 200);
+              warningY = warningOffset;
+              warningAngle = Math.PI / 2; // Arrow pointing down
+              spawnX = warningX;
+              spawnY = -spawnOffset;
+              missileAngle = Math.PI / 2;
+              break;
+            case "bottom":
+              warningX = 100 + Math.random() * (width - 200);
+              warningY = height - warningOffset;
+              warningAngle = -Math.PI / 2; // Arrow pointing up
+              spawnX = warningX;
+              spawnY = height + spawnOffset;
+              missileAngle = -Math.PI / 2;
+              break;
           }
-        }, 120 * (1000 / 60)); // 2 seconds
+
+          // Create warning with slight delay between them
+          setTimeout(() => {
+            if (isGameRunning) {
+              // Use spawnWithWarning which handles DirectionalWarning internally
+              const warningSystem = spawnWithWarning(
+                "missile",
+                warningX,
+                warningY,
+                {
+                  angle: warningAngle,
+                  duration: GAME_CONFIG.missiles.warningDuration,
+                }
+              );
+
+              // Create missile after warning with matched position
+              warningSystem.spawn(() => {
+                // Missile constructor now accepts x, y, angle
+                missiles.push(new Missile(spawnX, spawnY, missileAngle));
+              });
+            }
+          }, i * GAME_CONFIG.missiles.warningDuration * (1000 / 60)); // Stagger the warnings
+        }
       } else {
         eventActive.type = "denseField";
         showEventText("Asteroid Storm!");
@@ -1134,13 +1101,12 @@ function triggerRandomEvent() {
         const x = 100 + Math.random() * (width - 200);
         const y = 100 + Math.random() * (height - 200);
 
-        // Add warning signs
-        warnings.push(
-          new Warning(x, y, "blackhole", 180) // 3 second warning
-        );
+        // Sử dụng spawnWithWarning cho Black Hole
+        const warningSystem = spawnWithWarning("blackhole", x, y, {
+          duration: 180, // 3 second warning
+        });
 
-        // Create black holes after warning
-        setTimeout(() => {
+        warningSystem.spawn(() => {
           if (isGameRunning) {
             blackHoles.push(new BlackHole(x, y, true));
             // Create visual effect for black hole appearance
@@ -1161,10 +1127,8 @@ function triggerRandomEvent() {
             }
             playSound("blackhole");
           }
-        }, 180 * (1000 / 60)); // 3 seconds
+        });
       }
-
-      playSound("warning");
       break;
     case "asteroidCircle":
       eventActive.type = "asteroidCircle";
@@ -1203,14 +1167,75 @@ function triggerRandomEvent() {
     case "missileBarrage":
       eventActive.type = "missileBarrage";
       showEventText("🚀 MISSILE BARRAGE INCOMING! 🚀");
+
+      // Create directional warnings from multiple sides for missile barrage
+      const sides = ["left", "right", "top", "bottom"];
+
       for (let i = 0; i < GAME_CONFIG.events.missileBarrage.count; i++) {
+        // Choose a random side for this missile
+        const side = sides[Math.floor(Math.random() * sides.length)];
+        let warningX, warningY, warningAngle, spawnX, spawnY, missileAngle;
+        const warningOffset = 50;
+        const spawnOffset = 30;
+
+        // Position warning based on the chosen side
+        switch (side) {
+          case "left":
+            warningX = warningOffset;
+            warningY = 100 + Math.random() * (height - 200);
+            warningAngle = 0; // Arrow pointing right
+            spawnX = -spawnOffset;
+            spawnY = warningY;
+            missileAngle = 0;
+            break;
+          case "right":
+            warningX = width - warningOffset;
+            warningY = 100 + Math.random() * (height - 200);
+            warningAngle = Math.PI; // Arrow pointing left
+            spawnX = width + spawnOffset;
+            spawnY = warningY;
+            missileAngle = Math.PI;
+            break;
+          case "top":
+            warningX = 100 + Math.random() * (width - 200);
+            warningY = warningOffset;
+            warningAngle = Math.PI / 2; // Arrow pointing down
+            spawnX = warningX;
+            spawnY = -spawnOffset;
+            missileAngle = Math.PI / 2;
+            break;
+          case "bottom":
+            warningX = 100 + Math.random() * (width - 200);
+            warningY = height - warningOffset;
+            warningAngle = -Math.PI / 2; // Arrow pointing up
+            spawnX = warningX;
+            spawnY = height + spawnOffset;
+            missileAngle = -Math.PI / 2;
+            break;
+        }
+
+        // Create warning with slight delay between them
         setTimeout(() => {
           if (isGameRunning) {
-            missiles.push(new Missile());
+            // Use spawnWithWarning which handles DirectionalWarning internally
+            const warningSystem = spawnWithWarning(
+              "missile",
+              warningX,
+              warningY,
+              {
+                angle: warningAngle,
+                duration: 90, // 1.5 seconds warning
+              }
+            );
+
+            // Create missile after warning with matched position
+            warningSystem.spawn(() => {
+              // Missile constructor now accepts x, y, angle
+              missiles.push(new Missile(spawnX, spawnY, missileAngle));
+            });
           }
-        }, i * GAME_CONFIG.events.missileBarrage.delay);
+        }, i * (GAME_CONFIG.events.missileBarrage.delay / 2)); // Stagger the warnings
       }
-      playSound("warning");
       break;
     case "laserGrid":
       for (let i = 0; i < GAME_CONFIG.events.laserGrid.gridSize; i++) {
@@ -1233,61 +1258,72 @@ function triggerRandomEvent() {
           if (isGameRunning) {
             const x = Math.random() * width;
             const y = Math.random() * height * 0.7;
-            warnings.push(
-              new Warning(
-                x,
-                y,
-                "blackhole",
-                GAME_CONFIG.blackHoles.warningDuration
-              )
-            );
-            setTimeout(() => {
-              if (isGameRunning) {
-                blackHoles.push(new BlackHole(x, y, true));
-                playSound("blackhole");
-              }
-            }, GAME_CONFIG.events.blackHoleChain.warningDelay);
+            // Sử dụng WarningSystem mới để spawn BlackHole
+            const warningSystem = spawnWithWarning("blackhole", x, y, {
+              duration: GAME_CONFIG.blackHoles.warningDuration,
+            });
+
+            warningSystem.spawn(() => {
+              blackHoles.push(new BlackHole(x, y, true));
+              playSound("blackhole");
+            });
           }
         }, i * GAME_CONFIG.events.blackHoleChain.delay);
       }
       showEventText("Black Hole Chain!");
       break;
 
-    case "wormholePortal":
-      eventActive.type = "wormholePortal";
-      showEventText("Wormhole Assault!");
-      for (let i = 0; i < GAME_CONFIG.events.wormholePortal.count; i++) {
-        setTimeout(() => {
-          // Create wormhole that shoots asteroids
-          const x = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
-          const y = Math.random() * canvas.height * 0.6 + canvas.height * 0.2;
-          wormholes.push(new Wormhole(x, y));
-        }, i * 1000); // Spawn wormholes with 1 second delay
-      }
-      playSound("wormhole");
-      break;
-
     case "freezeZone":
       eventActive.type = "freezeZone";
-      showEventText("Freeze Zones Activated!");
+      showEventText("❄️ FREEZE ZONES IMMINENT ❄️");
+
       for (let i = 0; i < GAME_CONFIG.events.freezeZone.count; i++) {
-        const x = Math.random() * canvas.width;
-        const y = Math.random() * canvas.height;
-        freezeZones.push(new FreezeZone(x, y));
+        setTimeout(() => {
+          if (isGameRunning) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+
+            // Sử dụng spawnWithWarning
+            const warningSystem = spawnWithWarning("freeze", x, y, {
+              radius: GAME_CONFIG.events.freezeZone.radius,
+              duration: 120, // 2 seconds warning
+            });
+
+            warningSystem.spawn(() => {
+              freezeZones.push(new FreezeZone(x, y));
+              playSound("freeze");
+            });
+          }
+        }, i * 500); // Stagger freeze zone creation
       }
-      playSound("freeze");
       break;
 
+    // --- BỔ SUNG LOGIC CẢNH BÁO MAGNETIC STORM THEO YÊU CẦU ---
     case "magneticStorm":
       eventActive.type = "magneticStorm";
-      showEventText("Magnetic Storm Detected!");
+      showEventText("⚠️ MAGNETIC STORM INCOMING! ⚠️ (3s)");
 
-      // Create magnetic storm
-      magneticStorms.push(new MagneticStorm());
+      // Tạo WarningSystem với thời gian 3 giây (180 frames)
+      const magneticWarningSystem = spawnWithWarning(
+        "magnetic",
+        width / 2,
+        height / 2,
+        {
+          duration: 180, // 3 seconds
+        }
+      );
 
-      playSound("warning");
-      triggerScreenShake(0.3);
+      magneticWarningSystem.spawn(() => {
+        if (isGameRunning) {
+          // Kích hoạt Magnetic Storm sau khi cảnh báo kết thúc
+          magneticStorms.push(new MagneticStorm());
+          showEventText("⚡ MAGNETIC STORM ACTIVE ⚡");
+          playSound("warning");
+          triggerScreenShake(0.3);
+        }
+      });
       break;
+    // --- END MAGNETIC STORM ---
 
     case "asteroidBelt":
       eventActive.type = "asteroidBelt";
@@ -1295,174 +1331,58 @@ function triggerRandomEvent() {
       triggerAsteroidBelt();
       break;
 
-    // Laser Turrets event removed as requested
-
     case "plasmaStorm":
       eventActive.type = "plasmaStorm";
       showEventText("⚠️ PLASMA INFERNO IMMINENT ⚠️");
 
-      // Pre-calculate all plasma field positions
-      class PlasmaWarning {
-        constructor(duration) {
-          this.positions = [];
-          this.timer = 0;
-          this.duration = duration;
-          this.warningDelay = duration * 0.7; // 70% time for warning, 30% for impact
+      // Plasma storm logic simplified to use spawnWithWarning for all fields
+      const plasmaConfig = GAME_CONFIG.events.plasmaStorm || {};
+      const waveCount = plasmaConfig.waveCount || 4;
+      const fieldsPerWave = plasmaConfig.fieldsPerWave || 5;
+      const fieldStagger = plasmaConfig.fieldStagger || 80;
+      const warningDuration = plasmaConfig.warningDuration || 180; // 3 seconds
 
-          // Pre-calculate plasma positions for 4 waves, 5 fields per wave
-          const waveCount = 4;
-          const fieldsPerWave = 5;
+      for (let wave = 0; wave < waveCount; wave++) {
+        const baseY = (canvas.height / (waveCount + 1)) * (wave + 1);
 
-          for (let wave = 0; wave < waveCount; wave++) {
-            const baseY = (canvas.height / 5) * (wave + 1);
+        for (let field = 0; field < fieldsPerWave; field++) {
+          const x =
+            (canvas.width / (fieldsPerWave + 1)) * (field + 1) +
+            (Math.random() - 0.5) * (plasmaConfig.positionJitterX || 80);
+          const y =
+            baseY +
+            (Math.random() - 0.5) * (plasmaConfig.positionJitterY || 60);
+          const radius =
+            (plasmaConfig.minRadius || 60) +
+            Math.random() *
+              ((plasmaConfig.maxRadius || 90) - (plasmaConfig.minRadius || 60));
+          const timing = wave * fieldsPerWave + field;
 
-            for (let field = 0; field < fieldsPerWave; field++) {
-              // Calculate position within the wave
-              const x =
-                (canvas.width / (fieldsPerWave + 1)) * (field + 1) +
-                (Math.random() - 0.5) * 80;
-              const y = baseY + (Math.random() - 0.5) * 60;
-              const timing =
-                ((wave * fieldsPerWave + field) * 80) / (1000 / 60); // Convert ms to frames
+          setTimeout(() => {
+            if (isGameRunning) {
+              const warningSystem = spawnWithWarning("plasma", x, y, {
+                radius: radius,
+                duration: warningDuration,
+              });
 
-              this.positions.push({
-                x,
-                y,
-                wave,
-                timing,
-                radius: 60 + Math.random() * 20, // Randomize radius slightly
+              warningSystem.spawn(() => {
+                const plasma = new PlasmaField(x, y);
+                plasma.radius = radius * (plasmaConfig.radiusMultiplier || 1.2);
+                plasma.damageRate = plasmaConfig.damageRate || 0.04;
+                plasmaFields.push(plasma);
               });
             }
-          }
-        }
-
-        draw() {
-          ctx.save();
-
-          for (const pos of this.positions) {
-            // Only show warnings that will appear soon
-            if (
-              this.timer + 60 > pos.timing &&
-              this.timer < this.warningDelay
-            ) {
-              // Calculate warning progress (0-1)
-              let alpha = 1;
-              if (this.timer > this.warningDelay - 30) {
-                // Fade out as plasma approaches
-                alpha = (this.warningDelay - this.timer) / 30;
-              } else if (this.timer < 30) {
-                // Fade in
-                alpha = this.timer / 30;
-              }
-
-              // Calculate warning intensity
-              const pulseIntensity =
-                Math.sin(this.timer * 0.2 + pos.wave) * 0.5 + 0.5;
-
-              // Draw warning zone
-              ctx.globalAlpha = alpha * 0.5;
-              ctx.beginPath();
-              ctx.arc(pos.x, pos.y, pos.radius * 0.8, 0, Math.PI * 2);
-              const gradient = ctx.createRadialGradient(
-                pos.x,
-                pos.y,
-                0,
-                pos.x,
-                pos.y,
-                pos.radius * 0.8
-              );
-              gradient.addColorStop(
-                0,
-                `rgba(255, 80, 0, ${0.3 + pulseIntensity * 0.2})`
-              );
-              gradient.addColorStop(0.7, `rgba(255, 50, 0, ${0.2 * alpha})`);
-              gradient.addColorStop(1, "rgba(255, 0, 0, 0)");
-              ctx.fillStyle = gradient;
-              ctx.fill();
-
-              // Draw warning outline
-              ctx.beginPath();
-              ctx.arc(
-                pos.x,
-                pos.y,
-                pos.radius * (0.7 + pulseIntensity * 0.1),
-                0,
-                Math.PI * 2
-              );
-              ctx.strokeStyle = `rgba(255, 120, 0, ${0.7 * alpha})`;
-              ctx.lineWidth = 2;
-              ctx.setLineDash([10, 5]);
-              ctx.stroke();
-              ctx.setLineDash([]);
-
-              // Draw warning symbol
-              ctx.fillStyle = `rgba(255, 200, 0, ${alpha})`;
-              ctx.font = "bold 18px Arial";
-              ctx.textAlign = "center";
-              ctx.textBaseline = "middle";
-              ctx.fillText("🔥", pos.x, pos.y);
-            }
-          }
-
-          ctx.restore();
-        }
-
-        update() {
-          this.timer++;
-          this.draw();
-          return this.timer < this.duration;
+          }, timing * fieldStagger);
         }
       }
 
-      // Create plasma warning with 180 frames duration (3 seconds)
-      const plasmaWarning = new PlasmaWarning(180);
-      warnings.push(plasmaWarning);
-
-      playSound("warning");
-
-      // Create plasma storm after warning delay
       setTimeout(() => {
         if (isGameRunning) {
           showEventText("🔥 PLASMA INFERNO UNLEASHED 🔥");
-
-          // Use the same positions as in the warnings
-          for (let i = 0; i < plasmaWarning.positions.length; i++) {
-            const pos = plasmaWarning.positions[i];
-
-            setTimeout(() => {
-              if (isGameRunning) {
-                // Create plasma field at the exact warning position
-                const plasma = new PlasmaField(pos.x, pos.y);
-                plasma.radius = pos.radius * 1.2; // Slightly bigger than warning
-                plasma.damageRate = 0.04; // More dangerous
-                plasmaFields.push(plasma);
-
-                // Create plasma lightning between fields
-                if (i % 3 === 0 && plasmaFields.length > 1) {
-                  for (let j = 0; j < 5; j++) {
-                    particles.push(
-                      new Particle(
-                        pos.x + Math.random() * 100 - 50,
-                        pos.y + Math.random() * 50 - 25,
-                        Math.random() * 4 + 2,
-                        "#ff6600",
-                        {
-                          x: (Math.random() - 0.5) * 6,
-                          y: (Math.random() - 0.5) * 6,
-                        }
-                      )
-                    );
-                  }
-                }
-              }
-            }, i * 80);
-          }
-
-          // Screen shake for intensity
-          triggerScreenShake(0.8);
+          triggerScreenShake(plasmaConfig.shakeIntensity || 0.8);
           playSound("explosion");
         }
-      }, 180 * (1000 / 60)); // 3 seconds warning
+      }, waveCount * fieldsPerWave * fieldStagger + warningDuration * (1000 / 60));
       break;
 
     case "crystalRain":
@@ -1476,22 +1396,24 @@ function triggerRandomEvent() {
 
         for (let i = 0; i < GAME_CONFIG.events.crystalRain.count / 4; i++) {
           setTimeout(() => {
-            // Create crystals in cluster formation
-            const x = clusterX + (Math.random() - 0.5) * 150;
-            const y = clusterY + (Math.random() - 0.5) * 80;
+            if (isGameRunning) {
+              // Create crystals in cluster formation
+              const x = clusterX + (Math.random() - 0.5) * 150;
+              const y = clusterY + (Math.random() - 0.5) * 80;
 
-            const crystal = new CrystalShard(x, y);
+              const crystal = new CrystalShard(x, y);
 
-            // Set initial drifting velocity
-            crystal.velocity.x = (Math.random() - 0.5) * 2;
-            crystal.velocity.y = Math.random() * 1.5 + 0.5;
+              // Set initial drifting velocity
+              crystal.velocity.x = (Math.random() - 0.5) * 2;
+              crystal.velocity.y = Math.random() * 1.5 + 0.5;
 
-            // Add some orbital motion around cluster center
-            const angle = Math.atan2(y - clusterY, x - clusterX);
-            crystal.velocity.x += Math.cos(angle + Math.PI / 2) * 0.3;
-            crystal.velocity.y += Math.sin(angle + Math.PI / 2) * 0.3;
+              // Add some orbital motion around cluster center
+              const angle = Math.atan2(y - clusterY, x - clusterX);
+              crystal.velocity.x += Math.cos(angle + Math.PI / 2) * 0.3;
+              crystal.velocity.y += Math.sin(angle + Math.PI / 2) * 0.3;
 
-            crystalShards.push(crystal);
+              crystalShards.push(crystal);
+            }
           }, i * GAME_CONFIG.events.crystalRain.delay + cluster * 200);
         }
       }
@@ -1499,40 +1421,42 @@ function triggerRandomEvent() {
       // Add some scattered individual crystals
       for (let i = 0; i < 8; i++) {
         setTimeout(() => {
-          const edge = Math.floor(Math.random() * 4);
-          let x, y;
+          if (isGameRunning) {
+            const edge = Math.floor(Math.random() * 4);
+            let x, y;
 
-          // Spawn from different edges
-          switch (edge) {
-            case 0: // Top
-              x = Math.random() * canvas.width;
-              y = -30;
-              break;
-            case 1: // Right
-              x = canvas.width + 30;
-              y = Math.random() * canvas.height;
-              break;
-            case 2: // Bottom
-              x = Math.random() * canvas.width;
-              y = canvas.height + 30;
-              break;
-            case 3: // Left
-              x = -30;
-              y = Math.random() * canvas.height;
-              break;
+            // Spawn from different edges
+            switch (edge) {
+              case 0: // Top
+                x = Math.random() * canvas.width;
+                y = -30;
+                break;
+              case 1: // Right
+                x = canvas.width + 30;
+                y = Math.random() * canvas.height;
+                break;
+              case 2: // Bottom
+                x = Math.random() * canvas.width;
+                y = canvas.height + 30;
+                break;
+              case 3: // Left
+                x = -30;
+                y = Math.random() * canvas.height;
+                break;
+            }
+
+            const crystal = new CrystalShard(x, y);
+
+            // Set velocity toward center with some randomness
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const angle = Math.atan2(centerY - y, centerX - x);
+
+            crystal.velocity.x = Math.cos(angle) * (0.8 + Math.random() * 0.6);
+            crystal.velocity.y = Math.sin(angle) * (0.8 + Math.random() * 0.6);
+
+            crystalShards.push(crystal);
           }
-
-          const crystal = new CrystalShard(x, y);
-
-          // Set velocity toward center with some randomness
-          const centerX = canvas.width / 2;
-          const centerY = canvas.height / 2;
-          const angle = Math.atan2(centerY - y, centerX - x);
-
-          crystal.velocity.x = Math.cos(angle) * (0.8 + Math.random() * 0.6);
-          crystal.velocity.y = Math.sin(angle) * (0.8 + Math.random() * 0.6);
-
-          crystalShards.push(crystal);
         }, Math.random() * 3000);
       }
 
@@ -1561,10 +1485,18 @@ function triggerRandomEvent() {
       for (let i = 0; i < GAME_CONFIG.events.gravityWells.count; i++) {
         const x = 100 + Math.random() * (canvas.width - 200);
         const y = 100 + Math.random() * (canvas.height - 200);
-        // Create mini black holes as gravity wells
-        blackHoles.push(
-          new BlackHole(x, y, GAME_CONFIG.events.gravityWells.radius / 2)
-        );
+
+        // Sử dụng spawnWithWarning
+        const warningSystem = spawnWithWarning("blackhole", x, y, {
+          duration: 120, // 2 seconds warning
+        });
+
+        warningSystem.spawn(() => {
+          // Create mini black holes as gravity wells
+          blackHoles.push(
+            new BlackHole(x, y, GAME_CONFIG.events.gravityWells.radius / 2)
+          );
+        });
       }
       break;
 
@@ -1572,123 +1504,45 @@ function triggerRandomEvent() {
       eventActive.type = "meteorBombardment";
       showEventText("⚠️ METEOR BOMBARDMENT IMMINENT ⚠️");
 
-      // Create meteor warning indicators
-      class MeteorWarning {
-        constructor(duration) {
-          this.positions = [];
-          this.timer = 0;
-          this.duration = duration;
-          this.warningDelay = duration * 0.7; // 70% time for warning, 30% for impact
+      // Meteor warning logic simplified to use spawnWithWarning
+      const meteorConfig = GAME_CONFIG.events.meteorBombardment;
+      const warningDurationMeteor = 180; // 3 seconds
 
-          // Pre-calculate meteor positions
-          for (let i = 0; i < GAME_CONFIG.events.meteorBombardment.count; i++) {
-            this.positions.push({
-              x: Math.random() * canvas.width,
-              y: -30,
-              impactY: Math.random() * (canvas.height - 100) + 50,
-              timing:
-                (i * GAME_CONFIG.events.meteorBombardment.delay) / (1000 / 60), // Convert ms to frames
+      for (let i = 0; i < meteorConfig.count; i++) {
+        setTimeout(() => {
+          if (isGameRunning) {
+            const x = Math.random() * canvas.width;
+            const y = -30;
+            const impactY = Math.random() * (canvas.height - 100) + 50;
+
+            const warningSystem = spawnWithWarning("meteor", x, impactY, {
+              duration: warningDurationMeteor,
+              // Gửi vị trí spawn thực tế (y = -30) và velocity
+              spawnX: x,
+              spawnY: y,
+              speed: meteorConfig.speed,
+            });
+
+            warningSystem.spawn(() => {
+              if (isGameRunning) {
+                const meteor = new Asteroid(
+                  x,
+                  y,
+                  20 + Math.random() * 15,
+                  "#ff6b35",
+                  {
+                    x: (Math.random() - 0.5) * 2,
+                    y: meteorConfig.speed,
+                  }
+                );
+                asteroids.push(meteor);
+              }
             });
           }
-        }
-
-        draw() {
-          ctx.save();
-          for (const pos of this.positions) {
-            // Only show warnings for meteors that will arrive soon
-            if (
-              this.timer + 60 > pos.timing &&
-              this.timer < this.warningDelay
-            ) {
-              // Calculate warning progress (0-1)
-              let alpha = 1;
-              if (this.timer > this.warningDelay - 30) {
-                // Fade out as meteor approaches
-                alpha = (this.warningDelay - this.timer) / 30;
-              } else if (this.timer < 30) {
-                // Fade in
-                alpha = this.timer / 30;
-              }
-
-              // Calculate warning line intensity
-              const pulseIntensity = Math.sin(this.timer * 0.2) * 0.5 + 0.5;
-
-              // Draw meteor trajectory
-              ctx.globalAlpha = alpha * 0.6;
-              ctx.beginPath();
-              ctx.moveTo(pos.x, 0);
-              ctx.lineTo(pos.x, pos.impactY);
-              ctx.strokeStyle = `rgba(255, 80, 0, ${
-                0.6 + pulseIntensity * 0.4
-              })`;
-              ctx.lineWidth = 2;
-              ctx.setLineDash([8, 4]);
-              ctx.stroke();
-              ctx.setLineDash([]);
-
-              // Draw warning indicator at impact point
-              ctx.beginPath();
-              ctx.arc(
-                pos.x,
-                pos.impactY,
-                20 + pulseIntensity * 5,
-                0,
-                Math.PI * 2
-              );
-              ctx.fillStyle = `rgba(255, 80, 0, ${0.2 * alpha})`;
-              ctx.fill();
-              ctx.lineWidth = 2;
-              ctx.strokeStyle = `rgba(255, 180, 0, ${0.8 * alpha})`;
-              ctx.stroke();
-
-              // Draw warning symbol
-              ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`;
-              ctx.font = "bold 16px Arial";
-              ctx.textAlign = "center";
-              ctx.textBaseline = "middle";
-              ctx.fillText("⚠️", pos.x, pos.impactY);
-            }
-          }
-          ctx.restore();
-        }
-
-        update() {
-          this.timer++;
-          this.draw();
-          return this.timer < this.duration;
-        }
+        }, i * meteorConfig.delay);
       }
 
-      // Create meteor warning with 180 frames duration (3 seconds)
-      const meteorWarning = new MeteorWarning(180);
-      warnings.push(meteorWarning);
-
       playSound("warning");
-
-      // Launch meteors after warning delay
-      setTimeout(() => {
-        if (isGameRunning) {
-          showEventText("☄️ METEOR BOMBARDMENT STARTED ☄️");
-
-          for (let i = 0; i < GAME_CONFIG.events.meteorBombardment.count; i++) {
-            setTimeout(() => {
-              // Use the same positions as in the warning
-              const position = meteorWarning.positions[i];
-              const meteor = new Asteroid(
-                position.x,
-                -30,
-                20 + Math.random() * 15,
-                "#ff6b35",
-                {
-                  x: (Math.random() - 0.5) * 2,
-                  y: GAME_CONFIG.events.meteorBombardment.speed,
-                }
-              );
-              asteroids.push(meteor);
-            }, i * GAME_CONFIG.events.meteorBombardment.delay);
-          }
-        }
-      }, 180 * 0.7 * (1000 / 60)); // 70% of warning duration
       break;
 
     case "voidRifts":
@@ -1699,13 +1553,13 @@ function triggerRandomEvent() {
         const x = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
         const y = Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
 
-        // Show warning first
-        warnings.push(
-          new Warning(x, y, "voidrift", 180) // 3 second warning
-        );
+        // Sử dụng spawnWithWarning
+        const warningSystem = spawnWithWarning("voidrift", x, y, {
+          duration: 180, // 3 second warning
+        });
 
         // Create void rift after warning
-        setTimeout(() => {
+        warningSystem.spawn(() => {
           if (isGameRunning) {
             const voidRift = new BlackHole(x, y, true); // temporary void rift
             voidRift.isVoidRift = true;
@@ -1713,11 +1567,8 @@ function triggerRandomEvent() {
             blackHoles.push(voidRift);
             playSound("blackhole");
           }
-        }, 180 * (1000 / 60)); // 3 seconds
+        });
       }
-
-      playSound("warning");
-      playSound("blackhole");
       break;
 
     case "superNova":
@@ -1729,120 +1580,17 @@ function triggerRandomEvent() {
       const superY = 100 + Math.random() * (canvas.height - 200);
 
       // Enhanced warning with expanding circle and multiple visual indicators
-      warnings.push(
-        new Warning(superX, superY, "supernova", 180) // 3 second warning
+      const supernovaWarningSystem = spawnWithWarning(
+        "supernova",
+        superX,
+        superY,
+        {
+          maxRadius: 300,
+          duration: 180, // 3 second warning
+        }
       );
 
-      // Add an expanding circular warning zone
-      class SuperNovaWarning {
-        constructor(x, y, radius, duration) {
-          this.x = x;
-          this.y = y;
-          this.maxRadius = radius;
-          this.radius = 30;
-          this.growthRate = (radius - 30) / (duration * 0.7); // Grow to max size in 70% of the duration
-          this.timer = 0;
-          this.duration = duration;
-          this.alpha = 0;
-        }
-
-        draw() {
-          ctx.save();
-
-          // Calculate alpha based on time
-          if (this.timer < this.duration * 0.2) {
-            this.alpha = this.timer / (this.duration * 0.2); // Fade in
-          } else if (this.timer > this.duration * 0.7) {
-            this.alpha = (this.duration - this.timer) / (this.duration * 0.3); // Fade out
-          } else {
-            this.alpha = 1;
-          }
-
-          ctx.globalAlpha = this.alpha * 0.6;
-
-          // Draw pulsing outer ring
-          const pulse = Math.sin(this.timer * 0.1) * 0.5 + 0.5;
-          ctx.beginPath();
-          ctx.arc(
-            this.x,
-            this.y,
-            this.radius * (1 + pulse * 0.05),
-            0,
-            Math.PI * 2
-          );
-          ctx.strokeStyle = "#ff3333";
-          ctx.lineWidth = 3;
-          ctx.setLineDash([15, 10]);
-          ctx.stroke();
-          ctx.setLineDash([]);
-
-          // Draw danger zone
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-          const gradient = ctx.createRadialGradient(
-            this.x,
-            this.y,
-            0,
-            this.x,
-            this.y,
-            this.radius
-          );
-          gradient.addColorStop(0, "rgba(255, 0, 0, 0.1)");
-          gradient.addColorStop(0.7, "rgba(255, 80, 0, 0.05)");
-          gradient.addColorStop(1, "rgba(255, 150, 0, 0)");
-          ctx.fillStyle = gradient;
-          ctx.fill();
-
-          // Draw warning symbols around the perimeter
-          const symbolCount = 8;
-          for (let i = 0; i < symbolCount; i++) {
-            const angle = (i / symbolCount) * Math.PI * 2;
-            const x = this.x + Math.cos(angle) * this.radius;
-            const y = this.y + Math.sin(angle) * this.radius;
-
-            ctx.fillStyle = `rgba(255, 255, 0, ${
-              this.alpha * (Math.sin(this.timer * 0.2 + i) * 0.5 + 0.5)
-            })`;
-            ctx.font = "bold 18px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText("⚠️", x, y);
-          }
-
-          // Draw central warning symbol
-          ctx.fillStyle = `rgba(255, 50, 50, ${this.alpha})`;
-          ctx.font = "bold 32px Arial";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText("💥", this.x, this.y);
-
-          ctx.restore();
-        }
-
-        update() {
-          this.timer++;
-
-          // Grow the warning zone
-          if (
-            this.radius < this.maxRadius &&
-            this.timer < this.duration * 0.7
-          ) {
-            this.radius += this.growthRate;
-          }
-
-          this.draw();
-          return this.timer < this.duration;
-        }
-      }
-
-      // Add the enhanced SuperNova warning
-      const superNovaWarning = new SuperNovaWarning(superX, superY, 300, 180);
-      warnings.push(superNovaWarning);
-
-      playSound("warning");
-
-      // Create supernova after warning
-      setTimeout(() => {
+      supernovaWarningSystem.spawn(() => {
         if (isGameRunning) {
           showEventText("💥 SUPERNOVA DETONATION 💥");
 
@@ -1870,14 +1618,8 @@ function triggerRandomEvent() {
               })
             );
           }
-
-          // Hiệu ứng sáng lóa
-          ctx.save();
-          ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-          ctx.fillRect(0, 0, width, height);
-          ctx.restore();
         }
-      }, 180 * (1000 / 60)); // 3 seconds
+      });
       break;
 
     case "lightningStorm":
