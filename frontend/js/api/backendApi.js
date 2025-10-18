@@ -20,7 +20,20 @@ const BackendAPI = {
   async initialize() {
     if (window.endpointManager) {
       await window.endpointManager.initialize();
-      
+
+      // FIX: Cập nhật cấu hình BackendAPI với các endpoint đã được giải mã
+      // Điều này đảm bảo rằng ngay cả khi config environment không tìm thấy biến,
+      // thì endpointManager (với logic giải mã Base64) vẫn cung cấp URL.
+      const resolvedApiUrl = window.endpointManager.getApiEndpoint();
+      const resolvedWsUrl = window.endpointManager.getWsEndpoint();
+
+      if (resolvedApiUrl) {
+        this.API_BASE_URL = resolvedApiUrl;
+      }
+      if (resolvedWsUrl) {
+        this.WS_URL = resolvedWsUrl;
+      }
+
       // Set up endpoint rotation if enabled
       if (BACKEND_CONFIG.ENABLE_ENDPOINT_ROTATION) {
         setInterval(() => {
@@ -34,15 +47,20 @@ const BackendAPI = {
    * Get secure API base URL
    */
   getApiBaseUrl() {
+    // Ưu tiên sử dụng URL đã được resolve trong initialize()
+    if (this.API_BASE_URL) {
+      return this.API_BASE_URL;
+    }
+
     if (window.endpointManager && window.endpointManager.getApiEndpoint()) {
       return window.endpointManager.getApiEndpoint();
     }
-    
-    // Fallback for development
-    if (window.location.hostname === 'localhost') {
-      return 'http://localhost:3000';
+
+    // Fallback for development (devApiBaseUrl is loaded by environment.js)
+    if (window.location.hostname === "localhost" && window.environmentConfig) {
+      return window.environmentConfig.get("devApiBaseUrl");
     }
-    
+
     return null;
   },
 
@@ -50,15 +68,20 @@ const BackendAPI = {
    * Get secure WebSocket URL
    */
   getWsUrl() {
+    // Ưu tiên sử dụng URL đã được resolve trong initialize()
+    if (this.WS_URL) {
+      return this.WS_URL;
+    }
+
     if (window.endpointManager && window.endpointManager.getWsEndpoint()) {
       return window.endpointManager.getWsEndpoint();
     }
-    
-    // Fallback for development
-    if (window.location.hostname === 'localhost') {
-      return 'ws://localhost:3001';
+
+    // Fallback for development (devWebsocketUrl is loaded by environment.js)
+    if (window.location.hostname === "localhost" && window.environmentConfig) {
+      return window.environmentConfig.get("devWebsocketUrl");
     }
-    
+
     return null;
   },
   /**
@@ -66,7 +89,7 @@ const BackendAPI = {
    */
   async getClientIP() {
     try {
-      // Try multiple IP detection services
+      // Thử nhiều IP detection services
       const services = ["https://api.ipify.org?format=json"];
 
       for (const service of services) {
@@ -90,7 +113,7 @@ const BackendAPI = {
    */
   async submitScore(username, score, survivalTime, deathCause) {
     const apiBaseUrl = this.getApiBaseUrl();
-    
+
     if (!BACKEND_CONFIG.USE_BACKEND || !apiBaseUrl) {
       console.log("Backend integration disabled, using local storage only");
       return null;
@@ -99,37 +122,37 @@ const BackendAPI = {
     try {
       // Get client IP (optional, backend can also extract from headers)
       const clientIP = await this.getClientIP();
-      
+
       // Get user identification
       let userId = null;
       let fingerprint = null;
-      
-      if (window.userIdentification && window.userIdentification.isInitialized()) {
+
+      if (
+        window.userIdentification &&
+        window.userIdentification.isInitialized()
+      ) {
         const userInfo = window.userIdentification.getUserInfo();
         userId = userInfo.userId;
         fingerprint = userInfo.fingerprint;
       }
 
-      const response = await fetch(
-        `${apiBaseUrl}/submit-score`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            username: username || "Me",
-            score: Math.floor(score),
-            survivalTime: Math.floor(survivalTime),
-            deathCause: deathCause || "unknown",
-            clientIP: clientIP, // Send client IP to backend
-            userId: userId, // Unique user identifier
-            fingerprint: fingerprint, // Browser fingerprint
-            userAgent: navigator.userAgent,
-            timestamp: new Date().toISOString(),
-          }),
-        }
-      );
+      const response = await fetch(`${apiBaseUrl}/submit-score`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username || "Me",
+          score: Math.floor(score),
+          survivalTime: Math.floor(survivalTime),
+          deathCause: deathCause || "unknown",
+          clientIP: clientIP, // Send client IP to backend
+          userId: userId, // Unique user identifier
+          fingerprint: fingerprint, // Browser fingerprint
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+        }),
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -154,7 +177,7 @@ const BackendAPI = {
    */
   async fetchLeaderboard(limit = 100, country = null) {
     const apiBaseUrl = this.getApiBaseUrl();
-    
+
     if (!BACKEND_CONFIG.USE_BACKEND || !apiBaseUrl) {
       console.log("Backend integration disabled, using local storage only");
       return null;
@@ -191,7 +214,7 @@ const BackendAPI = {
    */
   async fetchLeaderboardByCountry(country = null, limit = 10) {
     const apiBaseUrl = this.getApiBaseUrl();
-    
+
     if (!BACKEND_CONFIG.USE_BACKEND || !apiBaseUrl) {
       console.log("Backend integration disabled");
       return null;
@@ -220,16 +243,14 @@ const BackendAPI = {
    */
   async fetchDeathStatistics() {
     const apiBaseUrl = this.getApiBaseUrl();
-    
+
     if (!BACKEND_CONFIG.USE_BACKEND || !apiBaseUrl) {
       console.log("Backend integration disabled");
       return null;
     }
 
     try {
-      const response = await fetch(
-        `${apiBaseUrl}/death-stats`
-      );
+      const response = await fetch(`${apiBaseUrl}/death-stats`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -246,7 +267,7 @@ const BackendAPI = {
    */
   async testConnection() {
     const apiBaseUrl = this.getApiBaseUrl();
-    
+
     if (!BACKEND_CONFIG.USE_BACKEND || !apiBaseUrl) {
       throw new Error("Backend integration disabled");
     }

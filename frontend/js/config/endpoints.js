@@ -62,11 +62,12 @@ class EndpointManager {
   async initializeLegacy() {
     // Obfuscated endpoint data (fallback for existing deployments)
     const obfuscatedData = {
-      // Base64 encoded API endpoint
-      api: "aHR0cHM6Ly8wamZlaWl2ZnBiLmV4ZWN1dGUtYXBpLmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vcHJvZA==",
-      // Base64 encoded WebSocket endpoint
-      ws: "d3NzOi8vaWU4MWh4b2lvNy5leGVjdXRlLWFwaS5hcC1zb3V0aGVhc3QtMS5hbWF6b25hd3MuY29tL3Byb2Q=",
-      // Additional security token (could be used for API key rotation)
+      // Dùng Base64 encoded URL mẫu, bạn cần thay thế bằng URL thật của bạn
+      // Ví dụ: https://YOUR_API_ID.execute-api.YOUR_REGION.amazonaws.com/prod
+      api: "aHR0cHM6Ly93b3JrLmV4ZWN1dGUtYXBpLmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vcHJvZA==",
+      // Ví dụ: wss://YOUR_WS_ID.execute-api.YOUR_REGION.amazonaws.com/prod
+      ws: "d3NzOi8vd3MubGltc2VydmVyLmV4ZWN1dGUtYXBpLmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vcHJvZA==",
+      // Additional security token
       token: "c3RlbGxhcl9kcmlmdF9zZWN1cmVfdG9rZW5fdjE=",
     };
 
@@ -101,10 +102,17 @@ class EndpointManager {
       window.location.hostname === "127.0.0.1";
 
     if (isDevelopment) {
+      // Fallback for local development
       this.endpoints.api = "http://localhost:3000";
       this.endpoints.ws = "ws://localhost:3001";
     } else {
-      // In production, these would be loaded from a secure configuration service
+      // Fallback cho môi trường Production (nếu Base64 và ENV đều thất bại)
+      // Cần một URL mặc định an toàn cho Production, ví dụ:
+      // (BẠN CẦN THAY THẾ CHÍNH XÁC URL CỦA BẠN VÀO ĐÂY)
+      this.endpoints.api = "https://default-api.example.com/prod"; // Thay thế bằng URL API thật của bạn
+      this.endpoints.ws = "wss://default-ws.example.com/prod"; // Thay thế bằng URL WS thật của bạn
+
+      // Nếu không muốn có fallback Production, hãy để null:
       this.endpoints.api = null;
       this.endpoints.ws = null;
     }
