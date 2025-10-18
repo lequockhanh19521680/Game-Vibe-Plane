@@ -83,71 +83,24 @@ let isGameRunning = false;
 let isPaused = false;
 let globalSpeedMultiplier = GAME_CONFIG.difficulty.baseSpeed;
 let nebulae = [];
-let nextEventScore = 1000;
+let nextEventScore = GAME_CONFIG.events.interval;
 let eventActive = { type: null, endTime: 0 };
 
 function startGame() {
-  initAudioSystem(); // Khởi tạo âm thanh khi người dùng bắt đầu game
-  init();
-  animate();
-  startBackgroundMusic();
-  uiElements.startScreen.style.display = "none";
-  uiElements.gameOverScreen.style.display = "none";
-  uiElements.topBar.style.opacity = "1";
-  uiElements.pauseButton.style.display = "flex";
+  gameStateManager.changeState('playing');
 }
 function endGame(reason = "unknown") {
   if (!isGameRunning) return;
   console.log(`Game Over! Reason: ${reason}`);
-  isGameRunning = false;
-  uiElements.pauseButton.style.display = "none";
-  stopBackgroundMusic();
-  playSound("explosion");
   cancelAnimationFrame(animationFrameId);
-  triggerScreenShake(GAME_CONFIG.visual.screenShake.explosionIntensity);
-  for (let i = 0; i < GAME_CONFIG.visual.particles.explosionCount * 8; i++)
-    particles.push(
-      new Particle(player.x, player.y, Math.random() * 3, "#ff4444", {
-        x:
-          (Math.random() - 0.5) *
-          GAME_CONFIG.visual.particles.explosionSpeed *
-          1.7,
-        y:
-          (Math.random() - 0.5) *
-          GAME_CONFIG.visual.particles.explosionSpeed *
-          1.7,
-      })
-    );
-  score = ~~score;
-  if (score > highScore) {
-    highScore = score;
-    localStorage.setItem(GAME_CONFIG.advanced.localStorageKey, highScore);
-    uiElements.newHighscoreMsg.style.display = "block";
-  } else {
-    uiElements.newHighscoreMsg.style.display = "none";
-  }
-  setTimeout(() => {
-    const minutes = Math.floor(survivalTime / 60);
-    const seconds = survivalTime % 60;
-    uiElements.finalScoreEl.innerText = `${score}`;
-    uiElements.finalTimeEl.innerText = `${minutes}:${seconds
-      .toString()
-      .padStart(2, "0")}`;
-    uiElements.gameOverScreen.style.display = "flex";
-    uiElements.topBar.style.opacity = "0";
-  }, 1000);
+  gameStateManager.changeState('gameOver', { reason });
 }
 
 function togglePause() {
-  isPaused = !isPaused;
   if (isPaused) {
-    uiElements.pauseMenu.style.display = "flex";
-    cancelAnimationFrame(animationFrameId);
-    pauseBackgroundMusic();
+    gameStateManager.changeState('playing');
   } else {
-    uiElements.pauseMenu.style.display = "none";
-    animate();
-    resumeBackgroundMusic();
+    gameStateManager.changeState('paused');
   }
 }
 
@@ -164,23 +117,23 @@ restartButton.addEventListener("click", () => {
 leaderboardButton.addEventListener("click", () => {
   initAudioSystem();
   playSound("buttonHover");
-  showLeaderboard();
+  gameStateManager.changeState('leaderboard');
 });
 
 howToPlayButton.addEventListener("click", () => {
   initAudioSystem();
   playSound("buttonHover");
-  showHowToPlay();
+  gameStateManager.changeState('howToPlay');
 });
 
 backToMainMenuButton.addEventListener("click", () => {
   playSound("buttonHover");
-  showMainMenu();
+  gameStateManager.changeState('menu');
 });
 
 backToMainFromHowToPlayButton.addEventListener("click", () => {
   playSound("buttonHover");
-  showMainMenu();
+  gameStateManager.changeState('menu');
 });
 
 uiElements.pauseButton.addEventListener("click", () => {
@@ -204,16 +157,16 @@ mainMenuFromPauseButton.addEventListener("click", () => {
   togglePause();
   isGameRunning = false;
   uiElements.pauseButton.style.display = "none";
-  uiElements.topBar.style.opacity = "0";
+  uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
 
   // Clear the canvas and redraw the starfield background
-  ctx.fillStyle = "#050510";
+  ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
   ctx.fillRect(0, 0, width, height);
   if (stars && stars.length > 0) {
     stars.forEach((s) => s.draw());
   }
 
-  showMainMenu();
+  gameStateManager.changeState('menu');
 });
 
 mainMenuFromOverButton.addEventListener("click", () => {
@@ -221,13 +174,13 @@ mainMenuFromOverButton.addEventListener("click", () => {
   uiElements.gameOverScreen.style.display = "none";
 
   // Clear the canvas and redraw the starfield background
-  ctx.fillStyle = "#050510";
+  ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
   ctx.fillRect(0, 0, width, height);
   if (stars && stars.length > 0) {
     stars.forEach((s) => s.draw());
   }
 
-  showMainMenu();
+  gameStateManager.changeState('menu');
 });
 
 // Button hover sound effects
@@ -254,7 +207,7 @@ window.addEventListener("resize", () => {
   height = canvas.height = window.innerHeight;
   if (!isGameRunning) {
     // Redraw background if not in game
-    ctx.fillStyle = "#050510";
+    ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
     ctx.fillRect(0, 0, width, height);
     nebulae = Array(5)
       .fill(null)
@@ -275,36 +228,34 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-// --- Initial Draw ---
-uiElements.startScreen.style.display = "flex";
-uiElements.gameOverScreen.style.display = "none";
-uiElements.topBar.style.opacity = "0";
+// --- Initial Setup ---
 width = canvas.width = window.innerWidth;
 height = canvas.height = window.innerHeight;
-ctx.fillStyle = "#050510";
-ctx.fillRect(0, 0, width, height);
-nebulae = Array(5)
+
+// Initialize background elements
+nebulae = Array(GAME_CONFIG.visual.nebula.count)
   .fill(null)
   .map(() => createNebula());
-nebulae.forEach((n) => {
-  ctx.fillStyle = n;
-  ctx.fillRect(0, 0, width, height);
-});
+
 stars = [];
-for (let i = 0; i < 3; i++) {
-  const layer = (i + 1) / 3;
-  for (let j = 0; j < 80; j++)
+for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
+  const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
+  for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
     stars.push(
       new Star(
         Math.random() * width,
         Math.random() * height,
-        Math.random() * 1.5 * layer,
+        Math.random() * GAME_CONFIG.visual.stars.maxRadius * layer,
         layer
       )
     );
 }
-stars.forEach((s) => s.draw());
-highScore = localStorage.getItem(GAME_CONFIG.advanced.localStorageKey) || 0;
+
+// Load high score
+highScore = localStorage.getItem(GAME_CONFIG.core.localStorageKey) || 0;
 if (uiElements.highscoreDisplay) {
   uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
 }
+
+// Start in menu state
+gameStateManager.changeState('menu');

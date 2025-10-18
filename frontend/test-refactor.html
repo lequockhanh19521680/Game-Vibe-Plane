@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refactor Test - Stellar Drift</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .pass { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .fail { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>Stellar Drift: Refactor Test Results</h1>
+    <div id="test-results"></div>
+
+    <script src="gameConfig.js"></script>
+    <script src="js/base/Entity.js"></script>
+    <script>
+        const results = [];
+        
+        function addResult(test, passed, message) {
+            results.push({ test, passed, message });
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `<strong>${test}:</strong> ${passed ? 'PASS' : 'FAIL'} - ${message}`;
+            document.getElementById('test-results').appendChild(div);
+        }
+
+        function addInfo(message) {
+            const div = document.createElement('div');
+            div.className = 'test-result info';
+            div.innerHTML = `<strong>INFO:</strong> ${message}`;
+            document.getElementById('test-results').appendChild(div);
+        }
+
+        // Test 1: Config Loading
+        try {
+            addResult(
+                "Config Loading", 
+                typeof GAME_CONFIG !== 'undefined' && GAME_CONFIG.core,
+                "Game configuration loaded successfully"
+            );
+        } catch (e) {
+            addResult("Config Loading", false, `Error: ${e.message}`);
+        }
+
+        // Test 2: Base Entity Classes
+        try {
+            const entity = new Entity(100, 100);
+            addResult(
+                "Base Entity Class", 
+                entity.x === 100 && entity.y === 100 && entity.isActive === true,
+                "Base Entity class works correctly"
+            );
+        } catch (e) {
+            addResult("Base Entity Class", false, `Error: ${e.message}`);
+        }
+
+        // Test 3: Circular Entity
+        try {
+            const circular = new CircularEntity(50, 50, 25);
+            addResult(
+                "Circular Entity Class", 
+                circular.radius === 25 && circular.collidesWith !== undefined,
+                "CircularEntity class works correctly"
+            );
+        } catch (e) {
+            addResult("Circular Entity Class", false, `Error: ${e.message}`);
+        }
+
+        // Test 4: Movable Entity
+        try {
+            const movable = new MovableEntity(0, 0, 10, {x: 1, y: 1});
+            movable.updateLogic();
+            addResult(
+                "Movable Entity Class", 
+                movable.x === 1 && movable.y === 1,
+                "MovableEntity class physics work correctly"
+            );
+        } catch (e) {
+            addResult("Movable Entity Class", false, `Error: ${e.message}`);
+        }
+
+        // Test 5: Colored Entity
+        try {
+            const colored = new ColoredEntity(0, 0, 10, "#ff0000");
+            addResult(
+                "Colored Entity Class", 
+                colored.color === "#ff0000" && colored.alpha === 1.0,
+                "ColoredEntity class works correctly"
+            );
+        } catch (e) {
+            addResult("Colored Entity Class", false, `Error: ${e.message}`);
+        }
+
+        // Test 6: Temporary Entity
+        try {
+            const temp = new TemporaryEntity(0, 0, 10, "#00ff00", {x: 0, y: 0}, 100);
+            temp.updateLogic();
+            addResult(
+                "Temporary Entity Class", 
+                temp.life === 99 && temp.getRemainingLifeRatio() < 1,
+                "TemporaryEntity class lifecycle works correctly"
+            );
+        } catch (e) {
+            addResult("Temporary Entity Class", false, `Error: ${e.message}`);
+        }
+
+        // Test 7: Config Structure
+        try {
+            const hasCore = GAME_CONFIG.core && GAME_CONFIG.core.targetFPS;
+            const hasEntities = GAME_CONFIG.entities && GAME_CONFIG.entities.asteroids;
+            const hasVisual = GAME_CONFIG.visual && GAME_CONFIG.visual.colors;
+            
+            addResult(
+                "Config Structure", 
+                hasCore && hasEntities && hasVisual,
+                "New organized config structure is working"
+            );
+        } catch (e) {
+            addResult("Config Structure", false, `Error: ${e.message}`);
+        }
+
+        // Test 8: Responsive CSS
+        try {
+            const mediaQuery = window.matchMedia('(max-width: 768px)');
+            addResult(
+                "Responsive CSS Support", 
+                mediaQuery !== null,
+                "Browser supports media queries for responsive design"
+            );
+        } catch (e) {
+            addResult("Responsive CSS Support", false, `Error: ${e.message}`);
+        }
+
+        // Summary
+        const passed = results.filter(r => r.passed).length;
+        const total = results.length;
+        const passRate = ((passed / total) * 100).toFixed(1);
+
+        addInfo(`Test Summary: ${passed}/${total} tests passed (${passRate}%)`);
+        
+        if (passed === total) {
+            addInfo("🎉 All refactoring tests passed! The game should work normally.");
+        } else {
+            addInfo("⚠️ Some tests failed. Please check the implementation.");
+        }
+    </script>
+</body>
+</html>

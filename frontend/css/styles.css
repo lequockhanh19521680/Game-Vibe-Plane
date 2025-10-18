@@ -330,3 +330,196 @@ button:hover {
     transform: translate(5px, -5px);
   }
 }
+
+/* ===== RESPONSIVE DESIGN ===== */
+/* Mobile devices (portrait) */
+@media (max-width: 768px) and (orientation: portrait) {
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0rem;
+  }
+  
+  h2 {
+    font-size: 2rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  p {
+    font-size: 0.9rem;
+    max-width: 300px;
+    line-height: 1.4;
+  }
+  
+  button {
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+    margin-top: 8px;
+  }
+  
+  .ui-element {
+    padding: 1.5rem 2rem;
+    border-radius: 15px;
+    max-width: 90vw;
+  }
+  
+  #top-bar {
+    padding: 10px 15px;
+    width: calc(100% - 30px);
+  }
+  
+  #score-display,
+  #level-display,
+  #survival-display {
+    font-size: 1.4rem;
+  }
+  
+  #highscore-display {
+    font-size: 0.9rem;
+  }
+  
+  #level-progress-bar-container {
+    width: 180px;
+  }
+  
+  #event-text {
+    font-size: 1.8rem;
+    top: 20%;
+  }
+  
+  #pause-button {
+    font-size: 1.2rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+/* Mobile devices (landscape) */
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 768px) {
+  h1 {
+    font-size: 2.8rem;
+  }
+  
+  h2 {
+    font-size: 2.2rem;
+  }
+  
+  .ui-element {
+    padding: 1.2rem 2.5rem;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  #top-bar {
+    padding: 8px 15px;
+  }
+  
+  #score-display,
+  #level-display,
+  #survival-display {
+    font-size: 1.5rem;
+  }
+  
+  #event-text {
+    font-size: 2rem;
+    top: 15%;
+  }
+}
+
+/* Tablet devices */
+@media (min-width: 769px) and (max-width: 1024px) {
+  h1 {
+    font-size: 3rem;
+  }
+  
+  h2 {
+    font-size: 2.4rem;
+  }
+  
+  button {
+    padding: 0.9rem 2.2rem;
+    font-size: 1.1rem;
+  }
+  
+  .ui-element {
+    padding: 1.8rem 2.8rem;
+  }
+  
+  #score-display,
+  #level-display,
+  #survival-display {
+    font-size: 1.6rem;
+  }
+  
+  #level-progress-bar-container {
+    width: 220px;
+  }
+}
+
+/* Large desktop screens */
+@media (min-width: 1440px) {
+  h1 {
+    font-size: 4rem;
+  }
+  
+  h2 {
+    font-size: 3.2rem;
+  }
+  
+  p {
+    font-size: 1.2rem;
+    max-width: 500px;
+  }
+  
+  button {
+    padding: 1.2rem 3rem;
+    font-size: 1.3rem;
+  }
+  
+  .ui-element {
+    padding: 2.5rem 3.5rem;
+  }
+  
+  #score-display,
+  #level-display,
+  #survival-display {
+    font-size: 2rem;
+  }
+  
+  #highscore-display {
+    font-size: 1.2rem;
+  }
+  
+  #level-progress-bar-container {
+    width: 300px;
+  }
+  
+  #event-text {
+    font-size: 3rem;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  button {
+    min-height: 44px; /* Apple's recommended touch target size */
+    min-width: 44px;
+  }
+  
+  #pause-button {
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 1.4rem;
+  }
+  
+  .dashboard-tab {
+    min-height: 44px;
+    padding: 0.7rem 1.2rem;
+  }
+}
+
+/* High DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  #game-canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
