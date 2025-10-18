@@ -213,6 +213,9 @@ class GameOverState extends GameState {
     // Create death explosion
     this.createDeathExplosion();
     
+    // Send game over data to backend
+    this.sendGameOverData();
+    
     // Check for high score
     this.checkHighScore();
     
@@ -251,6 +254,59 @@ class GameOverState extends GameState {
     uiElements.finalScoreEl.innerText = `${score}`;
     uiElements.finalTimeEl.innerText = `${minutes}:${seconds.toString().padStart(2, "0")}`;
     uiElements.gameOverScreen.style.display = "flex";
+  }
+
+  async sendGameOverData() {
+    try {
+      // Get client IP
+      let clientIP = null;
+      try {
+        clientIP = await BackendAPI.getClientIP();
+      } catch (error) {
+        console.log("Could not get client IP:", error);
+      }
+
+      // Prepare game over data
+      const gameOverData = {
+        score: Math.floor(score),
+        time: survivalTime,
+        deathBy: this.data.reason || "unknown",
+        deathTime: new Date().toISOString(),
+        clientIP: clientIP
+      };
+
+      console.log("Game Over Data:", gameOverData);
+
+      // Send to backend if available
+      if (window.BackendAPI && BACKEND_CONFIG.USE_BACKEND) {
+        try {
+          await BackendAPI.submitScore(
+            "Player", // username - can be made configurable later
+            gameOverData.score,
+            gameOverData.time,
+            gameOverData.deathBy
+          );
+        } catch (error) {
+          console.error("Failed to send data to backend:", error);
+        }
+      } else {
+        console.log("Backend not available, game over data logged locally");
+      }
+
+      // Store locally as backup
+      const localGameHistory = JSON.parse(localStorage.getItem('gameHistory') || '[]');
+      localGameHistory.push(gameOverData);
+      
+      // Keep only last 100 games
+      if (localGameHistory.length > 100) {
+        localGameHistory.splice(0, localGameHistory.length - 100);
+      }
+      
+      localStorage.setItem('gameHistory', JSON.stringify(localGameHistory));
+
+    } catch (error) {
+      console.error("Error sending game over data:", error);
+    }
   }
 
   exit() {

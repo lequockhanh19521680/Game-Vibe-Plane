@@ -15,6 +15,7 @@
     />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/dialog.css" />
+    <link rel="stylesheet" href="css/leaderboard.css" />
   </head>
   <body>
     <canvas id="game-canvas"></canvas>
@@ -70,22 +71,63 @@
 
       <!-- Leaderboard Screen -->
       <div id="leaderboard-screen" class="ui-element" style="display: none">
-        <h2>Dashboard</h2>
+        <h2>Live Dashboard</h2>
         <div class="dashboard-tabs">
-          <button class="dashboard-tab active" data-tab="leaderboard">
-            Leaderboard
+          <button class="dashboard-tab active" data-tab="global-leaderboard">
+            🏆 Top Players
           </button>
-          <button class="dashboard-tab" data-tab="stats">My Stats</button>
+          <button class="dashboard-tab" data-tab="country-leaderboard">
+            🌍 Top Countries
+          </button>
+          <button class="dashboard-tab" data-tab="my-stats">📊 My Stats</button>
         </div>
-        <div id="leaderboard-content" class="dashboard-content active">
-          <h3>Global Leaderboard</h3>
-          <div id="leaderboard-list"></div>
+        
+        <!-- Global Leaderboard Tab -->
+        <div id="global-leaderboard-content" class="dashboard-content active">
+          <div class="leaderboard-header">
+            <h3>🏆 Global Top 10</h3>
+            <div class="live-indicator">
+              <span class="live-dot"></span>
+              <span>LIVE</span>
+            </div>
+          </div>
+          <div id="global-leaderboard-list" class="leaderboard-container">
+            <div class="loading">Loading leaderboard...</div>
+          </div>
         </div>
-        <div id="stats-content" class="dashboard-content">
-          <h3>Your Statistics</h3>
-          <div id="player-stats"></div>
+        
+        <!-- Country Leaderboard Tab -->
+        <div id="country-leaderboard-content" class="dashboard-content">
+          <div class="leaderboard-header">
+            <h3>🌍 Top 10 Countries</h3>
+            <div class="live-indicator">
+              <span class="live-dot"></span>
+              <span>LIVE</span>
+            </div>
+          </div>
+          <div class="country-info">
+            <p>Countries ranked by top 10% of players' combined score</p>
+          </div>
+          <div id="country-leaderboard-list" class="leaderboard-container">
+            <div class="loading">Loading country rankings...</div>
+          </div>
         </div>
-        <button id="back-to-main-menu-button">Back</button>
+        
+        <!-- My Stats Tab -->
+        <div id="my-stats-content" class="dashboard-content">
+          <h3>📊 Your Statistics</h3>
+          <div id="player-stats" class="stats-container">
+            <div class="loading">Loading your stats...</div>
+          </div>
+        </div>
+        
+        <div class="leaderboard-footer">
+          <div class="connection-status">
+            <span id="connection-indicator">🔴</span>
+            <span id="connection-text">Connecting...</span>
+          </div>
+          <button id="back-to-main-menu-button">Back to Menu</button>
+        </div>
       </div>
 
       <!-- How to Play Screen -->
@@ -112,6 +154,7 @@
     <audio id="background-music" loop src="assets/audio/background.mp3"></audio>
 
     <script src="gameConfig.js"></script>
+    <script src="js/api/backendApi.js"></script>
     <script src="js/audio/audioSystem.js"></script>
     <script src="js/audio/musicSystem.js"></script>
     <script src="js/audio/soundEffects.js"></script>
