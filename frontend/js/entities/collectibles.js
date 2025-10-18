@@ -4,13 +4,13 @@ class EnergyOrb {
   constructor(x, y) {
     this.x = x || Math.random() * canvas.width;
     this.y = y || Math.random() * canvas.height;
-    this.radius = 8 + Math.random() * 4;
+    this.radius = 6 + Math.random() * 2;
     this.velocity = {
       x: (Math.random() - 0.5) * 2,
       y: (Math.random() - 0.5) * 2,
     };
     this.rotation = 0;
-    this.rotationSpeed = 0.05 + Math.random() * 0.05;
+    this.rotationSpeed = 0.01 + Math.random() * 0.01;
     this.pulsePhase = Math.random() * Math.PI * 2;
     this.lifetime = 300 + Math.random() * 200;
     this.age = 0;

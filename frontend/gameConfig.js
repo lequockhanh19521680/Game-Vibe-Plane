@@ -215,10 +215,10 @@ const GAME_CONFIG = {
 
     denseField: { spawnInterval: 35 },
     speedZone: { speedMultiplier: 1.4 },
-    laserSwarm: { laserCount: 6, targetChance: 0.6, delay: 200 },
+    laserSwarm: { laserCount: 3, targetChance: 0.6, delay: 400 },
     laserGrid: {
-      gridSize: 4, // ĐÃ ĐIỀU CHỈNH: Dễ hơn
-      delay: 250, // ĐÃ ĐIỀU CHỈNH: Dễ hơn
+      gridSize: 3, // ĐÃ ĐIỀU CHỈNH: Dễ hơn
+      delay: 350, // ĐÃ ĐIỀU CHỈNH: Dễ hơn
     },
     asteroidRain: {
       count: 18,
@@ -254,7 +254,7 @@ const GAME_CONFIG = {
 
     // CẤU HÌNH SUPER NOVA (ĐÃ CHUYỂN CÁC CONST TỪ hazards.js)
     superNova: {
-      maxRadius: 400,
+      maxRadius: 200,
       expansionSpeed: 10,
       lifetime: 150,
       clearBonus: 10,

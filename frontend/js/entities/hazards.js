@@ -1215,48 +1215,63 @@ class SuperNova {
     const color = this.config.color || "#ffeb3b";
 
     // Outer shockwave ring
-    ctx.globalAlpha = alpha * 0.8; // FIXED CONSTANT
+    ctx.globalAlpha = alpha * (this.config.ringAlpha || 0.8);
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.strokeStyle = color;
-    ctx.lineWidth = 8; // FIXED CONSTANT
+    ctx.lineWidth = this.config.ringLineWidth || 8;
     ctx.stroke();
 
     // Inner core explosion
-    ctx.globalAlpha = alpha * 0.6; // FIXED CONSTANT
+    ctx.globalAlpha = alpha * (this.config.coreAlpha || 0.6);
     const coreGradient = ctx.createRadialGradient(
       this.x,
       this.y,
       0,
       this.x,
       this.y,
-      this.radius * 0.5 // FIXED CONSTANT
+      this.radius * (this.config.coreRadiusFactor || 0.5)
     );
-    coreGradient.addColorStop(0, "#fff"); // FIXED CONSTANT
-    coreGradient.addColorStop(0.4, color); // FIXED CONSTANT
-    coreGradient.addColorStop(0.8, this.config.coreColor || "#ff9800"); // FIXED CONSTANT
-    coreGradient.addColorStop(1, "rgba(255, 152, 0, 0)"); // FIXED CONSTANT
+    coreGradient.addColorStop(0, this.config.coreStartColor || "#fff");
+    coreGradient.addColorStop(0.4, color);
+    coreGradient.addColorStop(0.8, this.config.coreColor || "#ff9800");
+    coreGradient.addColorStop(
+      1,
+      this.config.coreEndColor || "rgba(255, 152, 0, 0)"
+    );
 
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2); // FIXED CONSTANT
+    ctx.arc(
+      this.x,
+      this.y,
+      this.radius * (this.config.coreRadiusFactor || 0.5),
+      0,
+      Math.PI * 2
+    );
     ctx.fillStyle = coreGradient;
     ctx.fill();
 
     // Outer glow
-    ctx.globalAlpha = alpha * 0.3; // FIXED CONSTANT
+    ctx.globalAlpha = alpha * (this.config.glowAlpha || 0.3);
     const glowGradient = ctx.createRadialGradient(
       this.x,
       this.y,
-      this.radius * 0.8, // FIXED CONSTANT
+      this.radius * (this.config.glowInnerRadiusFactor || 0.8),
       this.x,
       this.y,
-      this.radius * 1.5 // FIXED CONSTANT
+      this.radius * (this.config.glowOuterRadiusFactor || 1.5)
     );
-    glowGradient.addColorStop(0, `rgba(255, 235, 59, 0.3)`); // FIXED CONSTANT
-    glowGradient.addColorStop(1, `rgba(255, 235, 59, 0)`); // FIXED CONSTANT
+    glowGradient.addColorStop(0, `rgba(255, 235, 59, 0.3)`);
+    glowGradient.addColorStop(1, `rgba(255, 235, 59, 0)`);
 
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius * 1.5, 0, Math.PI * 2); // FIXED CONSTANT
+    ctx.arc(
+      this.x,
+      this.y,
+      this.radius * (this.config.glowOuterRadiusFactor || 1.5),
+      0,
+      Math.PI * 2
+    );
     ctx.fillStyle = glowGradient;
     ctx.fill();
 
@@ -1274,15 +1289,18 @@ class SuperNova {
       this.clearObjects();
 
       // Add explosive particles for visual effect
-      if (this.age % 2 === 0) {
-        // FIXED CONSTANT
+      if (this.age % (this.config.particleSpawnInterval || 2) === 0) {
         const particleCount =
           this.config.particleMinCount +
-          Math.floor(this.radius / this.config.particleRadiusStep); // Dynamic particle count
+          Math.floor(this.radius / (this.config.particleRadiusStep || 30));
         for (let i = 0; i < particleCount; i++) {
           const angle = Math.random() * Math.PI * 2;
           // Tạo hạt ở vòng sóng mở rộng
-          const dist = this.radius - 20 + Math.random() * 40; // FIXED CONSTANTS
+          const dist =
+            this.radius -
+            (this.config.particleSpawnDistMin || 20) +
+            Math.random() * (this.config.particleSpawnDistMax || 40);
+
           const colors = this.config.particleColors || [
             "#ffeb3b",
             "#ff9800",
@@ -1293,7 +1311,7 @@ class SuperNova {
             new Particle(
               this.x + Math.cos(angle) * dist,
               this.y + Math.sin(angle) * dist,
-              Math.random() * 3 + 1, // FIXED CONSTANTS
+              Math.random() * (this.config.particleMaxRadius || 3) + 1,
               colors[Math.floor(Math.random() * colors.length)],
               {
                 x:
@@ -1313,12 +1331,13 @@ class SuperNova {
 
     // Add screen shake effect while expanding
     if (
-      this.age % this.config.shakeFrameInterval === 0 &&
+      this.age % (this.config.shakeFrameInterval || 10) === 0 &&
       this.radius < this.maxRadius
     ) {
       const intensity =
-        this.config.shakeBaseIntensity +
-        (this.radius / this.maxRadius) * this.config.shakeIntensityScale;
+        (this.config.shakeBaseIntensity || 0.3) +
+        (this.radius / this.maxRadius) *
+          (this.config.shakeIntensityScale || 0.5);
       triggerScreenShake(intensity);
     }
 
@@ -1360,11 +1379,13 @@ class SuperNova {
           const angle = Math.random() * Math.PI * 2;
           particles.push(
             new Particle(
-              asteroid.x + Math.cos(angle) * 5, // FIXED CONSTANT
-              asteroid.y + Math.sin(angle) * 5, // FIXED CONSTANT
-              Math.cos(angle) * 6, // FIXED CONSTANT
-              Math.sin(angle) * 6, // FIXED CONSTANT
-              "#ffbb33" // FIXED CONSTANT
+              asteroid.x +
+                Math.cos(angle) * (this.config.asteroidParticleOffset || 5),
+              asteroid.y +
+                Math.sin(angle) * (this.config.asteroidParticleOffset || 5),
+              Math.cos(angle) * (this.config.asteroidParticleSpeed || 6),
+              Math.sin(angle) * (this.config.asteroidParticleSpeed || 6),
+              this.config.asteroidParticleColor || "#ffbb33"
             )
           );
         }
@@ -1472,6 +1493,7 @@ class SuperNova {
 
       // Thêm hiệu ứng hạt khi vòng sóng mở rộng
       const particleCount = this.config.clearingParticleCount || 5;
+      const particleSpeed = this.config.clearingParticleSpeed || 3;
       for (let i = 0; i < particleCount; i++) {
         const angle = Math.random() * Math.PI * 2;
         const dist = innerRadius + (outerRadius - innerRadius) * Math.random();
@@ -1479,11 +1501,11 @@ class SuperNova {
           new Particle(
             this.x + Math.cos(angle) * dist,
             this.y + Math.sin(angle) * dist,
-            Math.random() * 3 + 1, // FIXED CONSTANTS
+            Math.random() * (this.config.clearingParticleMaxRadius || 3) + 1,
             this.config.clearingParticleColor || "#ffbb33",
             {
-              x: Math.cos(angle) * 3, // FIXED CONSTANT
-              y: Math.sin(angle) * 3, // FIXED CONSTANT
+              x: Math.cos(angle) * particleSpeed,
+              y: Math.sin(angle) * particleSpeed,
             }
           )
         );
