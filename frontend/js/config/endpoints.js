@@ -22,16 +22,15 @@ class EndpointManager {
         // Fallback to the legacy obfuscated system
         await this.initializeLegacy();
       }
-      
+
       this.initialized = true;
-      console.log('Endpoints initialized:', {
-        api: this.endpoints.api ? 'configured' : 'not configured',
-        websocket: this.endpoints.ws ? 'configured' : 'not configured',
-        source: window.environmentConfig ? 'environment' : 'legacy'
+      console.log("Endpoints initialized:", {
+        api: this.endpoints.api ? "configured" : "not configured",
+        websocket: this.endpoints.ws ? "configured" : "not configured",
+        source: window.environmentConfig ? "environment" : "legacy",
       });
-      
     } catch (error) {
-      console.error('Failed to initialize endpoints:', error);
+      console.error("Failed to initialize endpoints:", error);
       // Fallback to environment detection
       this.initializeFallback();
     }
@@ -42,17 +41,17 @@ class EndpointManager {
    */
   async initializeFromEnvironment() {
     const config = window.environmentConfig.initialize();
-    
+
     this.endpoints.api = config.apiBaseUrl;
     this.endpoints.ws = config.websocketUrl;
     this.endpoints.timeout = config.apiTimeout;
     this.endpoints.reconnectAttempts = config.websocketReconnectAttempts;
     this.endpoints.reconnectDelay = config.websocketReconnectDelay;
     this.endpoints.timestamp = Date.now();
-    
+
     // Validate URLs
     if (this.endpoints.api && !this.isValidUrl(this.endpoints.api)) {
-      console.warn('Invalid API URL detected, falling back to legacy system');
+      console.warn("Invalid API URL detected, falling back to legacy system");
       await this.initializeLegacy();
     }
   }
@@ -64,11 +63,11 @@ class EndpointManager {
     // Obfuscated endpoint data (fallback for existing deployments)
     const obfuscatedData = {
       // Base64 encoded API endpoint
-      api: 'aHR0cHM6Ly8wamZlaWl2ZnBiLmV4ZWN1dGUtYXBpLmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vcHJvZA==',
-      // Base64 encoded WebSocket endpoint  
-      ws: 'd3NzOi8vaWU4MWh4b2lvNy5leGVjdXRlLWFwaS5hcC1zb3V0aGVhc3QtMS5hbWF6b25hd3MuY29tL3Byb2Q=',
+      api: "aHR0cHM6Ly8wamZlaWl2ZnBiLmV4ZWN1dGUtYXBpLmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vcHJvZA==",
+      // Base64 encoded WebSocket endpoint
+      ws: "d3NzOi8vaWU4MWh4b2lvNy5leGVjdXRlLWFwaS5hcC1zb3V0aGVhc3QtMS5hbWF6b25hd3MuY29tL3Byb2Q=",
       // Additional security token (could be used for API key rotation)
-      token: 'c3RlbGxhcl9kcmlmdF9zZWN1cmVfdG9rZW5fdjE='
+      token: "c3RlbGxhcl9kcmlmdF9zZWN1cmVfdG9rZW5fdjE=",
     };
 
     // Decode endpoints
@@ -87,7 +86,7 @@ class EndpointManager {
     try {
       return atob(encoded);
     } catch (error) {
-      console.error('Decode error:', error);
+      console.error("Decode error:", error);
       return null;
     }
   }
@@ -97,18 +96,19 @@ class EndpointManager {
    */
   initializeFallback() {
     // Check if we're in development
-    const isDevelopment = window.location.hostname === 'localhost' || 
-                         window.location.hostname === '127.0.0.1';
-    
+    const isDevelopment =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+
     if (isDevelopment) {
-      this.endpoints.api = 'http://localhost:3000';
-      this.endpoints.ws = 'ws://localhost:3001';
+      this.endpoints.api = "http://localhost:3000";
+      this.endpoints.ws = "ws://localhost:3001";
     } else {
       // In production, these would be loaded from a secure configuration service
       this.endpoints.api = null;
       this.endpoints.ws = null;
     }
-    
+
     this.initialized = true;
   }
 
@@ -116,14 +116,14 @@ class EndpointManager {
    * Get API endpoint with validation
    */
   getApiEndpoint() {
+    // FIXED: Removed console.error to stop noisy logs during initialization
     if (!this.initialized) {
-      console.error('Endpoints not initialized');
       return null;
     }
 
     // Add timestamp validation (endpoints expire after 1 hour)
     if (Date.now() - this.endpoints.timestamp > 3600000) {
-      console.warn('Endpoints expired, reinitializing...');
+      console.warn("Endpoints expired, reinitializing...");
       this.initialized = false;
       this.initialize();
       return null;
@@ -136,8 +136,8 @@ class EndpointManager {
    * Get WebSocket endpoint with validation
    */
   getWsEndpoint() {
+    // FIXED: Removed console.error to stop noisy logs during initialization
     if (!this.initialized) {
-      console.error('Endpoints not initialized');
       return null;
     }
 
@@ -148,8 +148,8 @@ class EndpointManager {
    * Get security token
    */
   getToken() {
+    // FIXED: Removed console.error to stop noisy logs during initialization
     if (!this.initialized) {
-      console.error('Endpoints not initialized');
       return null;
     }
 
@@ -162,7 +162,7 @@ class EndpointManager {
   isValidUrl(url) {
     try {
       const parsed = new URL(url);
-      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+      return parsed.protocol === "http:" || parsed.protocol === "https:";
     } catch {
       return false;
     }
@@ -180,14 +180,14 @@ class EndpointManager {
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       const response = await fetch(`${this.endpoints.api}/health`, {
-        method: 'GET',
-        signal: controller.signal
+        method: "GET",
+        signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
       return response.ok;
     } catch (error) {
-      console.error('Endpoint validation failed:', error);
+      console.error("Endpoint validation failed:", error);
       return false;
     }
   }
@@ -196,7 +196,7 @@ class EndpointManager {
    * Rotate endpoints (for security)
    */
   async rotateEndpoints() {
-    console.log('Rotating endpoints for security...');
+    console.log("Rotating endpoints for security...");
     this.initialized = false;
     await this.initialize();
   }

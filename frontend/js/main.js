@@ -107,41 +107,41 @@ function togglePause() {
 // --- Event Listeners ---
 startButton.addEventListener("click", (e) => {
   // Prevent default if button is disabled
-  if (startButton.classList.contains('disabled') || startButton.disabled) {
+  if (startButton.classList.contains("disabled") || startButton.disabled) {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Focus on name input to guide user
     if (window.playerNameUI) {
       window.playerNameUI.show();
     }
-    
+
     // Show a brief message
-    if (typeof showEventText === 'function') {
-      showEventText('Please enter your name first!');
+    if (typeof showEventText === "function") {
+      showEventText("Please enter your name first!");
     }
-    
+
     return false;
   }
-  
+
   playSound("buttonHover");
-  
+
   // Double-check if player has a valid name
   if (window.playerNameUI && !window.playerNameUI.hasValidName()) {
     window.playerNameUI.show();
-    
-    if (typeof showEventText === 'function') {
-      showEventText('Please enter a valid name!');
+
+    if (typeof showEventText === "function") {
+      showEventText("Please enter a valid name!");
     }
-    
+
     return;
   }
-  
+
   // Save the name before starting
   if (window.playerNameUI) {
     window.playerNameUI.saveName();
   }
-  
+
   startGame();
 });
 restartButton.addEventListener("click", () => {
@@ -161,13 +161,13 @@ howToPlayButton.addEventListener("click", () => {
   gameStateManager.changeState("howToPlay");
 });
 
-settingsButton.addEventListener("click", () => {
-  initAudioSystem();
-  playSound("buttonHover");
-  if (window.settingsUI) {
-    window.settingsUI.show();
-  }
-});
+// settingsButton.addEventListener("click", () => {
+//   initAudioSystem();
+//   playSound("buttonHover");
+//   if (window.settingsUI) {
+//     window.settingsUI.show();
+//   }
+// });
 
 backToMainMenuButton.addEventListener("click", () => {
   playSound("buttonHover");
@@ -305,10 +305,10 @@ async function initializeUserIdentification() {
   try {
     if (window.userIdentification) {
       await window.userIdentification.initialize();
-      console.log('User identification initialized successfully');
+      console.log("User identification initialized successfully");
     }
   } catch (error) {
-    console.error('Error initializing user identification:', error);
+    console.error("Error initializing user identification:", error);
   }
 }
 
@@ -316,27 +316,27 @@ async function initializeUserIdentification() {
 async function initializeApp() {
   // Initialize user identification first
   await initializeUserIdentification();
-  
+
   // Initialize secure API endpoints
   if (window.BackendAPI && window.BackendAPI.initialize) {
     await window.BackendAPI.initialize();
   }
-  
+
   // Initialize game settings
   if (window.gameSettings) {
     await window.gameSettings.initialize();
   }
-  
+
   // Initialize settings UI
   if (window.settingsUI) {
     window.settingsUI.initialize();
   }
-  
+
   // Initialize player name UI
   if (window.playerNameUI) {
     window.playerNameUI.initialize();
   }
-  
+
   // Start in menu state
   gameStateManager.changeState("menu");
 }

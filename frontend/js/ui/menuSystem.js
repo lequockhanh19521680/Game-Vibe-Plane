@@ -1,3 +1,10 @@
+// File này bị lỗi thời.
+// Các chức năng chuyển đổi menu chính (showMainMenu, showLeaderboard, showHowToPlay)
+// hiện được xử lý bởi GameStateManager.
+// Các chức năng cập nhật Leaderboard được xử lý bởi dashboard.js.
+
+// Chú thích toàn bộ nội dung để loại bỏ lỗi: Uncaught (in promise) TypeError: Cannot set properties of null
+/*
 // Menu System Functions
 // Handles all menu navigation and UI state transitions
 
@@ -69,3 +76,4 @@ tabs.forEach((tab) => {
     document.getElementById(`${contentId}-content`).classList.add("active");
   });
 });
+*/
