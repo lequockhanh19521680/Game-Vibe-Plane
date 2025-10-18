@@ -302,8 +302,13 @@ class GameOverState extends GameState {
       // Send to backend if available
       if (window.BackendAPI && BACKEND_CONFIG.USE_BACKEND) {
         try {
+          // Get player name from playerNameUI or fallback
+          const playerName = window.playerNameUI && window.playerNameUI.getPlayerName() 
+            ? window.playerNameUI.getPlayerName() 
+            : "Anonymous";
+            
           await BackendAPI.submitScore(
-            "Khanh",
+            playerName,
             gameOverData.score,
             gameOverData.time,
             gameOverData.deathBy

@@ -1,0 +1,220 @@
+/* Player Name Input Styles */
+
+.name-input-section {
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.input-group {
+  margin-bottom: 1rem;
+}
+
+.name-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 1rem;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  font-family: 'Exo 2', sans-serif;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.name-input:focus {
+  outline: none;
+  box-shadow: 0 0 15px var(--primary-color);
+  background: rgba(0, 255, 255, 0.1);
+}
+
+.name-input.valid {
+  border-color: #4caf50;
+  box-shadow: 0 0 10px #4caf50;
+}
+
+.name-input.invalid {
+  border-color: #f44336;
+  box-shadow: 0 0 10px #f44336;
+}
+
+.name-input::placeholder {
+  color: rgba(0, 255, 255, 0.5);
+  font-style: italic;
+}
+
+/* Validation Message */
+.validation-message {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  text-align: center;
+  min-height: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.validation-message.error {
+  color: #f44336;
+  text-shadow: 0 0 5px #f44336;
+}
+
+.validation-message.success {
+  color: #4caf50;
+  text-shadow: 0 0 5px #4caf50;
+}
+
+/* Name Info */
+.name-info {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.name-info p {
+  color: #bbb;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.name-requirements {
+  font-size: 0.8rem !important;
+  color: #888 !important;
+  line-height: 1.4;
+  margin-top: 1rem !important;
+}
+
+/* Name Buttons */
+.name-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.name-button {
+  font-family: 'Exo 2', sans-serif;
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  border: 2px solid;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  min-width: 120px;
+}
+
+.name-button.primary {
+  background: transparent;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.name-button.primary:hover:not(.disabled) {
+  background: var(--primary-color);
+  color: #000;
+  box-shadow: 0 0 15px var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.name-button.primary.disabled {
+  border-color: #666;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.name-button.secondary {
+  background: transparent;
+  border-color: #666;
+  color: #666;
+}
+
+.name-button.secondary:hover {
+  background: #666;
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* Start Button Disabled State */
+#start-button.disabled {
+  border-color: #666 !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+}
+
+#start-button.disabled:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Character Counter (if needed) */
+.character-counter {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: #666;
+  pointer-events: none;
+}
+
+/* Animation for validation states */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.name-input.invalid {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 5px var(--primary-color); }
+  50% { box-shadow: 0 0 20px var(--primary-color); }
+  100% { box-shadow: 0 0 5px var(--primary-color); }
+}
+
+.name-input.valid {
+  animation: pulse 1s ease-in-out;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .name-input {
+    font-size: 1rem;
+    padding: 0.8rem;
+  }
+  
+  .name-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .name-button {
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .name-requirements {
+    font-size: 0.75rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .name-input {
+    font-size: 0.9rem;
+    padding: 0.7rem;
+  }
+  
+  .validation-message {
+    font-size: 0.8rem;
+  }
+  
+  .name-info p {
+    font-size: 0.8rem;
+  }
+}

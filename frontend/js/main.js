@@ -22,6 +22,7 @@ const startButton = document.getElementById("start-button");
 const restartButton = document.getElementById("restart-button");
 const leaderboardButton = document.getElementById("leaderboard-button");
 const howToPlayButton = document.getElementById("how-to-play-button");
+const settingsButton = document.getElementById("settings-button");
 const backToMainMenuButton = document.getElementById(
   "back-to-main-menu-button"
 );
@@ -106,6 +107,13 @@ function togglePause() {
 // --- Event Listeners ---
 startButton.addEventListener("click", () => {
   playSound("buttonHover");
+  
+  // Check if player has a valid name
+  if (window.playerNameUI && !window.playerNameUI.hasValidName()) {
+    window.playerNameUI.show();
+    return;
+  }
+  
   startGame();
 });
 restartButton.addEventListener("click", () => {
@@ -123,6 +131,14 @@ howToPlayButton.addEventListener("click", () => {
   initAudioSystem();
   playSound("buttonHover");
   gameStateManager.changeState("howToPlay");
+});
+
+settingsButton.addEventListener("click", () => {
+  initAudioSystem();
+  playSound("buttonHover");
+  if (window.settingsUI) {
+    window.settingsUI.show();
+  }
 });
 
 backToMainMenuButton.addEventListener("click", () => {
@@ -256,5 +272,46 @@ if (uiElements.highscoreDisplay) {
   uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
 }
 
-// Start in menu state
-gameStateManager.changeState("menu");
+// Initialize user identification
+async function initializeUserIdentification() {
+  try {
+    if (window.userIdentification) {
+      await window.userIdentification.initialize();
+      console.log('User identification initialized successfully');
+    }
+  } catch (error) {
+    console.error('Error initializing user identification:', error);
+  }
+}
+
+// Initialize everything
+async function initializeApp() {
+  // Initialize user identification first
+  await initializeUserIdentification();
+  
+  // Initialize secure API endpoints
+  if (window.BackendAPI && window.BackendAPI.initialize) {
+    await window.BackendAPI.initialize();
+  }
+  
+  // Initialize game settings
+  if (window.gameSettings) {
+    await window.gameSettings.initialize();
+  }
+  
+  // Initialize settings UI
+  if (window.settingsUI) {
+    window.settingsUI.initialize();
+  }
+  
+  // Initialize player name UI
+  if (window.playerNameUI) {
+    window.playerNameUI.initialize();
+  }
+  
+  // Start in menu state
+  gameStateManager.changeState("menu");
+}
+
+// Start the app
+initializeApp();
