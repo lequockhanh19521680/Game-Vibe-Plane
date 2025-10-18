@@ -17,7 +17,7 @@
   padding: 1rem;
   font-size: 1.1rem;
   border-radius: 8px;
-  font-family: 'Exo 2', sans-serif;
+  font-family: "Exo 2", sans-serif;
   text-align: center;
   transition: all 0.3s ease;
   box-sizing: border-box;
@@ -25,7 +25,7 @@
 
 .name-input:focus {
   outline: none;
-  box-shadow: 0 0 15px var(--primary-color);
+  box-shadow: 0 0 var(--primary-color);
   background: rgba(0, 255, 255, 0.1);
 }
 
@@ -91,7 +91,7 @@
 }
 
 .name-button {
-  font-family: 'Exo 2', sans-serif;
+  font-family: "Exo 2", sans-serif;
   padding: 0.8rem 2rem;
   font-size: 1rem;
   border: 2px solid;
@@ -163,9 +163,16 @@
 
 /* Animation for validation states */
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
 }
 
 .name-input.invalid {
@@ -173,9 +180,15 @@
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 5px var(--primary-color); }
-  50% { box-shadow: 0 0 20px var(--primary-color); }
-  100% { box-shadow: 0 0 5px var(--primary-color); }
+  0% {
+    box-shadow: 0 0 5px var(--primary-color);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--primary-color);
+  }
+  100% {
+    box-shadow: 0 0 5px var(--primary-color);
+  }
 }
 
 .name-input.valid {
@@ -188,17 +201,17 @@
     font-size: 1rem;
     padding: 0.8rem;
   }
-  
+
   .name-buttons {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .name-button {
     width: 100%;
     max-width: 200px;
   }
-  
+
   .name-requirements {
     font-size: 0.75rem !important;
   }
@@ -209,11 +222,11 @@
     font-size: 0.9rem;
     padding: 0.7rem;
   }
-  
+
   .validation-message {
     font-size: 0.8rem;
   }
-  
+
   .name-info p {
     font-size: 0.8rem;
   }

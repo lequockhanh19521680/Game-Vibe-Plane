@@ -53,13 +53,42 @@
         <h1>Stellar Drift</h1>
         <h2>SINGULARITY</h2>
         <p>
-          Move to score points. Avoid asteroids, black holes & missiles. Survive
-          as long as possible!
+          <span data-translate="menu.description"
+            >Move to score points. Avoid asteroids, black holes & missiles.
+            Survive as long as possible!</span
+          >
         </p>
-        <button id="start-button" data-translate="menu.startBattle">Start Battle</button>
-        <button id="leaderboard-button" data-translate="menu.leaderboard">Leaderboard</button>
-        <button id="how-to-play-button" data-translate="menu.howToPlay">How to Play</button>
-        <button id="settings-button" data-translate="menu.settings">Settings</button>
+
+        <div class="name-input-section" id="name-input-wrapper">
+          <div class="input-group">
+            <input
+              type="text"
+              id="player-name-input"
+              class="name-input"
+              placeholder="Your name..."
+              data-translate-placeholder="playerName.placeholder"
+              maxlength="20"
+              autocomplete="off"
+            />
+            <div id="name-validation-message" class="validation-message"></div>
+          </div>
+          <p class="name-info-text" data-translate="playerName.info">
+            Your name will appear on the leaderboard (2-20 chars)
+          </p>
+        </div>
+
+        <button id="start-button" data-translate="menu.startBattle">
+          Start Battle
+        </button>
+        <button id="leaderboard-button" data-translate="menu.leaderboard">
+          Leaderboard
+        </button>
+        <button id="how-to-play-button" data-translate="menu.howToPlay">
+          How to Play
+        </button>
+        <button id="settings-button" data-translate="menu.settings">
+          Settings
+        </button>
       </div>
 
       <!-- Game Over Screen -->
@@ -84,7 +113,7 @@
           </button>
           <button class="dashboard-tab" data-tab="my-stats">📊 My Stats</button>
         </div>
-        
+
         <!-- Global Leaderboard Tab -->
         <div id="global-leaderboard-content" class="dashboard-content active">
           <div class="leaderboard-header">
@@ -98,7 +127,7 @@
             <div class="loading">Loading leaderboard...</div>
           </div>
         </div>
-        
+
         <!-- Country Leaderboard Tab -->
         <div id="country-leaderboard-content" class="dashboard-content">
           <div class="leaderboard-header">
@@ -115,7 +144,7 @@
             <div class="loading">Loading country rankings...</div>
           </div>
         </div>
-        
+
         <!-- My Stats Tab -->
         <div id="my-stats-content" class="dashboard-content">
           <h3>📊 Your Statistics</h3>
@@ -123,7 +152,7 @@
             <div class="loading">Loading your stats...</div>
           </div>
         </div>
-        
+
         <div class="leaderboard-footer">
           <div class="connection-status">
             <span id="connection-indicator">🔴</span>
@@ -178,7 +207,6 @@
     <script src="js/utils/userIdentification.js"></script>
     <script src="js/config/settings.js"></script>
     <script src="js/ui/settingsUI.js"></script>
-    <script src="js/ui/playerNameUI.js"></script>
     <script src="js/main.js"></script>
     <script src="js/ui/dashboard.js"></script>
     <script src="js/ui/initUI.js"></script>
