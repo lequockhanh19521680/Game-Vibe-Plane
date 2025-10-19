@@ -5,6 +5,7 @@ const {
   updateItem,
   getTopScores,
   getTopCountries,
+  getCountryLeaderboard,
 } = require("../utils/dynamodb");
 const { getCountryFromIP, extractIPFromEvent } = require("../utils/geoip");
 const {
@@ -230,11 +231,48 @@ async function triggerLeaderboardUpdate(event) {
   try {
     console.log("Triggering real-time leaderboard update...");
 
-    // Get updated leaderboards
-    const [globalLeaderboard, countryLeaderboard] = await Promise.all([
-      getTopScores(10),
-      getTopCountries(10),
-    ]);
+    // Get updated global leaderboard
+    const globalLeaderboard = await getTopScores(10);
+
+    // 1. Lấy top quốc gia từ DynamoDB (chỉ có totalScore, playerCount)
+    let countryLeaderboardRaw = await getTopCountries(10);
+
+    // 2. Tái tạo logic tính toán top 10% score và sắp xếp lại
+    const formattedCountries = await Promise.all(
+      countryLeaderboardRaw.map(async (country) => {
+        // Lấy top 50 người chơi của quốc gia này để đảm bảo có đủ dữ liệu để tính top 10%
+        const topPlayers = await getCountryLeaderboard(country.country, 50);
+
+        // Tính toán top 10% score (hoặc ít nhất 1 người chơi)
+        const top10PercentCount = Math.max(
+          1,
+          Math.ceil(country.playerCount * 0.1)
+        );
+        const top10PercentPlayers = topPlayers.slice(0, top10PercentCount);
+        const top10PercentScore = top10PercentPlayers.reduce(
+          (sum, player) => sum + player.score,
+          0
+        );
+
+        return {
+          country: country.country,
+          totalScore: country.totalScore,
+          top10PercentScore, // Thêm trường này vào dữ liệu
+          playerCount: country.playerCount,
+          averageScore: country.averageScore,
+        };
+      })
+    );
+
+    // 3. Sắp xếp lại theo top 10% score (tiêu chí xếp hạng chính)
+    formattedCountries.sort(
+      (a, b) => b.top10PercentScore - a.top10PercentScore
+    );
+
+    // 4. Cập nhật Rank sau khi sắp xếp
+    formattedCountries.forEach((country, index) => {
+      country.rank = index + 1;
+    });
 
     // Broadcast updates to all connected WebSocket clients
     await Promise.all([
@@ -252,14 +290,8 @@ async function triggerLeaderboardUpdate(event) {
       }),
       broadcastCountryUpdate(event, {
         type: "countries",
-        countries: countryLeaderboard.map((country, index) => ({
-          rank: index + 1,
-          country: country.country,
-          totalScore: country.totalScore,
-          playerCount: country.playerCount,
-          averageScore: country.averageScore,
-          top10PercentScore: country.top10PercentScore || country.totalScore,
-        })),
+        // Sử dụng formattedCountries đã được sắp xếp và tính toán đầy đủ
+        countries: formattedCountries,
       }),
     ]);
 
