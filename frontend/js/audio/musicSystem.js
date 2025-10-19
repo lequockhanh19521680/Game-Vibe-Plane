@@ -4,7 +4,6 @@ let musicPaused = false;
 function startBackgroundMusic() {
   if (backgroundMusicElement) {
     // Set volume from config
-    // ĐÃ SỬA: Bỏ đoạn `* 0.7` để âm lượng được áp dụng đúng từ file config
     backgroundMusicElement.volume = GAME_CONFIG.audio.volumes.backgroundMusic;
 
     // play() returns a promise which can reject if the user hasn't interacted
@@ -42,13 +41,4 @@ function resumeBackgroundMusic() {
     });
     musicPaused = false;
   }
-}
-
-// These functions are no longer needed for procedural audio but are kept to avoid breaking calls.
-function startSpaceAmbience() {
-  // Now handled by the MP3 file
-}
-
-function stopSpaceAmbience() {
-  // Now handled by the MP3 file
 }

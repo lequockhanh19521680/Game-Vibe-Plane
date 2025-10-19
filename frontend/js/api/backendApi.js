@@ -102,7 +102,6 @@ const BackendAPI = {
 
       // Get user identification
       let userId = null;
-      let fingerprint = null;
 
       if (
         window.userIdentification &&
@@ -110,7 +109,6 @@ const BackendAPI = {
       ) {
         const userInfo = window.userIdentification.getUserInfo();
         userId = userInfo.userId;
-        fingerprint = userInfo.fingerprint;
       }
 
       const response = await fetch(`${apiBaseUrl}/submit-score`, {
@@ -125,7 +123,6 @@ const BackendAPI = {
           deathCause: deathCause || "unknown",
           clientIP: clientIP, // Send client IP to backend
           userId: userId, // Unique user identifier
-          fingerprint: fingerprint, // Browser fingerprint
           userAgent: navigator.userAgent,
           timestamp: new Date().toISOString(),
         }),

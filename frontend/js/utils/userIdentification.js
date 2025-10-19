@@ -1,17 +1,16 @@
 // User Identification System
-// Tạo unique user ID dựa trên địa chỉ IP của người dùng
+// Creates a unique user ID based on the user's IP address.
 
 class UserIdentification {
   constructor() {
-    this.localStorageKey = "stellarDriftUserId"; // Key để lưu trữ ID
+    this.localStorageKey = "stellarDriftUserId"; // Key for storing the ID
     this.userId = null;
     this.clientIP = null;
     this.initialized = false;
-    this.loadSavedId(); // Tải ID đã lưu ngay khi khởi tạo
+    this.loadSavedId(); // Load saved ID on initialization
   }
 
   loadSavedId() {
-    // Tải ID từ localStorage nếu tồn tại
     try {
       const savedId = localStorage.getItem(this.localStorageKey);
       if (savedId) {
@@ -25,7 +24,6 @@ class UserIdentification {
   }
 
   storeUserId() {
-    // Hàm lưu ID
     if (this.userId) {
       try {
         localStorage.setItem(this.localStorageKey, this.userId);
@@ -37,18 +35,18 @@ class UserIdentification {
   }
 
   /**
-   * Khởi tạo user identification
+   * Initialize user identification.
    */
   async initialize() {
-    if (this.userId && this.initialized) return this.userId; // Trả về ID đã có
+    if (this.userId && this.initialized) return this.userId; // Return existing ID
 
     try {
-      // Lấy địa chỉ IP của client
+      // Get the client's IP address
       this.clientIP = await this.getClientIP();
 
-      // Tạo user ID duy nhất dựa trên IP
+      // Create a unique user ID based on the IP
       this.userId = await this.generateUniqueUserId();
-      this.storeUserId(); // Lưu ID mới vào localStorage
+      this.storeUserId(); // Save the new ID to localStorage
 
       this.initialized = true;
       console.log("User ID initialized based on IP:", this.userId);
@@ -56,20 +54,20 @@ class UserIdentification {
       return this.userId;
     } catch (error) {
       console.error("Error initializing user identification:", error);
-      // Fallback: Nếu không lấy được IP, tạo ID ngẫu nhiên
+      // Fallback: If IP cannot be fetched, generate a random ID
       this.userId = this.generateFallbackId();
       this.initialized = true;
-      this.storeUserId(); // Lưu ID dự phòng
+      this.storeUserId(); // Save the fallback ID
       return this.userId;
     }
   }
 
   /**
-   * Lấy client IP
+   * Get client IP.
    */
   async getClientIP() {
     try {
-      // Thử nhiều service để lấy IP, tăng độ tin cậy
+      // Try multiple services for reliability
       const services = [
         "https://api.ipify.org?format=json",
         "https://ipapi.co/json/",
@@ -98,22 +96,16 @@ class UserIdentification {
   }
 
   /**
-   * Tạo unique user ID chỉ dựa trên IP
+   * Generate a unique user ID based on IP address.
    */
   async generateUniqueUserId() {
-    const components = [
-      this.clientIP || "no-ip", // Chỉ sử dụng IP
-    ];
-
-    const combinedString = components.join("_");
+    const combinedString = this.clientIP || "no-ip";
     const hashedId = await this.hashString(combinedString);
-
-    // Tạo ID ngắn gọn hơn
     return "user_ip_" + hashedId.substr(0, 12);
   }
 
   /**
-   * Băm chuỗi bằng Web Crypto API
+   * Hash a string using the Web Crypto API.
    */
   async hashString(str) {
     try {
@@ -123,19 +115,19 @@ class UserIdentification {
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
     } catch (error) {
-      // Fallback cho môi trường không hỗ trợ crypto
+      // Fallback for environments that don't support crypto
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
         const char = str.charCodeAt(i);
         hash = (hash << 5) - hash + char;
-        hash = hash & hash; // Chuyển thành số nguyên 32bit
+        hash = hash & hash; // Convert to 32bit integer
       }
       return Math.abs(hash).toString(16);
     }
   }
 
   /**
-   * Tạo ID dự phòng ngẫu nhiên
+   * Generate a random fallback ID.
    */
   generateFallbackId() {
     const timestamp = Date.now().toString(36);
@@ -144,35 +136,34 @@ class UserIdentification {
   }
 
   /**
-   * Lấy user ID hiện tại
+   * Get the current user ID.
    */
   getUserId() {
     return this.userId;
   }
 
   /**
-   * Kiểm tra xem đã khởi tạo chưa
+   * Check if initialized.
    */
   isInitialized() {
     return this.initialized;
   }
 
   /**
-   * Lấy thông tin user đầy đủ
+   * Get full user info.
    */
   getUserInfo() {
     return {
       userId: this.userId,
-      fingerprint: null, // Không còn sử dụng fingerprint
       clientIP: this.clientIP,
       initialized: this.initialized,
     };
   }
 }
 
-// Tạo instance global
+// Create a global instance
 const userIdentification = new UserIdentification();
 
-// Export cho sử dụng
+// Export for use
 window.UserIdentification = UserIdentification;
 window.userIdentification = userIdentification;

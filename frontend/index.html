@@ -19,8 +19,6 @@
     <link rel="stylesheet" href="css/settings.css" />
     <link rel="stylesheet" href="css/playerName.css" />
     <link rel="stylesheet" href="css/gameUI.css" />
-    <!-- The cursor-fix.css is no longer needed as the logic is now in styles.css -->
-    <!-- <link rel="stylesheet" href="css/cursor-fix.css" /> -->
   </head>
   <body>
     <!-- Loading Screen -->
@@ -33,7 +31,6 @@
 
     <div id="ui-container">
       <!-- HUD Bar: Score, Level, Time -->
-      <!-- MODIFIED: Restructured the top bar for better layout control -->
       <div id="top-bar">
         <!-- Left: High Score -->
         <div id="highscore-display">High Score: 0</div>
@@ -58,7 +55,7 @@
 
       <div id="event-text"></div>
 
-      <!-- Main Menu Screen (Tối ưu hóa bố cục) -->
+      <!-- Main Menu Screen -->
       <div id="start-screen" class="ui-element">
         <h1>Stellar Drift</h1>
         <h2>SINGULARITY</h2>
@@ -86,7 +83,6 @@
           </div>
         </div>
 
-        <!-- Nhóm các nút lại cho gọn gàng hơn -->
         <div class="menu-buttons-group">
           <button id="start-button" data-translate="menu.startBattle">
             Start Battle
@@ -125,25 +121,6 @@
               <div id="final-time" class="stat-value">0:00</div>
             </div>
           </div>
-
-          <!-- <div class="secondary-stats">
-            <div class="stat-row">
-              <span class="stat-name">Level Reached:</span>
-              <span id="final-level" class="stat-data">1</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-name">Enemies Avoided:</span>
-              <span id="enemies-avoided" class="stat-data">0</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-name">Power-ups Collected:</span>
-              <span id="powerups-collected" class="stat-data">0</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-name">Distance Traveled:</span>
-              <span id="distance-traveled" class="stat-data">0m</span>
-            </div>
-          </div> -->
 
           <div
             class="achievement-section"
@@ -327,15 +304,11 @@
           </button>
         </div>
       </div>
-
-      <!-- Settings Screen được tạo động bởi settingsUI.js -->
-      <!-- Loại bỏ <div id="settings-screen" ...> cũ -->
     </div>
 
     <audio id="background-music" loop src="assets/audio/background.mp3"></audio>
 
     <script src="gameConfig.js"></script>
-    <!-- REMOVED type="module" -->
     <script src="js/config/endpoints.js"></script>
     <script src="js/api/backendApi.js"></script>
     <script src="js/audio/audioSystem.js"></script>
@@ -346,7 +319,7 @@
     <script src="js/utils/helpers.js"></script>
     <script src="js/entities/visuals.js"></script>
 
-    <!-- Tải các file Entity *trước* entityFactory -->
+    <!-- Entity classes must be loaded before the factory that uses them -->
     <script src="js/entities/player.js"></script>
     <script src="js/entities/warnings.js"></script>
     <script src="js/entities/obstacles.js"></script>
@@ -354,22 +327,21 @@
     <script src="js/entities/hazards.js"></script>
     <script src="js/entities/portals.js"></script>
 
-    <!-- Tải entityFactory sau khi tất cả các lớp Entity được định nghĩa -->
+    <!-- The factory is loaded after all entity classes are defined -->
     <script src="js/core/entityFactory.js"></script>
 
-    <!-- Tải các file core khác -->
+    <!-- Core game logic files -->
     <script src="js/core/gameStateManager.js"></script>
     <script src="js/core/game.js"></script>
     <script src="js/core/eventSystem.js"></script>
     <script src="js/config/settings.js"></script>
 
-    <!-- Tải các file UI và main -->
+    <!-- UI and main application entry point -->
     <script src="js/ui/settingsUI.js"></script>
     <script src="js/ui/playerNameUI.js"></script>
-    <script src="js/ui/gameUI.js"></script>
     <script src="js/main.js"></script>
     <script src="js/ui/dashboard.js"></script>
-    <script src="js/ui/initUI.js"></script>
-    <script src="js/ui/menuSystem.js"></script>
+
+    <!-- The file menuSystem.js has been removed as it was obsolete -->
   </body>
 </html>

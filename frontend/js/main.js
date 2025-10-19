@@ -22,7 +22,6 @@ const startButton = document.getElementById("start-button");
 const restartButton = document.getElementById("restart-button");
 const leaderboardButton = document.getElementById("leaderboard-button");
 const howToPlayButton = document.getElementById("how-to-play-button");
-const settingsButton = document.getElementById("settings-button");
 const backToMainMenuButton = document.getElementById(
   "back-to-main-menu-button"
 );
@@ -89,55 +88,42 @@ let eventActive = { type: null, endTime: 0 };
 function startGame() {
   gameStateManager.changeState("playing");
 }
-function endGame(reason = "unknown") {
-  if (!isGameRunning) return;
-  console.log(`Game Over! Reason: ${reason}`);
-  cancelAnimationFrame(animationFrameId);
-  gameStateManager.changeState("gameOver", { reason });
-}
 
 function togglePause() {
-  if (isPaused) {
-    gameStateManager.changeState("playing");
-  } else {
-    gameStateManager.changeState("paused");
+  if (isGameRunning) {
+    if (isPaused) {
+      gameStateManager.changeState("playing");
+    } else {
+      gameStateManager.changeState("paused");
+    }
   }
 }
 
 // --- Event Listeners ---
 startButton.addEventListener("click", (e) => {
-  // Prevent default if button is disabled
   if (startButton.classList.contains("disabled") || startButton.disabled) {
     e.preventDefault();
     e.stopPropagation();
 
-    // Focus on name input to guide user
     if (window.playerNameUI) {
       window.playerNameUI.show();
     }
-
-    // Show a brief message
     if (typeof showEventText === "function") {
       showEventText("Please enter your name first!");
     }
-
     return false;
   }
 
   playSound("buttonHover");
 
-  // Double-check if player has a valid name
   if (window.playerNameUI && !window.playerNameUI.hasValidName()) {
     window.playerNameUI.show();
-
     if (typeof showEventText === "function") {
       showEventText("Please enter a valid name!");
     }
-
     return;
   }
 
-  // Save the name before starting
   if (window.playerNameUI) {
     window.playerNameUI.saveName();
   }
@@ -160,14 +146,6 @@ howToPlayButton.addEventListener("click", () => {
   playSound("buttonHover");
   gameStateManager.changeState("howToPlay");
 });
-
-// settingsButton.addEventListener("click", () => {
-//   initAudioSystem();
-//   playSound("buttonHover");
-//   if (window.settingsUI) {
-//     window.settingsUI.show();
-//   }
-// });
 
 backToMainMenuButton.addEventListener("click", () => {
   playSound("buttonHover");
@@ -202,7 +180,6 @@ mainMenuFromPauseButton.addEventListener("click", () => {
   uiElements.pauseButton.style.display = "none";
   uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
 
-  // Clear the canvas and redraw the starfield background
   ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
   ctx.fillRect(0, 0, width, height);
   if (stars && stars.length > 0) {
@@ -216,7 +193,6 @@ mainMenuFromOverButton.addEventListener("click", () => {
   playSound("buttonHover");
   uiElements.gameOverScreen.style.display = "none";
 
-  // Clear the canvas and redraw the starfield background
   ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
   ctx.fillRect(0, 0, width, height);
   if (stars && stars.length > 0) {
@@ -226,10 +202,6 @@ mainMenuFromOverButton.addEventListener("click", () => {
   gameStateManager.changeState("menu");
 });
 
-// Button hover sound effects
-startButton.addEventListener("mouseenter", () => playSound("buttonHover"));
-restartButton.addEventListener("mouseenter", () => playSound("buttonHover"));
-
 window.addEventListener("mousemove", (e) => {
   mouse.x = e.clientX;
   mouse.y = e.clientY;
@@ -238,8 +210,6 @@ window.addEventListener(
   "touchmove",
   (e) => {
     if (e.touches.length > 0) {
-      // ONLY prevent default scroll behavior (like pull-to-refresh or page scrolling)
-      // when the game is actively being played.
       if (isGameRunning && !isPaused) {
         e.preventDefault();
       }
@@ -253,7 +223,6 @@ window.addEventListener("resize", () => {
   width = canvas.width = window.innerWidth;
   height = canvas.height = window.innerHeight;
   if (!isGameRunning) {
-    // Redraw background if not in game
     ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
     ctx.fillRect(0, 0, width, height);
     nebulae = Array(5)
@@ -279,7 +248,6 @@ window.addEventListener("keydown", (e) => {
 width = canvas.width = window.innerWidth;
 height = canvas.height = window.innerHeight;
 
-// Initialize background elements
 nebulae = Array(GAME_CONFIG.visual.nebula.count)
   .fill(null)
   .map(() => createNebula());
@@ -298,13 +266,11 @@ for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
     );
 }
 
-// Load high score
 highScore = localStorage.getItem(GAME_CONFIG.core.localStorageKey) || 0;
 if (uiElements.highscoreDisplay) {
   uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
 }
 
-// Initialize user identification
 async function initializeUserIdentification() {
   try {
     if (window.userIdentification) {
@@ -316,50 +282,39 @@ async function initializeUserIdentification() {
   }
 }
 
-// Initialize everything
 async function initializeApp() {
   const loadingScreen = document.getElementById("loading-screen");
 
-  // Initialize user identification first
   await initializeUserIdentification();
 
-  // Initialize secure API endpoints
   if (window.BackendAPI && window.BackendAPI.initialize) {
     await window.BackendAPI.initialize();
   }
 
-  // Initialize game settings
   if (window.gameSettings) {
     await window.gameSettings.initialize();
   }
 
-  // Initialize settings UI
   if (window.settingsUI) {
     window.settingsUI.initialize();
   }
 
-  // Initialize player name UI
   if (window.playerNameUI) {
     window.playerNameUI.initialize();
   }
 
-  // Initialize dashboard after other systems are ready
   if (window.initializeDashboard) {
     window.initializeDashboard();
   }
 
-  // Start in menu state
   gameStateManager.changeState("menu");
 
-  // Hide the loading screen after a short delay for smooth transition
   if (loadingScreen) {
     loadingScreen.classList.add("hidden");
-    // After the transition, set display to none
     setTimeout(() => {
       loadingScreen.style.display = "none";
-    }, 500); // This should match the CSS transition duration
+    }, 500);
   }
 }
 
-// Start the app
 initializeApp();

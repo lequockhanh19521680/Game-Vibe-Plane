@@ -209,16 +209,11 @@ class Player extends ColoredEntity {
         this.thunderShieldActive = false;
       }
     }
-
-    // Trail and shield updates are handled in afterUpdate
   }
 
   afterUpdate() {
-    this.updateTrail();
     this.updateShields();
   }
-
-  updateTrail() {}
 
   activateShield() {
     this.shieldActive = true;
@@ -239,7 +234,7 @@ class Player extends ColoredEntity {
     // Increase player speed slightly while thunder shield is active
     globalSpeedMultiplier *= 0.8;
 
-    // Visual effect: Giảm số lượng hạt ban đầu
+    // Visual effect: Reduce the number of initial particles
     for (let i = 0; i < 12; i++) {
       const angle = (i / 12) * Math.PI * 2;
       particles.push(
@@ -276,16 +271,16 @@ class Player extends ColoredEntity {
         // Create lightning effect to the asteroid
         this.createLightningStrike(ast.x, ast.y);
 
-        // Create explosion particles: Giảm số lượng hạt nổ
+        // Create explosion particles: Reduce the number of explosion particles
         for (let j = 0; j < 4; j++) {
           const angle = Math.random() * Math.PI * 2;
           particles.push(
             new Particle(
               ast.x + Math.cos(angle) * 5,
               ast.y + Math.sin(angle) * 5,
-              Math.cos(angle) * 6,
-              Math.sin(angle) * 6,
-              "#ffff00"
+              3, // radius
+              "#ffff00", // color
+              { x: Math.cos(angle) * 6, y: Math.sin(angle) * 6 } // velocity
             )
           );
         }
