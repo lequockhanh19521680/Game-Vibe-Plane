@@ -1,107 +1,220 @@
-# Game Vibe Plane - Game Sinh Tồn Không Gian Thời Gian Thực
+Kiến trúc AWS cho Game Vibe Plane
 
-Một trò chơi sinh tồn không gian có nhịp độ nhanh với **bảng xếp hạng toàn cầu thời gian thực**, nơi bạn điều hướng qua các mối nguy hiểm trong vũ trụ, thu thập vật phẩm tăng sức mạnh và cạnh tranh với người chơi trên toàn thế giới.
+Tài liệu này mô tả kiến trúc hạ tầng đám mây được xây dựng trên Amazon Web Services (AWS) cho dự án "Game Vibe Plane". Kiến trúc này được thiết kế theo mô hình serverless, tập trung vào khả năng mở rộng, hiệu suất cao, tối ưu chi phí và cập nhật dữ liệu theo thời gian thực.
 
-## 🎮 Tổng Quan Trò Chơi
+🎯 Tổng Quan Kiến Trúc
 
-Game Vibe Plane là một trò chơi arcade dựa trên web đầy hành động với bảng xếp hạng nhiều người chơi theo thời gian thực. Điều khiển tàu vũ trụ của bạn vượt qua các mối nguy hiểm không gian ngày càng thử thách trong khi cạnh tranh vị trí hàng đầu trên bảng xếp hạng toàn cầu và theo quốc gia.
+Hệ thống được chia thành hai phần chính: Frontend được phân phối toàn cầu qua CDN và Backend xử lý logic nghiệp vụ hoàn toàn serverless.
 
-### 🌟 Tính Năng Chính
+Frontend Hosting: Các tài sản tĩnh (HTML, CSS, JavaScript, hình ảnh, âm thanh) được lưu trữ trên Amazon S3 và phân phối đến người dùng cuối thông qua Amazon CloudFront, giúp tăng tốc độ tải trang và giảm độ trễ trên toàn cầu.
 
-- **🏆 Bảng Xếp Hạng Toàn Cầu Thời Gian Thực**: Cạnh tranh với người chơi trên toàn thế giới với các cập nhật trực tiếp.
-- **🌍 Xếp Hạng Quốc Gia**: Các quốc gia được xếp hạng dựa trên tổng điểm của 10% người chơi hàng đầu.
-- **⚡ Hệ Thống Sự Kiện Động**: Trải nghiệm các sự kiện vũ trụ ngẫu nhiên như mưa thiên thạch, bão plasma và từ trường.
-- **💎 Vật Phẩm Tăng Sức Mạnh & Khiên**: Thu thập các mảnh tinh thể để có được sự bảo vệ tạm thời.
-- **📊 Thống Kê Trực Tiếp**: Theo dõi tiến trình của bạn với số liệu thống kê chi tiết và phân tích nguyên nhân "game over".
-- **🔄 Tích Hợp WebSocket**: Cập nhật thời gian thực mà không cần làm mới trang.
-- **📱 Thiết Kế Đáp Ứng**: Chơi trên máy tính để bàn, máy tính bảng hoặc thiết bị di động.
+Backend API:
 
-### 🎯 Cơ Chế Chơi
+Amazon API Gateway đóng vai trò là cửa ngõ cho tất cả các yêu cầu, quản lý cả REST API (cho các tác vụ như gửi điểm) và WebSocket API (cho việc cập nhật bảng xếp hạng trực tiếp).
 
-1.  **Di Chuyển**: Điều khiển bằng chuột/cảm ứng để điều hướng tàu vũ trụ chính xác.
-2.  **Tính Điểm**: Kiếm điểm thông qua di chuyển và thời gian sống sót.
-3.  **Sinh Tồn**: Tránh thiên thạch, tên lửa, hố đen, tia laser và các mối nguy hiểm khác.
-4.  **Sự Kiện**: Các sự kiện vũ trụ ngẫu nhiên làm thay đổi động lực chơi.
-5.  **Cạnh Tranh**: Xếp hạng thời gian thực so với người chơi toàn cầu.
+AWS Lambda cung cấp năng lực tính toán, thực thi các hàm logic nghiệp vụ khi được kích hoạt bởi API Gateway hoặc các sự kiện khác.
 
----
+Amazon DynamoDB là cơ sở dữ liệu NoSQL được quản lý hoàn toàn, lưu trữ điểm số người chơi, bảng xếp hạng quốc gia và thông tin kết nối WebSocket.
 
-## 🏗️ Kiến Trúc Hệ Thống
+DynamoDB Streams được sử dụng để kích hoạt Lambda function một cách tự động khi có sự thay đổi dữ liệu (ví dụ: điểm số mới được ghi), tạo nên một hệ thống cập nhật real-time hiệu quả.
 
-### 🎯 Tổng Quan
+Sơ Đồ Kiến Trúc Chi Tiết
 
-Stellar Drift (tên cũ của Game Vibe Plane được tìm thấy trong code) sử dụng kiến trúc serverless hiện đại được thiết kế cho khả năng mở rộng, hiệu suất và phạm vi tiếp cận toàn cầu. Hệ thống hỗ trợ các tính năng nhiều người chơi thời gian thực với khả năng tự động thay đổi quy mô và tối ưu hóa chi phí.
-
-### 🖥️ Kiến Trúc Frontend
-
-- **HTML5 Canvas**: Công cụ kết xuất 2D hiệu suất cao.
-- **Vanilla JavaScript**: Game engine không phụ thuộc để đạt hiệu suất tối đa.
-- **CSS3**: Hệ thống bố cục đáp ứng.
-- **WebSocket API**: Giao tiếp hai chiều thời gian thực.
-- **Web Audio API**: Hệ thống âm thanh không gian sống động.
-- **LocalStorage**: Lưu trữ cài đặt và tiến trình phía client.
-
-### ☁️ Kiến Trúc Backend (AWS Serverless)
-
-#### Các Thành Phần Hạ Tầng AWS
-
-- **Amazon API Gateway**: Cung cấp các điểm cuối API RESTful (để gửi điểm, lấy bảng xếp hạng) và WebSocket API (cho cập nhật thời gian thực).
-- **AWS Lambda**: Các hàm tính toán serverless (Node.js 18.x) xử lý logic nghiệp vụ.
-- **Amazon DynamoDB**: Cơ sở dữ liệu NoSQL với khả năng tự động thay đổi quy mô, lưu trữ điểm số, thông tin quốc gia và kết nối WebSocket.
-- **DynamoDB Streams**: Xử lý thay đổi dữ liệu thời gian thực (ví dụ: khi điểm mới được ghi) để cập nhật bảng xếp hạng.
-- **CloudWatch**: Giám sát, ghi log và cảnh báo.
-- **AWS IAM**: Quản lý quyền truy cập chi tiết cho các tài nguyên AWS.
-
-#### Sơ Đồ Kiến Trúc AWS
-
-```mermaid
 graph TD
-    F[Frontend (Browser)] -->|REST API| AG_REST[API Gateway REST]
-    F -->|WebSocket (WSS)| AG_WS[API Gateway WebSocket]
+subgraph "Người Dùng"
+User("👨‍🚀 Người Chơi")
+end
 
-    AG_REST -->|submitScore| L_Submit[Lambda: submitScore]
-    AG_REST -->|getLeaderboard| L_GetGlobal[Lambda: getLeaderboard]
-    AG_REST -->|getCountryLeaderboard| L_GetCountry[Lambda: getCountryLeaderboard]
-    AG_REST -->|healthCheck| L_Health[Lambda: healthCheck]
-
-    AG_WS -- $connect --> L_Connect[Lambda: websocketConnect]
-    AG_WS -- $disconnect --> L_Disconnect[Lambda: websocketDisconnect]
-    AG_WS -- $default --> L_Default[Lambda: websocketDefault]
-
-    L_Submit --> DDB_Scores[(DynamoDB: ScoresTable)]
-    L_Submit --> DDB_Countries[(DynamoDB: CountriesTable)]
-    L_GetGlobal --> DDB_Scores
-    L_GetCountry --> DDB_Countries
-    L_GetCountry --> DDB_Scores # Lấy top players của quốc gia
-
-    L_Connect --> DDB_WS[(DynamoDB: WebSocketTable)]
-    L_Disconnect --> DDB_WS
-
-    DDB_Scores -- Stream --> L_Process[Lambda: processScoreUpdate]
-    L_Process --> L_GetGlobal # Lấy BXH mới
-    L_Process --> L_GetCountry # Lấy BXH quốc gia mới
-    L_Process --> AGW_Mgmt[API Gateway Management API]
-    AGW_Mgmt -->|Broadcast Update| AG_WS
-
-    L_Submit --> GeoIP[GeoIP APIs (External)]
-
-    subgraph AWS Cloud
-        AG_REST
-        AG_WS
-        L_Submit
-        L_GetGlobal
-        L_GetCountry
-        L_Health
-        L_Connect
-        L_Disconnect
-        L_Default
-        L_Process
-        DDB_Scores
-        DDB_Countries
-        DDB_WS
-        AGW_Mgmt[API Gateway Management API]
+    subgraph "AWS Edge Network (CDN)"
+        CF["🌐 Amazon CloudFront"]
     end
 
-    style F fill:#f9f,stroke:#333,stroke-width:2px
-    style GeoIP fill:#ccf,stroke:#333,stroke-width:2px
-```
+    subgraph "AWS Cloud - Region (ví dụ: ap-southeast-1)"
+        subgraph "Frontend Hosting"
+            S3["🗂️ Amazon S3 Bucket<br/>(Lưu trữ file tĩnh: HTML, JS, CSS)"]
+        end
+
+        subgraph "Backend API"
+            AG_REST["🚪 API Gateway (REST API)<br/>/submit-score, /leaderboard"]
+            AG_WS["🔌 API Gateway (WebSocket API)<br/>$connect, $disconnect"]
+        end
+
+        subgraph "Compute"
+            L_Submit["λ Lambda<br/>(submitScore)"]
+            L_Get["λ Lambda<br/>(getLeaderboard)"]
+            L_WS["λ Lambda<br/>(websocketConnect, etc.)"]
+            L_Process["λ Lambda<br/>(processScoreUpdate)"]
+        end
+
+        subgraph "Database"
+            DDB_Scores["🗄️ DynamoDB<br/>(ScoresTable)"]
+            DDB_Countries["🗄️ DynamoDB<br/>(CountriesTable)"]
+            DDB_WS["🗄️ DynamoDB<br/>(WebSocketTable)"]
+        end
+
+        DDB_Stream["🔥 DynamoDB Stream"]
+        AG_Mgmt["⚙️ API Gateway<br/>Management API"]
+    end
+
+    subgraph "Dịch Vụ Bên Ngoài"
+        GeoIP["🌍 Dịch vụ GeoIP"]
+    end
+
+    %% Định nghĩa các luồng dữ liệu
+    User -- "HTTPS: game.yourdomain.com" --> CF
+
+    CF -- "Phân phối tài sản tĩnh (cached)" --> S3
+    CF -- "API requests (/api/*)" --> AG_REST
+    CF -- "WebSocket connections (/ws/*)" --> AG_WS
+
+    AG_REST -- "/submit-score" --> L_Submit
+    AG_REST -- "/leaderboard" --> L_Get
+
+    L_Submit -- "Lấy thông tin quốc gia" --> GeoIP
+    L_Submit -- "Ghi/Cập nhật điểm" --> DDB_Scores
+    L_Submit -- "Cập nhật thống kê" --> DDB_Countries
+
+    L_Get -- "Đọc Bảng xếp hạng" --> DDB_Scores
+    L_Get -- "Đọc BXH Quốc gia" --> DDB_Countries
+
+    AG_WS -- "$connect, $disconnect" --> L_WS
+    L_WS -- "Lưu/Xóa Connection ID" --> DDB_WS
+
+    DDB_Scores -- "Sự kiện thay đổi dữ liệu" --> DDB_Stream
+    DDB_Stream -- "Kích hoạt (Trigger)" --> L_Process
+    L_Process -- "Lấy Top Scores & Countries" --> DDB_Scores & DDB_Countries
+    L_Process -- "Lấy danh sách kết nối" --> DDB_WS
+    L_Process -- "Gửi tin nhắn" --> AG_Mgmt
+    AG_Mgmt -- "Phát cập nhật real-time" --> User
+
+⚙️ Chi Tiết Các Thành Phần
+
+1. Phân Phối Frontend (S3 + CloudFront)
+
+Amazon S3 (Simple Storage Service): Được cấu hình như một website hosting tĩnh. Thùng S3 này chứa tất cả các tệp của thư mục frontend. Quyền truy cập công khai vào các tệp này bị hạn chế, chỉ cho phép CloudFront truy cập thông qua Origin Access Identity (OAI).
+
+Amazon CloudFront:
+
+Hoạt động như một Mạng phân phối nội dung (CDN), cache các tệp tĩnh tại các điểm biên (Edge Location) trên toàn cầu.
+
+Khi người dùng truy cập trang web, họ sẽ được phục vụ từ Edge Location gần nhất, giúp giảm đáng kể độ trễ và tăng tốc độ tải trang.
+
+Cung cấp HTTPS miễn phí thông qua AWS Certificate Manager (ACM).
+
+Cấu hình nhiều behavior:
+
+Behavior mặc định (\*) trỏ đến S3 origin để phục vụ các tệp tĩnh.
+
+Các behavior tùy chỉnh (ví dụ /api/_, /ws/_) được cấu hình để chuyển tiếp các yêu cầu đến API Gateway, hoạt động như một reverse proxy.
+
+2. Backend API (API Gateway)
+
+REST API:
+
+/submit-score (POST): Tiếp nhận điểm số từ người chơi.
+
+/leaderboard (GET): Trả về bảng xếp hạng toàn cầu.
+
+/leaderboard/country (GET): Trả về bảng xếp hạng các quốc gia.
+
+/health (GET): Điểm cuối kiểm tra tình trạng hoạt động của hệ thống.
+
+WebSocket API:
+
+$connect: Xử lý khi một client mới kết nối, kích hoạt Lambda để lưu connectionId.
+
+$disconnect: Xử lý khi một client ngắt kết nối, kích hoạt Lambda để xóa connectionId.
+
+$default: Xử lý các tin nhắn đến khác (ví dụ: subscribe, ping).
+
+3. Logic Nghiệp Vụ (AWS Lambda)
+
+Các hàm Lambda được viết bằng Node.js và được quản lý bởi Serverless Framework (serverless.yml).
+
+submitScore:
+
+Được kích hoạt bởi API Gateway REST.
+
+Xác thực dữ liệu đầu vào.
+
+Sử dụng IP của client để gọi dịch vụ GeoIP bên ngoài, xác định quốc gia.
+
+So sánh điểm mới với điểm cao nhất đã lưu của người chơi đó trong ScoresTable.
+
+Nếu điểm cao hơn, ghi đè bản ghi. Nếu chưa có, tạo bản ghi mới.
+
+Cập nhật (hoặc tạo mới) thống kê cho quốc gia trong CountriesTable.
+
+getLeaderboard & getCountryLeaderboard:
+
+Được kích hoạt bởi API Gateway REST.
+
+Truy vấn DynamoDB (sử dụng Global Secondary Index - GSI để tối ưu) để lấy dữ liệu xếp hạng.
+
+websocketConnect / websocketDisconnect:
+
+Được kích hoạt bởi API Gateway WebSocket.
+
+Thêm hoặc xóa connectionId từ WebSocketTable.
+
+processScoreUpdate:
+
+Điểm mấu chốt của hệ thống real-time.
+
+Được kích hoạt bởi DynamoDB Stream từ ScoresTable mỗi khi có điểm số mới được ghi hoặc cập nhật.
+
+Truy vấn lại ScoresTable và CountriesTable để lấy bảng xếp hạng mới nhất.
+
+Lấy danh sách tất cả connectionId đang hoạt động từ WebSocketTable.
+
+Sử dụng API Gateway Management API để gửi (broadcast) dữ liệu bảng xếp hạng mới đến tất cả các client đang kết nối.
+
+4. Lưu Trữ Dữ Liệu (Amazon DynamoDB)
+
+Kiến trúc sử dụng ba bảng NoSQL để lưu trữ dữ liệu:
+
+ScoresTable:
+
+Khóa chính: userId (để mỗi người chơi chỉ có một bản ghi điểm cao nhất).
+
+Thuộc tính: username, score, country, timestamp, deathCause, leaderboard (giá trị tĩnh "global" cho GSI),...
+
+Global Secondary Index (GSI):
+
+ScoreIndex: leaderboard (Partition Key) và score (Sort Key) -> cho phép truy vấn top điểm toàn cầu hiệu quả.
+
+CountryIndex: country (Partition Key) và score (Sort Key) -> cho phép truy vấn top điểm theo từng quốc gia.
+
+CountriesTable:
+
+Khóa chính: country.
+
+Thuộc tính: totalScore, playerCount, averageScore, top10PercentScore.
+
+Dùng để tổng hợp và xếp hạng các quốc gia.
+
+WebSocketTable:
+
+Khóa chính: connectionId.
+
+Thuộc tính: ttl (Time to Live) để tự động dọn dẹp các kết nối cũ.
+
+🔄 Luồng Hoạt Động Chi Tiết
+
+Người dùng truy cập game: Yêu cầu đến CloudFront. CloudFront phục vụ các tệp tĩnh từ S3 cache.
+
+Người dùng chơi game và kết thúc: Frontend gửi yêu cầu POST đến /api/submit-score qua CloudFront.
+
+CloudFront chuyển tiếp yêu cầu đến API Gateway REST.
+
+API Gateway kích hoạt Lambda submitScore.
+
+Lambda submitScore xử lý, cập nhật dữ liệu vào DynamoDB.
+
+Sự thay đổi trong ScoresTable tạo ra một sự kiện trong DynamoDB Stream.
+
+Stream kích hoạt Lambda processScoreUpdate.
+
+Lambda processScoreUpdate lấy dữ liệu xếp hạng mới nhất và sử dụng API Gateway Management API để gửi cập nhật đến tất cả các client đã kết nối qua API Gateway WebSocket.
+
+Giao diện của tất cả người dùng đang mở bảng xếp hạng được cập nhật ngay lập tức.
