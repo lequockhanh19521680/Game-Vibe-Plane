@@ -343,6 +343,11 @@ async function initializeApp() {
     window.playerNameUI.initialize();
   }
 
+  // Initialize dashboard after other systems are ready
+  if (window.initializeDashboard) {
+    window.initializeDashboard();
+  }
+
   // Start in menu state
   gameStateManager.changeState("menu");
 

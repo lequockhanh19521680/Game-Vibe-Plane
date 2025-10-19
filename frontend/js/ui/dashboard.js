@@ -105,20 +105,32 @@ function connectWebSocket() {
 
 // Handle incoming WebSocket messages
 function handleWebSocketMessage(message) {
+  // Check if the leaderboard screen is currently visible
+  const leaderboardVisible =
+    document.getElementById("leaderboard-screen").style.display === "flex";
+
   switch (message.type) {
     case "leaderboard_update":
       console.log("Received leaderboard update:", message.data);
       if (message.data.type === "global") {
+        // Always update the data in the background
         globalLeaderboard = message.data.leaderboard;
-        updateGlobalLeaderboard();
+        // Only re-render the UI if the user is currently looking at it
+        if (leaderboardVisible) {
+          updateGlobalLeaderboard();
+        }
       }
       break;
 
     case "country_update":
       console.log("Received country update:", message.data);
       if (message.data.type === "countries") {
+        // Always update the data in the background
         countryLeaderboard = message.data.countries;
-        updateCountryLeaderboard();
+        // Only re-render the UI if the user is currently looking at it
+        if (leaderboardVisible) {
+          updateCountryLeaderboard();
+        }
       }
       break;
 
@@ -483,15 +495,27 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
-// Legacy function for backward compatibility
+/**
+ * Renders the leaderboard UI using the currently stored data in `globalLeaderboard` and `countryLeaderboard`.
+ * This avoids re-fetching data unnecessarily.
+ */
+function renderCurrentLeaderboardData() {
+  updateGlobalLeaderboard();
+  updateCountryLeaderboard();
+  updatePlayerStats();
+}
+
+// Legacy function for backward compatibility, now points to the new render function
 function updateLeaderboard() {
-  loadInitialData();
+  renderCurrentLeaderboardData();
 }
 
 // Make functions globally available
 window.initializeDashboard = initializeDashboard;
 window.updateLeaderboard = updateLeaderboard;
 window.updatePlayerStats = updatePlayerStats;
+// Make the new render function globally available as well
+window.renderCurrentLeaderboardData = renderCurrentLeaderboardData;
 
 // Call initialization when the script loads
 document.addEventListener("DOMContentLoaded", initializeDashboard);

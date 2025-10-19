@@ -366,8 +366,12 @@ class LeaderboardState extends GameState {
     uiElements.startScreen.style.display = "none";
     uiElements.howToPlayScreen.style.display = "none";
     uiElements.leaderboardScreen.style.display = "flex";
-    // Call function to populate leaderboard data
-    if (typeof updateLeaderboard === "function") {
+
+    // Call function to render the currently stored leaderboard data
+    if (typeof renderCurrentLeaderboardData === "function") {
+      renderCurrentLeaderboardData();
+    } else if (typeof updateLeaderboard === "function") {
+      // Fallback for older structure
       updateLeaderboard();
     }
   }

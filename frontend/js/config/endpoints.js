@@ -15,11 +15,12 @@ class EndpointManager {
     if (this.initialized) return;
 
     try {
-      // Direct endpoint data
+      // Direct endpoint data from your 'prod' deployment
       this.endpoints.api =
         "https://414laz8ylc.execute-api.ap-southeast-1.amazonaws.com/prod";
+      // FIX: Removed the trailing slash. The connection URL typically does not end with a slash.
       this.endpoints.ws =
-        "wss://w86y8zp3ck.execute-api.ap-southeast-1.amazonaws.com/prod/";
+        "wss://w86y8zp3ck.execute-api.ap-southeast-1.amazonaws.com/prod";
       this.endpoints.token = "stellar_drift_secure_token_v1";
 
       // Add timestamp-based validation
