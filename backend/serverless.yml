@@ -13,6 +13,9 @@ provider:
     COUNTRIES_TABLE: ${self:service}-countries-${self:provider.stage}
     WEBSOCKET_TABLE: ${self:service}-websocket-${self:provider.stage}
     STAGE: ${self:provider.stage}
+    # ADDED: Pass the WebSocket API ID to the Lambda functions
+    WEBSOCKET_API_ID:
+      Ref: WebsocketsApi
 
   iam:
     role:

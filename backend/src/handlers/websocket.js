@@ -1,4 +1,4 @@
-const { storeConnection, removeConnection } = require('../utils/websocket');
+const { storeConnection, removeConnection } = require("../utils/websocket");
 
 /**
  * Handle WebSocket connection
@@ -6,20 +6,20 @@ const { storeConnection, removeConnection } = require('../utils/websocket');
 exports.connectHandler = async (event) => {
   try {
     const connectionId = event.requestContext.connectionId;
-    console.log('WebSocket connection:', connectionId);
+    console.log("WebSocket connection:", connectionId);
 
     // Store the connection
     await storeConnection(connectionId);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Connected successfully' })
+      body: JSON.stringify({ message: "Connected successfully" }),
     };
   } catch (error) {
-    console.error('WebSocket connect error:', error);
+    console.error("WebSocket connect error:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Connection failed' })
+      body: JSON.stringify({ error: "Connection failed" }),
     };
   }
 };
@@ -30,20 +30,20 @@ exports.connectHandler = async (event) => {
 exports.disconnectHandler = async (event) => {
   try {
     const connectionId = event.requestContext.connectionId;
-    console.log('WebSocket disconnection:', connectionId);
+    console.log("WebSocket disconnection:", connectionId);
 
     // Remove the connection
     await removeConnection(connectionId);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Disconnected successfully' })
+      body: JSON.stringify({ message: "Disconnected successfully" }),
     };
   } catch (error) {
-    console.error('WebSocket disconnect error:', error);
+    console.error("WebSocket disconnect error:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Disconnection failed' })
+      body: JSON.stringify({ error: "Disconnection failed" }),
     };
   }
 };
@@ -54,52 +54,51 @@ exports.disconnectHandler = async (event) => {
 exports.defaultHandler = async (event) => {
   try {
     const connectionId = event.requestContext.connectionId;
-    const body = JSON.parse(event.body || '{}');
-    
-    console.log('WebSocket message from', connectionId, ':', body);
+    const body = JSON.parse(event.body || "{}");
+
+    console.log("WebSocket message from", connectionId, ":", body);
 
     // Handle different message types
     switch (body.action) {
-      case 'ping':
+      case "ping":
         // Send pong response back to client
-        const { sendToConnection, initializeApiGateway } = require('../utils/websocket');
-        const apiGateway = initializeApiGateway(event);
-        
-        await sendToConnection(apiGateway, connectionId, {
-          type: 'pong',
-          timestamp: Date.now()
+        const { sendToConnection } = require("../utils/websocket");
+
+        await sendToConnection(connectionId, {
+          type: "pong",
+          timestamp: Date.now(),
         });
-        
+
         return {
           statusCode: 200,
-          body: JSON.stringify({ message: 'Pong sent' })
+          body: JSON.stringify({ message: "Pong sent" }),
         };
-        
-      case 'subscribe':
+
+      case "subscribe":
         // Client wants to subscribe to real-time updates
         return {
           statusCode: 200,
-          body: JSON.stringify({ 
-            type: 'subscribed',
-            message: 'Successfully subscribed to real-time updates',
-            timestamp: Date.now() 
-          })
+          body: JSON.stringify({
+            type: "subscribed",
+            message: "Successfully subscribed to real-time updates",
+            timestamp: Date.now(),
+          }),
         };
-        
+
       default:
         return {
           statusCode: 400,
-          body: JSON.stringify({ 
-            error: 'Unknown action',
-            supportedActions: ['ping', 'subscribe']
-          })
+          body: JSON.stringify({
+            error: "Unknown action",
+            supportedActions: ["ping", "subscribe"],
+          }),
         };
     }
   } catch (error) {
-    console.error('WebSocket default handler error:', error);
+    console.error("WebSocket default handler error:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Message processing failed' })
+      body: JSON.stringify({ error: "Message processing failed" }),
     };
   }
 };

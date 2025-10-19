@@ -1,16 +1,5 @@
-const {
-  putItem,
-  getItem,
-  updateItem,
-  getTopScores,
-  getTopCountries,
-  getCountryLeaderboard,
-} = require("../utils/dynamodb");
+const { putItem, getItem, updateItem } = require("../utils/dynamodb");
 const { getCountryFromIP, extractIPFromEvent } = require("../utils/geoip");
-const {
-  broadcastLeaderboardUpdate,
-  broadcastCountryUpdate,
-} = require("../utils/websocket");
 
 /**
  * Update country statistics
@@ -79,74 +68,6 @@ async function calculatePlayerRank(score) {
   } catch (error) {
     console.error("Error calculating rank:", error);
     return null;
-  }
-}
-
-/**
- * Trigger real-time leaderboard updates via WebSocket.
- */
-async function triggerLeaderboardUpdate(event) {
-  try {
-    console.log("Triggering real-time leaderboard update...");
-
-    const [globalLeaderboard, countryLeaderboardRaw] = await Promise.all([
-      getTopScores(10),
-      getTopCountries(10),
-    ]);
-
-    // Re-calculate country scores to ensure accuracy for broadcasting
-    const formattedCountries = await Promise.all(
-      countryLeaderboardRaw.map(async (country) => {
-        const topPlayers = await getCountryLeaderboard(country.country, 50);
-        const top10PercentCount = Math.max(
-          1,
-          Math.ceil(country.playerCount * 0.1)
-        );
-        const top10PercentPlayers = topPlayers.slice(0, top10PercentCount);
-        const top10PercentScore = top10PercentPlayers.reduce(
-          (sum, player) => sum + player.score,
-          0
-        );
-
-        return {
-          country: country.country,
-          totalScore: country.totalScore,
-          top10PercentScore,
-          playerCount: country.playerCount,
-          averageScore: country.averageScore,
-        };
-      })
-    );
-
-    formattedCountries.sort(
-      (a, b) => b.top10PercentScore - a.top10PercentScore
-    );
-    formattedCountries.forEach((c, i) => {
-      c.rank = i + 1;
-    });
-
-    await Promise.all([
-      broadcastLeaderboardUpdate(event, {
-        type: "global",
-        leaderboard: globalLeaderboard.map((entry, index) => ({
-          rank: index + 1,
-          username: entry.username,
-          score: entry.score,
-          country: entry.country,
-          countryCode: entry.countryCode,
-          survivalTime: entry.survivalTime,
-          timestamp: entry.timestamp,
-        })),
-      }),
-      broadcastCountryUpdate(event, {
-        type: "countries",
-        countries: formattedCountries,
-      }),
-    ]);
-
-    console.log("Real-time leaderboard updates broadcasted successfully");
-  } catch (error) {
-    console.error("Error triggering leaderboard update:", error);
   }
 }
 
@@ -247,7 +168,8 @@ exports.handler = async (event) => {
       validatedScore,
       existingScoreItem
     );
-    await triggerLeaderboardUpdate(event);
+    // The DynamoDB stream on ScoresTable will now trigger processScoreUpdate
+    // to handle broadcasting, so we remove the direct call from here.
 
     return {
       statusCode: 200,
