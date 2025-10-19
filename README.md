@@ -24,6 +24,8 @@ Game Vibe Plane là một trò chơi arcade dựa trên web đầy hành động
 4.  **Sự Kiện**: Các sự kiện vũ trụ ngẫu nhiên làm thay đổi động lực chơi.
 5.  **Cạnh Tranh**: Xếp hạng thời gian thực so với người chơi toàn cầu.
 
+---
+
 ## 🏗️ Kiến Trúc Hệ Thống
 
 ### 🎯 Tổng Quan
@@ -54,7 +56,7 @@ Stellar Drift (tên cũ của Game Vibe Plane được tìm thấy trong code) s
 
 ```mermaid
 graph TD
-    F[Frontend (Browser)] -->|REST API (HTTPS)| AG_REST[API Gateway REST]
+    F[Frontend (Browser)] -->|REST API| AG_REST[API Gateway REST]
     F -->|WebSocket (WSS)| AG_WS[API Gateway WebSocket]
 
     AG_REST -->|submitScore| L_Submit[Lambda: submitScore]
