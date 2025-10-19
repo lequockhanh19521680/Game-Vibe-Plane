@@ -5,6 +5,8 @@ let globalLeaderboard = [];
 let countryLeaderboard = [];
 let isConnected = false;
 let heartbeatInterval = null;
+let prevGlobalLeaderboardIds = [];
+let prevCountryLeaderboardIds = [];
 
 // Initialize dashboard functionality
 function initializeDashboard() {
@@ -105,32 +107,34 @@ function connectWebSocket() {
 
 // Handle incoming WebSocket messages
 function handleWebSocketMessage(message) {
-  // Check if the leaderboard screen is currently visible
-  const leaderboardVisible =
-    document.getElementById("leaderboard-screen").style.display === "flex";
-
   switch (message.type) {
     case "leaderboard_update":
       console.log("Received leaderboard update:", message.data);
       if (message.data.type === "global") {
-        // Always update the data in the background
-        globalLeaderboard = message.data.leaderboard;
-        // Only re-render the UI if the user is currently looking at it
-        if (leaderboardVisible) {
-          updateGlobalLeaderboard();
-        }
+        const newLeaderboard = message.data.leaderboard;
+        const changedEntries = getChangedEntries(
+          prevGlobalLeaderboardIds,
+          newLeaderboard,
+          "userId"
+        );
+        globalLeaderboard = newLeaderboard;
+        updateGlobalLeaderboard(changedEntries);
+        prevGlobalLeaderboardIds = globalLeaderboard.map((e) => e.userId);
       }
       break;
 
     case "country_update":
       console.log("Received country update:", message.data);
       if (message.data.type === "countries") {
-        // Always update the data in the background
-        countryLeaderboard = message.data.countries;
-        // Only re-render the UI if the user is currently looking at it
-        if (leaderboardVisible) {
-          updateCountryLeaderboard();
-        }
+        const newLeaderboard = message.data.countries;
+        const changedEntries = getChangedEntries(
+          prevCountryLeaderboardIds,
+          newLeaderboard,
+          "country"
+        );
+        countryLeaderboard = newLeaderboard;
+        updateCountryLeaderboard(changedEntries);
+        prevCountryLeaderboardIds = countryLeaderboard.map((c) => c.country);
       }
       break;
 
@@ -155,6 +159,7 @@ async function loadInitialData() {
     const globalData = await BackendAPI.fetchLeaderboard(10);
     if (globalData && globalData.leaderboard) {
       globalLeaderboard = globalData.leaderboard;
+      prevGlobalLeaderboardIds = globalLeaderboard.map((e) => e.userId);
       updateGlobalLeaderboard();
     }
 
@@ -162,6 +167,7 @@ async function loadInitialData() {
     const countryData = await BackendAPI.fetchLeaderboardByCountry(null, 10);
     if (countryData && countryData.countries) {
       countryLeaderboard = countryData.countries;
+      prevCountryLeaderboardIds = countryLeaderboard.map((c) => c.country);
       updateCountryLeaderboard();
     }
   } catch (error) {
@@ -171,7 +177,7 @@ async function loadInitialData() {
 }
 
 // Update global leaderboard display
-function updateGlobalLeaderboard() {
+function updateGlobalLeaderboard(changedEntries = new Map()) {
   const leaderboardList = document.getElementById("global-leaderboard-list");
   if (!leaderboardList) return;
 
@@ -190,6 +196,16 @@ function updateGlobalLeaderboard() {
     // Add special styling for top 3
     if (index < 3) {
       entryElement.classList.add(`rank-${index + 1}`);
+    }
+
+    const changeType = changedEntries.get(entry.userId);
+    if (changeType) {
+      entryElement.classList.add(
+        changeType === "up" ? "rank-change-up" : "rank-change-down"
+      );
+      setTimeout(() => {
+        entryElement.classList.remove("rank-change-up", "rank-change-down");
+      }, 1500);
     }
 
     const timeFormatted = formatTime(entry.survivalTime || 0);
@@ -214,7 +230,7 @@ function updateGlobalLeaderboard() {
 }
 
 // Update country leaderboard display
-function updateCountryLeaderboard() {
+function updateCountryLeaderboard(changedEntries = new Map()) {
   const leaderboardList = document.getElementById("country-leaderboard-list");
   if (!leaderboardList) return;
 
@@ -233,6 +249,16 @@ function updateCountryLeaderboard() {
     // Add special styling for top 3
     if (index < 3) {
       entryElement.classList.add(`rank-${index + 1}`);
+    }
+
+    const changeType = changedEntries.get(entry.country);
+    if (changeType) {
+      entryElement.classList.add(
+        changeType === "up" ? "rank-change-up" : "rank-change-down"
+      );
+      setTimeout(() => {
+        entryElement.classList.remove("rank-change-up", "rank-change-down");
+      }, 1500);
     }
 
     const countryFlag = getCountryFlag(entry.countryCode || entry.country);
@@ -392,9 +418,28 @@ function updateConnectionStatus(status, text) {
 }
 
 // Utility functions
+function getChangedEntries(prevIds, newList, idKey) {
+  const changes = new Map();
+  const newPositions = new Map(
+    newList.map((item, index) => [item[idKey], index])
+  );
+
+  prevIds.forEach((id, oldIndex) => {
+    const newIndex = newPositions.get(id);
+    if (newIndex !== undefined && newIndex !== oldIndex) {
+      if (newIndex < oldIndex) {
+        changes.set(id, "up"); // Moved up
+      } else {
+        changes.set(id, "down"); // Moved down
+      }
+    }
+  });
+  return changes;
+}
+
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
+  const remainingSeconds = Math.floor(seconds % 60);
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
