@@ -1,46 +1,46 @@
-const { getTopScores } = require("../utils/dynamodb");
+const { getTopScores, getCountryLeaderboard } = require("../utils/dynamodb");
 
 /**
- * Get the global leaderboard
+ * Get the global or country-specific leaderboard
  */
 exports.handler = async (event) => {
-  // Thêm xử lý OPTIONS request cho CORS Preflight
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers":
-          "Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+        "Access-Control-Allow-Methods": "GET,OPTIONS",
       },
       body: "",
     };
   }
 
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "GET,OPTIONS",
+  };
+
   try {
     console.log("Get leaderboard event:", JSON.stringify(event, null, 2));
 
-    // Parse query parameters
     const queryParams = event.queryStringParameters || {};
-    const limit = Math.min(parseInt(queryParams.limit) || 10, 100); // Max 100 entries
+    const limit = Math.min(parseInt(queryParams.limit) || 10, 100);
     const country = queryParams.country;
 
     let leaderboard;
 
     if (country) {
-      // Get country-specific leaderboard
-      const { getCountryLeaderboard } = require("../utils/dynamodb");
       leaderboard = await getCountryLeaderboard(country, limit);
     } else {
-      // Get global leaderboard
       leaderboard = await getTopScores(limit);
     }
 
-    // Format the response
     const formattedLeaderboard = leaderboard.map((entry, index) => ({
       rank: index + 1,
-      id: entry.id,
+      userId: entry.userId, // CHANGED: from id to userId
       username: entry.username,
       score: entry.score,
       survivalTime: entry.survivalTime,
@@ -53,11 +53,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-      },
+      headers: corsHeaders,
       body: JSON.stringify({
         success: true,
         leaderboard: formattedLeaderboard,
@@ -68,14 +64,9 @@ exports.handler = async (event) => {
     };
   } catch (error) {
     console.error("Error getting leaderboard:", error);
-
     return {
       statusCode: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-      },
+      headers: corsHeaders,
       body: JSON.stringify({
         error: "Internal server error",
         message: error.message,

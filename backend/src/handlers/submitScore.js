@@ -1,4 +1,3 @@
-const { v4: uuidv4 } = require("uuid");
 const {
   putItem,
   getItem,
@@ -14,166 +13,27 @@ const {
 } = require("../utils/websocket");
 
 /**
- * Submit a new score to the leaderboard
- */
-exports.handler = async (event) => {
-  // Thêm xử lý OPTIONS request cho CORS Preflight
-  if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers":
-          "Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-      },
-      body: "",
-    };
-  }
-
-  try {
-    console.log("Submit score event:", JSON.stringify(event, null, 2));
-
-    // Parse request body
-    let body;
-    try {
-      body = JSON.parse(event.body);
-    } catch (error) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-        },
-        body: JSON.stringify({
-          error: "Invalid JSON in request body",
-          message: error.message,
-        }),
-      };
-    }
-
-    // Validate required fields
-    const { username, score, survivalTime, deathCause, userId, fingerprint } =
-      body;
-
-    if (
-      !username ||
-      typeof score !== "number" ||
-      typeof survivalTime !== "number"
-    ) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-        },
-        body: JSON.stringify({
-          error: "Missing required fields",
-          required: ["username", "score", "survivalTime"],
-        }),
-      };
-    }
-
-    // Extract IP and get country information
-    const clientIP = body.clientIP || extractIPFromEvent(event);
-    console.log("Client IP:", clientIP);
-
-    let countryInfo = { country: "Unknown", countryCode: "XX" };
-    if (clientIP) {
-      try {
-        countryInfo = await getCountryFromIP(clientIP);
-        console.log("Country info:", countryInfo);
-      } catch (error) {
-        console.error("Error getting country info:", error);
-      }
-    }
-
-    // Create score record
-    const scoreId = uuidv4();
-    const timestamp = Date.now();
-
-    const scoreRecord = {
-      id: scoreId,
-      username: username.substring(0, 50), // Limit username length
-      score: Math.floor(score),
-      survivalTime: Math.floor(survivalTime),
-      deathCause: deathCause || "unknown",
-      country: countryInfo.country,
-      countryCode: countryInfo.countryCode,
-      city: countryInfo.city || null,
-      region: countryInfo.region || null,
-      clientIP: clientIP,
-      userId: userId || null, // Unique user identifier
-      fingerprint: fingerprint || null, // Browser fingerprint
-      userAgent: body.userAgent || event.headers?.["user-agent"],
-      timestamp,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Store the score
-    await putItem(process.env.SCORES_TABLE, scoreRecord);
-    console.log("Score stored:", scoreRecord);
-
-    // Update country statistics
-    await updateCountryStats(countryInfo.country, Math.floor(score));
-
-    // Trigger real-time leaderboard updates
-    await triggerLeaderboardUpdate(event);
-
-    // Return success response
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-      },
-      body: JSON.stringify({
-        success: true,
-        scoreId,
-        country: countryInfo.country,
-        countryCode: countryInfo.countryCode,
-        rank: await calculatePlayerRank(Math.floor(score)),
-        message: "Score submitted successfully",
-      }),
-    };
-  } catch (error) {
-    console.error("Error submitting score:", error);
-
-    return {
-      statusCode: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-      },
-      body: JSON.stringify({
-        error: "Internal server error",
-        message: error.message,
-      }),
-    };
-  }
-};
-
-/**
  * Update country statistics
+ * @param {string} country - The country of the player.
+ * @param {number} score - The new score.
+ * @param {object|null} oldScoreItem - The previous score item for the user, if any.
  */
-async function updateCountryStats(country, score) {
+async function updateCountryStats(country, score, oldScoreItem) {
   if (!country || country === "Unknown") return;
 
   try {
-    // Get existing country record
-    const existingRecord = await getItem(process.env.COUNTRIES_TABLE, {
-      country,
-    });
+    const scoreDifference = oldScoreItem ? score - oldScoreItem.score : score;
+    const playerCountIncrement = oldScoreItem ? 0 : 1;
 
-    if (existingRecord) {
-      // Update existing record
-      const newTotalScore = existingRecord.totalScore + score;
-      const newPlayerCount = existingRecord.playerCount + 1;
-      const newAverageScore = Math.floor(newTotalScore / newPlayerCount);
+    // Get the current country data first to calculate the new average
+    const countryData = await getItem(process.env.COUNTRIES_TABLE, { country });
+
+    if (countryData) {
+      const newTotalScore = (countryData.totalScore || 0) + scoreDifference;
+      const newPlayerCount =
+        (countryData.playerCount || 0) + playerCountIncrement;
+      const newAverageScore =
+        newPlayerCount > 0 ? Math.floor(newTotalScore / newPlayerCount) : 0;
 
       await updateItem(
         process.env.COUNTRIES_TABLE,
@@ -187,7 +47,7 @@ async function updateCountryStats(country, score) {
         }
       );
     } else {
-      // Create new country record
+      // First time player from this country
       await putItem(process.env.COUNTRIES_TABLE, {
         country,
         totalScore: score,
@@ -199,23 +59,21 @@ async function updateCountryStats(country, score) {
     }
   } catch (error) {
     console.error("Error updating country stats:", error);
-    // Don't throw error here as it's not critical for score submission
+    // Non-critical error, so we don't re-throw
   }
 }
 
 /**
- * Calculate player rank (approximate)
+ * Calculate player's global rank.
+ * Note: This is an approximation and can be inefficient at scale.
+ * @param {number} score - The player's score.
  */
 async function calculatePlayerRank(score) {
   try {
-    // This is a simplified rank calculation
-    // In production, you might want to use a more sophisticated approach
     const { scanItems } = require("../utils/dynamodb");
-
     const allScores = await scanItems(process.env.SCORES_TABLE, {
       ProjectionExpression: "score",
     });
-
     const higherScores = allScores.filter((item) => item.score > score);
     return higherScores.length + 1;
   } catch (error) {
@@ -225,25 +83,21 @@ async function calculatePlayerRank(score) {
 }
 
 /**
- * Trigger real-time leaderboard updates
+ * Trigger real-time leaderboard updates via WebSocket.
  */
 async function triggerLeaderboardUpdate(event) {
   try {
     console.log("Triggering real-time leaderboard update...");
 
-    // Get updated global leaderboard
-    const globalLeaderboard = await getTopScores(10);
+    const [globalLeaderboard, countryLeaderboardRaw] = await Promise.all([
+      getTopScores(10),
+      getTopCountries(10),
+    ]);
 
-    // 1. Lấy top quốc gia từ DynamoDB (chỉ có totalScore, playerCount)
-    let countryLeaderboardRaw = await getTopCountries(10);
-
-    // 2. Tái tạo logic tính toán top 10% score và sắp xếp lại
+    // Re-calculate country scores to ensure accuracy for broadcasting
     const formattedCountries = await Promise.all(
       countryLeaderboardRaw.map(async (country) => {
-        // Lấy top 50 người chơi của quốc gia này để đảm bảo có đủ dữ liệu để tính top 10%
         const topPlayers = await getCountryLeaderboard(country.country, 50);
-
-        // Tính toán top 10% score (hoặc ít nhất 1 người chơi)
         const top10PercentCount = Math.max(
           1,
           Math.ceil(country.playerCount * 0.1)
@@ -257,24 +111,20 @@ async function triggerLeaderboardUpdate(event) {
         return {
           country: country.country,
           totalScore: country.totalScore,
-          top10PercentScore, // Thêm trường này vào dữ liệu
+          top10PercentScore,
           playerCount: country.playerCount,
           averageScore: country.averageScore,
         };
       })
     );
 
-    // 3. Sắp xếp lại theo top 10% score (tiêu chí xếp hạng chính)
     formattedCountries.sort(
       (a, b) => b.top10PercentScore - a.top10PercentScore
     );
-
-    // 4. Cập nhật Rank sau khi sắp xếp
-    formattedCountries.forEach((country, index) => {
-      country.rank = index + 1;
+    formattedCountries.forEach((c, i) => {
+      c.rank = i + 1;
     });
 
-    // Broadcast updates to all connected WebSocket clients
     await Promise.all([
       broadcastLeaderboardUpdate(event, {
         type: "global",
@@ -290,7 +140,6 @@ async function triggerLeaderboardUpdate(event) {
       }),
       broadcastCountryUpdate(event, {
         type: "countries",
-        // Sử dụng formattedCountries đã được sắp xếp và tính toán đầy đủ
         countries: formattedCountries,
       }),
     ]);
@@ -298,6 +147,129 @@ async function triggerLeaderboardUpdate(event) {
     console.log("Real-time leaderboard updates broadcasted successfully");
   } catch (error) {
     console.error("Error triggering leaderboard update:", error);
-    // Don't throw error to avoid breaking score submission
   }
 }
+
+/**
+ * Submit a new score to the leaderboard
+ */
+exports.handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers":
+          "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+        "Access-Control-Allow-Methods": "POST,OPTIONS",
+      },
+      body: "",
+    };
+  }
+
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+  };
+
+  try {
+    console.log("Submit score event:", JSON.stringify(event, null, 2));
+    const body = JSON.parse(event.body || "{}");
+    const { username, score, survivalTime, deathCause, userId, fingerprint } =
+      body;
+    const validatedScore = Math.floor(score);
+
+    if (
+      !userId ||
+      !username ||
+      typeof score !== "number" ||
+      typeof survivalTime !== "number"
+    ) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          error: "Missing required fields",
+          required: ["userId", "username", "score", "survivalTime"],
+        }),
+      };
+    }
+
+    const existingScoreItem = await getItem(process.env.SCORES_TABLE, {
+      userId,
+    });
+
+    if (existingScoreItem && validatedScore <= existingScoreItem.score) {
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          success: true,
+          message: "Score not higher than previous best.",
+          rank: await calculatePlayerRank(existingScoreItem.score),
+        }),
+      };
+    }
+
+    const clientIP = body.clientIP || extractIPFromEvent(event);
+    const countryInfo = clientIP
+      ? await getCountryFromIP(clientIP)
+      : { country: "Unknown", countryCode: "XX" };
+
+    const timestamp = Date.now();
+    const scoreRecord = {
+      userId,
+      username: username.substring(0, 50),
+      score: validatedScore,
+      survivalTime: Math.floor(survivalTime),
+      deathCause: deathCause || "unknown",
+      country: countryInfo.country,
+      countryCode: countryInfo.countryCode,
+      city: countryInfo.city || null,
+      region: countryInfo.region || null,
+      clientIP,
+      fingerprint: fingerprint || null,
+      userAgent: body.userAgent || event.headers?.["user-agent"],
+      timestamp,
+      createdAt: existingScoreItem
+        ? existingScoreItem.createdAt
+        : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      leaderboard: "global",
+    };
+
+    await putItem(process.env.SCORES_TABLE, scoreRecord);
+    console.log("Score stored/updated:", scoreRecord);
+
+    await updateCountryStats(
+      countryInfo.country,
+      validatedScore,
+      existingScoreItem
+    );
+    await triggerLeaderboardUpdate(event);
+
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        success: true,
+        userId,
+        country: countryInfo.country,
+        countryCode: countryInfo.countryCode,
+        rank: await calculatePlayerRank(validatedScore),
+        message: "Score submitted successfully",
+      }),
+    };
+  } catch (error) {
+    console.error("Error submitting score:", error);
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        error: "Internal server error",
+        message: error.message,
+      }),
+    };
+  }
+};

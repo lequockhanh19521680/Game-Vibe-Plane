@@ -110,23 +110,23 @@ resources:
         StreamSpecification:
           StreamViewType: NEW_AND_OLD_IMAGES
         AttributeDefinitions:
-          - AttributeName: id
+          - AttributeName: userId # CHANGED: Use userId as the primary key
             AttributeType: S
           - AttributeName: score
             AttributeType: N
           - AttributeName: country
             AttributeType: S
-          - AttributeName: timestamp
-            AttributeType: N
+          - AttributeName: leaderboard # ADDED: For efficient global leaderboard GSI
+            AttributeType: S
         KeySchema:
-          - AttributeName: id
+          - AttributeName: userId # CHANGED: Use userId as the primary key
             KeyType: HASH
         GlobalSecondaryIndexes:
-          - IndexName: ScoreIndex
+          - IndexName: ScoreIndex # CHANGED: To query for global leaderboard
             KeySchema:
-              - AttributeName: score
+              - AttributeName: leaderboard
                 KeyType: HASH
-              - AttributeName: timestamp
+              - AttributeName: score
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
