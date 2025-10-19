@@ -1,0 +1,373 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  Creates a full CI/CD pipeline for a static frontend application with separate Staging (S3 Public Website)
+  and Production (S3 Private + CloudFront) environments. Triggered from a GitHub push.
+
+Parameters:
+  GitHubOwner:
+    Type: String
+    Description: The owner of the source GitHub repository (e.g., 'lequockhanh19521680').
+  GitHubRepo:
+    Type: String
+    Description: The name of the source GitHub repository (e.g., 'game-vibe-plane').
+  GitHubBranch:
+    Type: String
+    Description: The branch to trigger the pipeline from.
+    Default: main
+  CodeStarConnectionArn:
+    Type: String
+    Description: >-
+      The ARN of the AWS CodeStar connection to GitHub. Create this in the AWS Console under
+      Developer Tools > CodePipeline > Settings > Connections.
+  DomainName:
+    Type: String
+    Description: (optional) Custom domain name for the production site (e.g., 'www.my-game.com'). Leave blank if not used.
+    Default: ""
+  CertificateArn:
+    Type: String
+    Description: (optional) ARN of the ACM certificate for the custom domain in us-east-1. Required if DomainName is set.
+    Default: ""
+
+Conditions:
+  HasDomain: !Not [!Equals [!Ref DomainName, ""]]
+
+Resources:
+  # --- S3 Buckets ---
+
+  # Staging: Public S3 bucket for cheap and easy testing
+  StagingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration: # <-- FIX: Explicitly allow public access for this bucket
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  StagingBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StagingBucket
+      PolicyDocument:
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "arn:aws:s3:::${StagingBucket}/*"
+
+  # Production: Private S3 bucket, accessed only via CloudFront
+  ProductionBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # Pipeline: Bucket to store build artifacts
+  PipelineArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # --- CloudFront for Production ---
+
+  CloudFrontOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "OAI for ${ProductionBucket}"
+
+  ProductionBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ProductionBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOAI.S3CanonicalUserId
+            Action: s3:GetObject
+            Resource: !Sub "arn:aws:s3:::${ProductionBucket}/*"
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "CloudFront distribution for ${AWS::StackName}"
+        DefaultRootObject: index.html
+        Aliases: !If
+          - HasDomain
+          - - !Ref DomainName
+          - !Ref AWS::NoValue
+        ViewerCertificate: !If
+          - HasDomain
+          - CertificateArn: !Ref CertificateArn
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt ProductionBucket.DomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOAI}"
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          Compress: true
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          DefaultTTL: 86400 # 1 day
+          MinTTL: 0
+          MaxTTL: 31536000
+
+  # --- IAM Roles ---
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodeBuildPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AWS::StackName}-*:*"
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                Resource: !Sub "arn:aws:s3:::${PipelineArtifactBucket}/*"
+              - Effect: Allow # Permissions for deploying to S3 buckets
+                Action:
+                  - s3:PutObject
+                  - s3:ListBucket
+                  - s3:DeleteObject
+                Resource:
+                  - !GetAtt StagingBucket.Arn
+                  - !Sub "${StagingBucket.Arn}/*"
+                  - !GetAtt ProductionBucket.Arn
+                  - !Sub "${ProductionBucket.Arn}/*"
+              - Effect: Allow # Permission for CloudFront invalidation
+                Action: cloudfront:CreateInvalidation
+                Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodePipelinePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codestar-connections:UseConnection
+                Resource: !Ref CodeStarConnectionArn
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${PipelineArtifactBucket}/*"
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource:
+                  - !GetAtt BuildProject.Arn
+                  - !GetAtt InvalidateCacheProject.Arn
+              - Effect: Allow
+                Action: iam:PassRole
+                Resource: !GetAtt CodeBuildRole.Arn
+
+  # --- CodeBuild Project ---
+  BuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${AWS::StackName}-BuildProject"
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            build:
+              commands:
+                - echo "Static site. No build commands needed. Preparing artifacts..."
+          artifacts:
+            files:
+              - '**/*'
+            base-directory: 'frontend'
+
+  # --- CodePipeline ---
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      # Name: !Sub "${AWS::StackName}-FrontendPipeline" # <-- FIX: This line was removed
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHub_Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: "1"
+              Configuration:
+                ConnectionArn: !Ref CodeStarConnectionArn
+                FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepo}"
+                BranchName: !Ref GitHubBranch
+                OutputArtifactFormat: CODE_ZIP
+              OutputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 1
+        - Name: Prepare_Artifacts
+          Actions:
+            - Name: PrepareStaticFiles
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref BuildProject
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+        - Name: Deploy_To_Staging
+          Actions:
+            - Name: DeployToS3
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: S3
+                Version: "1"
+              Configuration:
+                BucketName: !Ref StagingBucket
+                Extract: true
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+        - Name: Manual_Approval
+          Actions:
+            - Name: Approve_Production_Deploy
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Provider: Manual
+                Version: "1"
+              RunOrder: 1
+        - Name: Deploy_To_Production
+          Actions:
+            - Name: DeployToS3
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: S3
+                Version: "1"
+              Configuration:
+                BucketName: !Ref ProductionBucket
+                Extract: true
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+            - Name: InvalidateCloudFrontCache
+              ActionTypeId:
+                Category: Build # <-- FIX: Changed from Deploy to Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref InvalidateCacheProject
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 2
+
+  # --- CodeBuild Project for CloudFront Invalidation ---
+  InvalidateCacheProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${AWS::StackName}-InvalidateCacheProject"
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+      Source:
+        Type: NO_SOURCE
+        BuildSpec: !Sub |
+          version: 0.2
+          phases:
+            build:
+              commands:
+                - echo "Invalidating CloudFront cache..."
+                - aws cloudfront create-invalidation --distribution-id ${CloudFrontDistribution} --paths "/*"
+
+Outputs:
+  StagingWebsiteURL:
+    Description: "URL for the staging S3 website"
+    Value: !GetAtt StagingBucket.WebsiteURL
+  ProductionURL:
+    Description: "URL for the production CloudFront distribution"
+    Value: !If
+      - HasDomain
+      - !Sub "https://${DomainName}"
+      - !Sub "https://${CloudFrontDistribution.DomainName}"
+  PipelineConsoleUrl:
+    Description: "URL to view the CodePipeline in the AWS Console"
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${Pipeline}/view?region=${AWS::Region}"
