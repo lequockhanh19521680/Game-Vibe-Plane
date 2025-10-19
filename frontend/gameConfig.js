@@ -351,8 +351,8 @@ const GAME_CONFIG = {
   // =============================================================================
   scoring: {
     movementMultiplier: 0.2,
-    baseMovementThreshold: 5,
-    minMovementThreshold: 2,
+    baseMovementThreshold: 0.5,
+    minMovementThreshold: 10,
     thresholdDecreaseRate: 0.95,
   },
 };
