@@ -107,10 +107,10 @@
 
 /* Leaderboard Entries */
 .leaderboard-entry {
-  display: grid;
-  grid-template-columns: 40px 1fr 100px 70px; /* Adjusted fixed widths */
-  gap: 0.5rem; /* Reduced gap */
+  display: flex;
+  justify-content: flex-start;
   align-items: center;
+  gap: 1rem;
   padding: 0.5rem 0.75rem; /* Reduced padding */
   margin-bottom: 0.3rem; /* Reduced margin */
   background: rgba(255, 255, 255, 0.05);
@@ -162,6 +162,7 @@
   font-weight: bold;
   text-align: center;
   color: #00ffff;
+  flex: 0 0 50px; /* Fixed width */
 }
 
 .player-info {
@@ -169,6 +170,8 @@
   flex-direction: column;
   gap: 0.2rem;
   overflow: hidden; /* For text-overflow */
+  flex: 1; /* Takes up remaining space */
+  text-align: left;
 }
 
 .username {
@@ -178,7 +181,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px; /* Adjust as needed */
 }
 
 .country {
@@ -194,20 +196,22 @@
   font-weight: bold;
   color: #ffff00;
   text-align: right;
+  flex: 0 0 100px; /* Fixed width */
 }
 
 .time {
   font-size: 0.8rem; /* Smaller time */
   color: rgba(255, 255, 255, 0.8);
   text-align: right;
+  flex: 0 0 70px; /* Fixed width */
 }
 
 /* Country Leaderboard */
 .country-entry {
-  display: grid;
-  grid-template-columns: 40px 1fr 120px; /* Reduced fixed widths */
-  gap: 0.5rem; /* Reduced gap */
+  display: flex;
+  justify-content: flex-start;
   align-items: center;
+  gap: 1rem;
   padding: 0.5rem 0.75rem; /* Reduced padding */
   margin-bottom: 0.3rem;
   background: rgba(255, 255, 255, 0.05);
@@ -238,6 +242,8 @@
   flex-direction: column;
   gap: 0.2rem;
   overflow: hidden; /* For text-overflow */
+  flex: 1; /* Takes up remaining space */
+  text-align: left;
 }
 
 .country-name {
@@ -247,7 +253,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px;
 }
 
 .country-stats {
@@ -260,6 +265,7 @@
   flex-direction: column;
   gap: 0.2rem;
   text-align: right;
+  flex: 0 0 120px; /* Fixed width */
 }
 
 .top-score {
@@ -414,16 +420,11 @@
     border-radius: 8px;
   }
 
-  .leaderboard-entry {
-    grid-template-columns: 40px 1fr 80px 60px;
-    gap: 0.3rem;
-    padding: 0.4rem;
-    font-size: 0.85rem;
-  }
-
+  .leaderboard-entry,
   .country-entry {
-    grid-template-columns: 40px 1fr 100px;
-    gap: 0.3rem;
+    flex-direction: row; /* Ensure row direction */
+    flex-wrap: nowrap; /* Prevent wrapping inside the entry */
+    justify-content: space-between; /* Space out items */
     padding: 0.4rem;
     font-size: 0.85rem;
   }
@@ -460,22 +461,27 @@
 
   .rank {
     font-size: 1rem;
+    flex-basis: 40px;
   }
 
   .username {
     font-size: 0.9rem;
+    max-width: 120px; /* Adjust for mobile */
   }
 
   .country {
     font-size: 0.7rem;
+    max-width: 120px;
   }
 
   .score {
     font-size: 0.9rem;
+    flex-basis: 80px;
   }
 
   .time {
     font-size: 0.75rem;
+    flex-basis: 60px;
   }
 }
 
@@ -493,13 +499,15 @@
   }
 
   .leaderboard-entry {
-    grid-template-columns: 35px 1fr 70px;
-    gap: 0.2rem;
     padding: 0.3rem;
   }
 
   .time {
     display: none; /* Hide time on very small screens */
+  }
+
+  .leaderboard-entry {
+    grid-template-columns: 35px 1fr 70px; /* Re-apply grid for small screens if time is hidden */
   }
 
   .country-entry {
@@ -557,14 +565,8 @@
     font-size: 0.95rem;
   }
 
-  .leaderboard-entry {
-    grid-template-columns: 55px 1fr 110px 75px;
-    gap: 0.8rem;
-    padding: 0.6rem;
-  }
-
+  .leaderboard-entry,
   .country-entry {
-    grid-template-columns: 55px 1fr 130px;
     gap: 0.8rem;
     padding: 0.6rem;
   }
@@ -585,14 +587,8 @@
     font-size: 1.1rem;
   }
 
-  .leaderboard-entry {
-    grid-template-columns: 70px 1fr 140px 90px;
-    gap: 1.2rem;
-    padding: 1rem;
-  }
-
+  .leaderboard-entry,
   .country-entry {
-    grid-template-columns: 70px 1fr 160px;
     gap: 1.2rem;
     padding: 1rem;
   }

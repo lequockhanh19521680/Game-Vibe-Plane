@@ -19,6 +19,8 @@
     <link rel="stylesheet" href="css/settings.css" />
     <link rel="stylesheet" href="css/playerName.css" />
     <link rel="stylesheet" href="css/gameUI.css" />
+    <!-- The cursor-fix.css is no longer needed as the logic is now in styles.css -->
+    <!-- <link rel="stylesheet" href="css/cursor-fix.css" /> -->
   </head>
   <body>
     <!-- Loading Screen -->
@@ -31,12 +33,12 @@
 
     <div id="ui-container">
       <!-- HUD Bar: Score, Level, Time -->
+      <!-- MODIFIED: Restructured the top bar for better layout control -->
       <div id="top-bar">
-        <!-- Left Section: High Score -->
-        <div class="hud-left">
-          <div id="highscore-display">High Score: 0</div>
-        </div>
-        <!-- Center Section: Level, Score, Time -->
+        <!-- Left: High Score -->
+        <div id="highscore-display">High Score: 0</div>
+
+        <!-- Center: Level, Score, Time -->
         <div class="hud-center">
           <div id="level-display">Level: 1</div>
           <div id="level-progress-bar-container">
@@ -47,10 +49,9 @@
             <div id="survival-display">Time: 0:00</div>
           </div>
         </div>
-        <!-- Right Section: Pause Button -->
-        <div class="hud-right">
-          <button id="pause-button" style="display: none">❚❚</button>
-        </div>
+
+        <!-- Right: Pause Button -->
+        <button id="pause-button">❚❚</button>
       </div>
 
       <div id="event-text"></div>

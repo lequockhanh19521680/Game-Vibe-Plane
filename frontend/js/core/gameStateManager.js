@@ -112,12 +112,15 @@ class GameState {
  */
 class MenuState extends GameState {
   enter() {
+    // MODIFIED: Set body class to control cursor visibility
+    document.body.className = "menu-active";
     uiElements.startScreen.style.display = "flex";
     uiElements.gameOverScreen.style.display = "none";
     uiElements.leaderboardScreen.style.display = "none";
     uiElements.howToPlayScreen.style.display = "none";
     uiElements.pauseMenu.style.display = "none";
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
+    uiElements.pauseButton.style.display = "none";
 
     // Draw background
     this.drawBackground();
@@ -150,13 +153,17 @@ class MenuState extends GameState {
  */
 class PlayingState extends GameState {
   enter() {
+    // MODIFIED: Set body class to hide cursor during gameplay
+    document.body.className = "game-active";
     uiElements.startScreen.style.display = "none";
     uiElements.gameOverScreen.style.display = "none";
     uiElements.pauseMenu.style.display = "none";
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarOpacity;
-    uiElements.pauseButton.style.display = "flex";
+    uiElements.pauseButton.style.display = "block";
 
-    if (!isGameRunning) {
+    if (!isGameRunning || isPaused) {
+      isPaused = false;
+      isGameRunning = true;
       init();
       animate();
       startBackgroundMusic();
@@ -165,7 +172,7 @@ class PlayingState extends GameState {
   }
 
   exit() {
-    uiElements.pauseButton.style.display = "none";
+    // No specific exit actions needed here, enter of next state will handle UI
   }
 
   update() {
@@ -180,6 +187,8 @@ class PlayingState extends GameState {
  */
 class PausedState extends GameState {
   enter() {
+    // MODIFIED: Set body class to show cursor during pause
+    document.body.className = "paused-active";
     uiElements.pauseMenu.style.display = "flex";
     isPaused = true;
     if (animationFrameId) {
@@ -189,6 +198,8 @@ class PausedState extends GameState {
   }
 
   exit() {
+    // MODIFIED: Set body class back to game-active when resuming
+    document.body.className = "game-active";
     uiElements.pauseMenu.style.display = "none";
     isPaused = false;
     if (isGameRunning) {
@@ -203,6 +214,8 @@ class PausedState extends GameState {
  */
 class GameOverState extends GameState {
   enter() {
+    // MODIFIED: Set body class to show cursor on game over
+    document.body.className = "game-over";
     isGameRunning = false;
     uiElements.pauseButton.style.display = "none";
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
@@ -303,10 +316,11 @@ class GameOverState extends GameState {
       if (window.BackendAPI && BACKEND_CONFIG.USE_BACKEND) {
         try {
           // Get player name from playerNameUI or fallback
-          const playerName = window.playerNameUI && window.playerNameUI.getPlayerName() 
-            ? window.playerNameUI.getPlayerName() 
-            : "Anonymous";
-            
+          const playerName =
+            window.playerNameUI && window.playerNameUI.getPlayerName()
+              ? window.playerNameUI.getPlayerName()
+              : "Anonymous";
+
           await BackendAPI.submitScore(
             playerName,
             gameOverData.score,
@@ -347,6 +361,8 @@ class GameOverState extends GameState {
  */
 class LeaderboardState extends GameState {
   enter() {
+    // MODIFIED: Set body class for menu states
+    document.body.className = "menu-active";
     uiElements.startScreen.style.display = "none";
     uiElements.howToPlayScreen.style.display = "none";
     uiElements.leaderboardScreen.style.display = "flex";
@@ -366,6 +382,8 @@ class LeaderboardState extends GameState {
  */
 class HowToPlayState extends GameState {
   enter() {
+    // MODIFIED: Set body class for menu states
+    document.body.className = "menu-active";
     uiElements.howToPlayScreen.style.display = "flex";
   }
 
