@@ -9,75 +9,37 @@ class EndpointManager {
   }
 
   /**
-   * Initialize endpoints with modern configuration system
+   * Initialize endpoints with obfuscation
    */
   async initialize() {
     if (this.initialized) return;
 
     try {
-      // First, try to use the new environment configuration system
-      if (window.environmentConfig) {
-        await this.initializeFromEnvironment();
-      } else {
-        // Fallback to the legacy obfuscated system
-        await this.initializeLegacy();
-      }
+      // Obfuscated endpoint data (in production, this could be fetched from a secure endpoint)
+      const obfuscatedData = {
+        // Base64 encoded API endpoint
+        api: "aHR0cHM6Ly8wamZlaWl2ZnBiLmV4ZWN1dGUtYXBpLmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vcHJvZA==",
+        // Base64 encoded WebSocket endpoint
+        ws: "d3NzOi8vaWU4MWh4b2lvNy5leGVjdXRlLWFwaS5hcC1zb3V0aGVhc3QtMS5hbWF6b25hd3MuY29tL3Byb2Q=",
+        // Additional security token (could be used for API key rotation)
+        token: "c3RlbGxhcl9kcmlmdF9zZWN1cmVfdG9rZW5fdjE=",
+      };
+
+      // Decode endpoints
+      this.endpoints.api = this.decode(obfuscatedData.api);
+      this.endpoints.ws = this.decode(obfuscatedData.ws);
+      this.endpoints.token = this.decode(obfuscatedData.token);
+
+      // Add timestamp-based validation
+      this.endpoints.timestamp = Date.now();
 
       this.initialized = true;
-      console.log("Endpoints initialized:", {
-        api: this.endpoints.api ? "configured" : "not configured",
-        websocket: this.endpoints.ws ? "configured" : "not configured",
-        source: window.environmentConfig ? "environment" : "legacy",
-      });
+      console.log("Endpoints initialized securely");
     } catch (error) {
       console.error("Failed to initialize endpoints:", error);
       // Fallback to environment detection
       this.initializeFallback();
     }
-  }
-
-  /**
-   * Initialize from modern environment configuration
-   */
-  async initializeFromEnvironment() {
-    const config = window.environmentConfig.initialize();
-
-    this.endpoints.api = config.apiBaseUrl;
-    this.endpoints.ws = config.websocketUrl;
-    this.endpoints.timeout = config.apiTimeout;
-    this.endpoints.reconnectAttempts = config.websocketReconnectAttempts;
-    this.endpoints.reconnectDelay = config.websocketReconnectDelay;
-    this.endpoints.timestamp = Date.now();
-
-    // Validate URLs
-    if (this.endpoints.api && !this.isValidUrl(this.endpoints.api)) {
-      console.warn("Invalid API URL detected, falling back to legacy system");
-      await this.initializeLegacy();
-    }
-  }
-
-  /**
-   * Initialize using legacy obfuscated system (fallback)
-   */
-  async initializeLegacy() {
-    // Obfuscated endpoint data (fallback for existing deployments)
-    const obfuscatedData = {
-      // Dùng Base64 encoded URL mẫu, bạn cần thay thế bằng URL thật của bạn
-      // Ví dụ: https://YOUR_API_ID.execute-api.YOUR_REGION.amazonaws.com/prod
-      api: "aHR0cHM6Ly93b3JrLmV4ZWN1dGUtYXBpLmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vcHJvZA==",
-      // Ví dụ: wss://YOUR_WS_ID.execute-api.YOUR_REGION.amazonaws.com/prod
-      ws: "d3NzOi8vd3MubGltc2VydmVyLmV4ZWN1dGUtYXBpLmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vcHJvZA==",
-      // Additional security token
-      token: "c3RlbGxhcl9kcmlmdF9zZWN1cmVfdG9rZW5fdjE=",
-    };
-
-    // Decode endpoints
-    this.endpoints.api = this.decode(obfuscatedData.api);
-    this.endpoints.ws = this.decode(obfuscatedData.ws);
-    this.endpoints.token = this.decode(obfuscatedData.token);
-
-    // Add timestamp-based validation
-    this.endpoints.timestamp = Date.now();
   }
 
   /**
@@ -102,17 +64,10 @@ class EndpointManager {
       window.location.hostname === "127.0.0.1";
 
     if (isDevelopment) {
-      // Fallback for local development
       this.endpoints.api = "http://localhost:3000";
       this.endpoints.ws = "ws://localhost:3001";
     } else {
-      // Fallback cho môi trường Production (nếu Base64 và ENV đều thất bại)
-      // Cần một URL mặc định an toàn cho Production, ví dụ:
-      // (BẠN CẦN THAY THẾ CHÍNH XÁC URL CỦA BẠN VÀO ĐÂY)
-      this.endpoints.api = "https://default-api.example.com/prod"; // Thay thế bằng URL API thật của bạn
-      this.endpoints.ws = "wss://default-ws.example.com/prod"; // Thay thế bằng URL WS thật của bạn
-
-      // Nếu không muốn có fallback Production, hãy để null:
+      // In production, these would be loaded from a secure configuration service
       this.endpoints.api = null;
       this.endpoints.ws = null;
     }
@@ -124,8 +79,8 @@ class EndpointManager {
    * Get API endpoint with validation
    */
   getApiEndpoint() {
-    // FIXED: Removed console.error to stop noisy logs during initialization
     if (!this.initialized) {
+      console.error("Endpoints not initialized");
       return null;
     }
 
@@ -144,8 +99,8 @@ class EndpointManager {
    * Get WebSocket endpoint with validation
    */
   getWsEndpoint() {
-    // FIXED: Removed console.error to stop noisy logs during initialization
     if (!this.initialized) {
+      console.error("Endpoints not initialized");
       return null;
     }
 
@@ -156,24 +111,12 @@ class EndpointManager {
    * Get security token
    */
   getToken() {
-    // FIXED: Removed console.error to stop noisy logs during initialization
     if (!this.initialized) {
+      console.error("Endpoints not initialized");
       return null;
     }
 
     return this.endpoints.token;
-  }
-
-  /**
-   * Validate URL format
-   */
-  isValidUrl(url) {
-    try {
-      const parsed = new URL(url);
-      return parsed.protocol === "http:" || parsed.protocol === "https:";
-    } catch {
-      return false;
-    }
   }
 
   /**
@@ -183,16 +126,11 @@ class EndpointManager {
     if (!this.endpoints.api) return false;
 
     try {
-      const timeout = this.endpoints.timeout || 5000;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-
       const response = await fetch(`${this.endpoints.api}/health`, {
         method: "GET",
-        signal: controller.signal,
+        timeout: 5000,
       });
 
-      clearTimeout(timeoutId);
       return response.ok;
     } catch (error) {
       console.error("Endpoint validation failed:", error);

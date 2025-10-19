@@ -21,19 +21,6 @@ const BackendAPI = {
     if (window.endpointManager) {
       await window.endpointManager.initialize();
 
-      // FIX: Cập nhật cấu hình BackendAPI với các endpoint đã được giải mã
-      // Điều này đảm bảo rằng ngay cả khi config environment không tìm thấy biến,
-      // thì endpointManager (với logic giải mã Base64) vẫn cung cấp URL.
-      const resolvedApiUrl = window.endpointManager.getApiEndpoint();
-      const resolvedWsUrl = window.endpointManager.getWsEndpoint();
-
-      if (resolvedApiUrl) {
-        this.API_BASE_URL = resolvedApiUrl;
-      }
-      if (resolvedWsUrl) {
-        this.WS_URL = resolvedWsUrl;
-      }
-
       // Set up endpoint rotation if enabled
       if (BACKEND_CONFIG.ENABLE_ENDPOINT_ROTATION) {
         setInterval(() => {
@@ -47,18 +34,13 @@ const BackendAPI = {
    * Get secure API base URL
    */
   getApiBaseUrl() {
-    // Ưu tiên sử dụng URL đã được resolve trong initialize()
-    if (this.API_BASE_URL) {
-      return this.API_BASE_URL;
-    }
-
     if (window.endpointManager && window.endpointManager.getApiEndpoint()) {
       return window.endpointManager.getApiEndpoint();
     }
 
-    // Fallback for development (devApiBaseUrl is loaded by environment.js)
-    if (window.location.hostname === "localhost" && window.environmentConfig) {
-      return window.environmentConfig.get("devApiBaseUrl");
+    // Fallback for development
+    if (window.location.hostname === "localhost") {
+      return "http://localhost:3000";
     }
 
     return null;
@@ -68,18 +50,13 @@ const BackendAPI = {
    * Get secure WebSocket URL
    */
   getWsUrl() {
-    // Ưu tiên sử dụng URL đã được resolve trong initialize()
-    if (this.WS_URL) {
-      return this.WS_URL;
-    }
-
     if (window.endpointManager && window.endpointManager.getWsEndpoint()) {
       return window.endpointManager.getWsEndpoint();
     }
 
-    // Fallback for development (devWebsocketUrl is loaded by environment.js)
-    if (window.location.hostname === "localhost" && window.environmentConfig) {
-      return window.environmentConfig.get("devWebsocketUrl");
+    // Fallback for development
+    if (window.location.hostname === "localhost") {
+      return "ws://localhost:3001";
     }
 
     return null;
@@ -89,7 +66,7 @@ const BackendAPI = {
    */
   async getClientIP() {
     try {
-      // Thử nhiều IP detection services
+      // Try multiple IP detection services
       const services = ["https://api.ipify.org?format=json"];
 
       for (const service of services) {

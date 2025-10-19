@@ -329,7 +329,7 @@
     <audio id="background-music" loop src="assets/audio/background.mp3"></audio>
 
     <script src="gameConfig.js"></script>
-    <script type="module" src="js/config/environment.js"></script>
+    <!-- REMOVED type="module" -->
     <script src="js/config/endpoints.js"></script>
     <script src="js/api/backendApi.js"></script>
     <script src="js/audio/audioSystem.js"></script>
@@ -339,17 +339,25 @@
     <script src="js/utils/userIdentification.js"></script>
     <script src="js/utils/helpers.js"></script>
     <script src="js/entities/visuals.js"></script>
-    <script src="js/core/entityFactory.js"></script>
-    <script src="js/core/gameStateManager.js"></script>
+
+    <!-- Tải các file Entity *trước* entityFactory -->
     <script src="js/entities/player.js"></script>
     <script src="js/entities/warnings.js"></script>
     <script src="js/entities/obstacles.js"></script>
     <script src="js/entities/collectibles.js"></script>
     <script src="js/entities/hazards.js"></script>
     <script src="js/entities/portals.js"></script>
+
+    <!-- Tải entityFactory sau khi tất cả các lớp Entity được định nghĩa -->
+    <script src="js/core/entityFactory.js"></script>
+
+    <!-- Tải các file core khác -->
+    <script src="js/core/gameStateManager.js"></script>
     <script src="js/core/game.js"></script>
     <script src="js/core/eventSystem.js"></script>
     <script src="js/config/settings.js"></script>
+
+    <!-- Tải các file UI và main -->
     <script src="js/ui/settingsUI.js"></script>
     <script src="js/ui/playerNameUI.js"></script>
     <script src="js/ui/gameUI.js"></script>
