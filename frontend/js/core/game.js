@@ -71,12 +71,11 @@ function init() {
   energyOrbs = [];
   plasmaFields = [];
   crystalShards = [];
-  quantumPortals = [];
   shieldGenerators = [];
   freezeZones = [];
-  wormholes = [];
   magneticStorms = [];
   lightningStorms = [];
+  // REMOVED: quantumPortals = []; and wormholes = []; as they are unused.
   for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
     const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
     for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
@@ -158,12 +157,11 @@ function animate() {
     energyOrbs,
     plasmaFields,
     crystalShards,
-    quantumPortals,
     shieldGenerators,
     freezeZones,
-    wormholes,
     magneticStorms,
     lightningStorms,
+    // REMOVED: quantumPortals, wormholes
   ].forEach((arr) =>
     arr.forEach((item) => (item.update ? item.update() : undefined))
   );
@@ -189,12 +187,11 @@ function animate() {
   energyOrbs = energyOrbs.filter((e) => e.update() !== false);
   plasmaFields = plasmaFields.filter((p) => p.update() !== false);
   crystalShards = crystalShards.filter((c) => c.update() !== false);
-  quantumPortals = quantumPortals.filter((q) => q.update() !== false);
   shieldGenerators = shieldGenerators.filter((s) => s.update() !== false);
   freezeZones = freezeZones.filter((f) => f.update() !== false);
-  wormholes = wormholes.filter((w) => w.update() !== false);
   magneticStorms = magneticStorms.filter((m) => m.update() !== false);
   lightningStorms = lightningStorms.filter((l) => l.update() !== false);
+  // REMOVED: quantumPortals and wormholes filtering, as they are unused.
 
   if (score >= nextEventScore) {
     if (typeof window.triggerRandomEvent === "function") {
@@ -209,25 +206,18 @@ function animate() {
     eventActive.type = null;
   }
 
-  let currentSpawnInterval =
-    eventActive.type === "denseField" && timers.difficulty < eventActive.endTime
-      ? GAME_CONFIG.events.denseField.spawnInterval
-      : spawnInterval;
+  // REMOVED: Unused 'denseField' event logic
+  let currentSpawnInterval = spawnInterval;
 
   timers.asteroid++;
   if (timers.asteroid % currentSpawnInterval === 0) {
     const difficultyLevel = Math.floor(score / scorePerLevel);
     const radius =
-      eventActive.type === "denseField"
-        ? GAME_CONFIG.entities.asteroids.minRadius +
-          Math.random() *
-            (GAME_CONFIG.entities.asteroids.maxRadius -
-              GAME_CONFIG.entities.asteroids.minRadius) *
-            0.6
-        : GAME_CONFIG.entities.asteroids.minRadius +
-          Math.random() *
-            (GAME_CONFIG.entities.asteroids.maxRadius -
-              GAME_CONFIG.entities.asteroids.minRadius);
+      GAME_CONFIG.entities.asteroids.minRadius +
+      Math.random() *
+        (GAME_CONFIG.entities.asteroids.maxRadius -
+          GAME_CONFIG.entities.asteroids.minRadius);
+
     const asteroidSpeed =
       (GAME_CONFIG.entities.asteroids.baseSpeed +
         Math.random() * GAME_CONFIG.entities.asteroids.speedVariation +
@@ -649,16 +639,7 @@ function animate() {
     }
   }
 
-  for (const portal of quantumPortals) {
-    if (
-      Math.hypot(player.x - portal.x, player.y - portal.y) <
-      portal.radius + player.radius
-    ) {
-      player.x = Math.random() * width;
-      player.y = Math.random() * height;
-      playSound("wormhole");
-    }
-  }
+  // REMOVED: Unused collision check for quantumPortals
 
   const difficultyLevel = Math.floor(score / scorePerLevel);
 
@@ -681,9 +662,6 @@ function animate() {
 
 function endGame(reason = "unknown") {
   if (!isGameRunning) return;
-
-  // This call is removed because gameUIManager is being deleted.
-  // gameUIManager.handleEnemyCollision(reason);
 
   console.log(`Game Over! Reason: ${reason}`);
   cancelAnimationFrame(animationFrameId);

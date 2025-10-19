@@ -1,7 +1,7 @@
 // =============================================================================
 // STELLAR DRIFT: SINGULARITY - GAME CONFIGURATION (REFACTORED)
 // =============================================================================
-// Unused properties have been removed or commented out for a cleaner, more maintainable config.
+// Unused properties have been removed for a cleaner, more maintainable config.
 // Some values that were hardcoded in the logic have been moved here.
 // =============================================================================
 
@@ -10,7 +10,6 @@ const GAME_CONFIG = {
   // CORE GAME SETTINGS
   // =============================================================================
   core: {
-    targetFPS: 60,
     maxParticles: 300,
     maxFragments: 150,
     collisionPrecision: 1,
@@ -186,17 +185,13 @@ const GAME_CONFIG = {
       instantMissiles: 1500,
       gravitationalAnomaly: 12000,
       asteroidRain: 2500,
-      wormholePortal: 13000,
       lightningStorm: 8000,
       temporalChaos: 18000,
       lightningNetwork: 19000,
       voidStorm: 20000,
       mineFieldDetonation: 21000,
       speedZone: 1000,
-      asteroidBelt: 3500,
-      quantumTunnels: 14000,
       gravityWells: 16000,
-      laserTurrets: 9000,
     },
     speedZone: { speedMultiplier: 1.4 },
     laserGrid: { gridSize: 3, delay: 350 },
@@ -216,15 +211,9 @@ const GAME_CONFIG = {
       speed: 1.5,
       centerVariation: 50,
     },
-    asteroidBelt: {
-      count: 20,
-      beltRadius: 300,
-      asteroidSpeed: 1.5,
-    },
     missileBarrage: { count: 5, delay: 500 },
     blackHoleChain: { count: 3, delay: 1000 },
     crystalRain: { count: 5, delay: 80 },
-    quantumTunnels: { lifetime: 350 },
     gravityWells: { count: 5 },
     meteorBombardment: { count: 25, delay: 60, speed: 5 },
     voidRifts: { count: 4 },
@@ -258,19 +247,6 @@ const GAME_CONFIG = {
       color: "#81d4fa",
       pulseSpeed: 0.05,
       duration: 300,
-    },
-    laserTurret: {
-      radius: 20,
-      barrelLength: 30,
-      rotationSpeed: 0.05,
-      trackingRange: 200,
-      fireInterval: 90,
-      color: "#ff5722",
-      laserColor: "#ff5722",
-      barrelColor: "#d32f2f",
-      chargeColor: "#ffeb3b",
-      asteroidScore: 20,
-      missileScore: 15,
     },
     magneticStorm: {
       lifetime: 480,

@@ -150,16 +150,7 @@
   transform: none !important;
 }
 
-/* Character Counter (if needed) */
-.character-counter {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.8rem;
-  color: #666;
-  pointer-events: none;
-}
+/* REMOVED: Unused .character-counter rule */
 
 /* Animation for validation states */
 @keyframes shake {

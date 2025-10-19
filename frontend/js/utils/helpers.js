@@ -46,36 +46,8 @@ function triggerAsteroidCircle() {
 }
 
 /**
- * Triggers the Asteroid Belt event.
+ * REMOVED: Unused function triggerAsteroidBelt
  */
-function triggerAsteroidBelt() {
-  const config = GAME_CONFIG.events.asteroidBelt;
-  const centerX = canvas.width / 2;
-  const centerY = canvas.height / 2;
-
-  const beltWarning = new BeltWarning(centerX, centerY, config.beltRadius);
-  warnings.push(beltWarning);
-
-  setTimeout(() => {
-    const warningIndex = warnings.indexOf(beltWarning);
-    if (warningIndex > -1) {
-      warnings.splice(warningIndex, 1);
-    }
-    if (!isGameRunning) return;
-
-    for (let i = 0; i < config.count; i++) {
-      const angle = (i / config.count) * Math.PI * 2;
-      const x = centerX + Math.cos(angle) * config.beltRadius;
-      const y = centerY + Math.sin(angle) * config.beltRadius;
-      asteroids.push(
-        new Asteroid(x, y, 15 + Math.random() * 10, "#ffbb33", {
-          x: -Math.sin(angle) * config.asteroidSpeed,
-          y: Math.cos(angle) * config.asteroidSpeed,
-        })
-      );
-    }
-  }, 180 * (1000 / 60)); // Hardcoded 3-second warning
-}
 
 /**
  * Creates a smaller asteroid for the "Asteroid Shower" event.
