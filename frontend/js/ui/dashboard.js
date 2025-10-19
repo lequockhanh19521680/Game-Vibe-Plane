@@ -42,26 +42,29 @@ function setupTabSwitching() {
 // Connect to WebSocket for real-time updates
 function connectWebSocket() {
   const wsUrl = window.BackendAPI ? window.BackendAPI.getWsUrl() : null;
-  
+
   if (!BACKEND_CONFIG.USE_BACKEND || !wsUrl) {
     updateConnectionStatus("offline", "Backend disabled");
+    console.log(
+      "WebSocket connection skipped: Backend is disabled or URL is missing."
+    );
     return;
   }
 
   try {
-
+    console.log(`Attempting to connect to WebSocket at: ${wsUrl}`);
     updateConnectionStatus("connecting", "Connecting...");
 
     websocket = new WebSocket(wsUrl);
 
     websocket.onopen = () => {
-      console.log("WebSocket connected");
+      console.log("WebSocket connection established successfully.");
       isConnected = true;
       updateConnectionStatus("connected", "Live");
 
       // Subscribe to real-time updates
       websocket.send(JSON.stringify({ action: "subscribe" }));
-      
+
       // Start heartbeat
       startHeartbeat();
     };
@@ -69,17 +72,20 @@ function connectWebSocket() {
     websocket.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
+        console.log("WebSocket message received:", message);
         handleWebSocketMessage(message);
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);
       }
     };
 
-    websocket.onclose = () => {
-      console.log("WebSocket disconnected");
+    websocket.onclose = (event) => {
+      console.log(
+        `WebSocket disconnected. Code: ${event.code}, Reason: ${event.reason}`
+      );
       isConnected = false;
       updateConnectionStatus("disconnected", "Disconnected");
-      
+
       // Stop heartbeat
       stopHeartbeat();
 
@@ -88,12 +94,12 @@ function connectWebSocket() {
     };
 
     websocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      updateConnectionStatus("error", "Connection error");
+      console.error("WebSocket error occurred:", error);
+      updateConnectionStatus("error", "Connection Error");
     };
   } catch (error) {
-    console.error("Failed to create WebSocket:", error);
-    updateConnectionStatus("error", "Connection failed");
+    console.error("Failed to create WebSocket instance:", error);
+    updateConnectionStatus("error", "Setup Failed");
   }
 }
 
@@ -346,22 +352,30 @@ function updatePlayerStats() {
 
 // Update connection status indicator
 function updateConnectionStatus(status, text) {
-  const indicator = document.getElementById("connection-indicator");
-  const statusText = document.getElementById("connection-text");
+  const indicators = [
+    document.getElementById("connection-indicator"),
+    document.getElementById("connection-indicator-footer"),
+  ];
+  const statusTexts = [
+    document.getElementById("connection-text"),
+    document.getElementById("connection-text-footer"),
+  ];
 
-  if (indicator && statusText) {
-    const statusConfig = {
-      connecting: { icon: "🟡", text: text },
-      connected: { icon: "🟢", text: text },
-      disconnected: { icon: "🔴", text: text },
-      error: { icon: "🔴", text: text },
-      offline: { icon: "⚫", text: text },
-    };
+  const statusConfig = {
+    connecting: { icon: "🟡", text: text },
+    connected: { icon: "🟢", text: text },
+    disconnected: { icon: "🔴", text: text },
+    error: { icon: "🔴", text: text },
+    offline: { icon: "⚫", text: text },
+  };
+  const config = statusConfig[status] || statusConfig["offline"];
 
-    const config = statusConfig[status] || statusConfig["offline"];
-    indicator.textContent = config.icon;
-    statusText.textContent = config.text;
-  }
+  indicators.forEach((el) => {
+    if (el) el.textContent = config.icon;
+  });
+  statusTexts.forEach((el) => {
+    if (el) el.textContent = config.text;
+  });
 }
 
 // Utility functions
@@ -410,7 +424,7 @@ function escapeHtml(text) {
 // Start heartbeat to keep connection alive
 function startHeartbeat() {
   stopHeartbeat(); // Clear any existing interval
-  
+
   heartbeatInterval = setInterval(() => {
     if (websocket && websocket.readyState === WebSocket.OPEN) {
       websocket.send(JSON.stringify({ action: "ping" }));

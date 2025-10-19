@@ -15,20 +15,12 @@ class EndpointManager {
     if (this.initialized) return;
 
     try {
-      // Obfuscated endpoint data (in production, this could be fetched from a secure endpoint)
-      const obfuscatedData = {
-        // Base64 encoded API endpoint
-        api: "https://414laz8ylc.execute-api.ap-southeast-1.amazonaws.com/prod",
-        // Base64 encoded WebSocket endpoint
-        ws: "wss://w86y8zp3ck.execute-api.ap-southeast-1.amazonaws.com/prod/",
-        // Additional security token (could be used for API key rotation)
-        token: "c3RlbGxhcl9kcmlmdF9zZWN1cmVfdG9rZW5fdjE=",
-      };
-
-      // Decode endpoints
-      this.endpoints.api = this.decode(obfuscatedData.api);
-      this.endpoints.ws = this.decode(obfuscatedData.ws);
-      this.endpoints.token = this.decode(obfuscatedData.token);
+      // Direct endpoint data
+      this.endpoints.api =
+        "https://414laz8ylc.execute-api.ap-southeast-1.amazonaws.com/prod";
+      this.endpoints.ws =
+        "wss://w86y8zp3ck.execute-api.ap-southeast-1.amazonaws.com/prod/";
+      this.endpoints.token = "stellar_drift_secure_token_v1";
 
       // Add timestamp-based validation
       this.endpoints.timestamp = Date.now();
@@ -43,7 +35,7 @@ class EndpointManager {
   }
 
   /**
-   * Decode base64 strings
+   * Decode base64 strings (No longer used for endpoints but kept for compatibility if needed elsewhere)
    */
   decode(encoded) {
     try {

@@ -314,6 +314,8 @@ async function initializeUserIdentification() {
 
 // Initialize everything
 async function initializeApp() {
+  const loadingScreen = document.getElementById("loading-screen");
+
   // Initialize user identification first
   await initializeUserIdentification();
 
@@ -339,6 +341,15 @@ async function initializeApp() {
 
   // Start in menu state
   gameStateManager.changeState("menu");
+
+  // Hide the loading screen after a short delay for smooth transition
+  if (loadingScreen) {
+    loadingScreen.classList.add("hidden");
+    // After the transition, set display to none
+    setTimeout(() => {
+      loadingScreen.style.display = "none";
+    }, 500); // This should match the CSS transition duration
+  }
 }
 
 // Start the app

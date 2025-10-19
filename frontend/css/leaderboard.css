@@ -34,6 +34,8 @@
 .dashboard-content {
   display: none;
   animation: fadeIn 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .dashboard-content.active {
@@ -98,18 +100,19 @@
   border: 1px solid rgba(0, 255, 255, 0.3);
   border-radius: 10px;
   padding: 1rem;
-  max-height: 400px;
+  max-height: 55vh; /* Allow more vertical space */
   overflow-y: auto;
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 /* Leaderboard Entries */
 .leaderboard-entry {
   display: grid;
-  grid-template-columns: 60px 1fr 120px 80px;
-  gap: 1rem;
+  grid-template-columns: 40px 1fr 100px 70px; /* Adjusted fixed widths */
+  gap: 0.5rem; /* Reduced gap */
   align-items: center;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem; /* Reduced padding */
+  margin-bottom: 0.3rem; /* Reduced margin */
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -155,7 +158,7 @@
 }
 
 .rank {
-  font-size: 1.2rem;
+  font-size: 1rem; /* Smaller rank */
   font-weight: bold;
   text-align: center;
   color: #00ffff;
@@ -165,28 +168,36 @@
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+  overflow: hidden; /* For text-overflow */
 }
 
 .username {
   font-weight: bold;
   color: white;
-  font-size: 1rem;
+  font-size: 0.9rem; /* Smaller username */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px; /* Adjust as needed */
 }
 
 .country {
-  font-size: 0.8rem;
+  font-size: 0.75rem; /* Smaller country */
   color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .score {
-  font-size: 1.1rem;
+  font-size: 1rem; /* Smaller score */
   font-weight: bold;
   color: #ffff00;
   text-align: right;
 }
 
 .time {
-  font-size: 0.9rem;
+  font-size: 0.8rem; /* Smaller time */
   color: rgba(255, 255, 255, 0.8);
   text-align: right;
 }
@@ -194,11 +205,11 @@
 /* Country Leaderboard */
 .country-entry {
   display: grid;
-  grid-template-columns: 60px 1fr 150px;
-  gap: 1rem;
+  grid-template-columns: 40px 1fr 120px; /* Reduced fixed widths */
+  gap: 0.5rem; /* Reduced gap */
   align-items: center;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem; /* Reduced padding */
+  margin-bottom: 0.3rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -226,16 +237,21 @@
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+  overflow: hidden; /* For text-overflow */
 }
 
 .country-name {
   font-weight: bold;
   color: white;
-  font-size: 1rem;
+  font-size: 0.9rem; /* Smaller country name */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 .country-stats {
-  font-size: 0.8rem;
+  font-size: 0.75rem; /* Smaller stats */
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -247,18 +263,18 @@
 }
 
 .top-score {
-  font-size: 1.1rem;
+  font-size: 1rem; /* Smaller score */
   font-weight: bold;
   color: #ffff00;
 }
 
 .avg-score {
-  font-size: 0.8rem;
+  font-size: 0.75rem; /* Smaller average */
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* Country Info */
-.country-info {
+/* Country Info box */
+.country-info-box {
   text-align: center;
   margin-bottom: 1rem;
   padding: 0.5rem;
@@ -268,25 +284,28 @@
   font-size: 0.9rem;
 }
 
-/* Stats Grid */
+/* My Stats Tab */
 .stats-container {
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(0, 255, 255, 0.3);
   border-radius: 10px;
-  padding: 1.5rem;
+  padding: 1rem; /* Slightly reduced padding */
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(150px, 1fr)
+  ); /* Flexible grid */
+  gap: 0.8rem; /* Reduced gap */
 }
 
 .stat-item {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  padding: 1rem;
+  padding: 0.8rem; /* Reduced padding */
   text-align: center;
   transition: all 0.3s ease;
 }
@@ -307,15 +326,21 @@
 }
 
 .stat-label {
-  font-size: 0.9rem;
+  font-size: 0.8rem; /* Smaller label */
   color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
 }
 
 .stat-value {
-  font-size: 1.4rem;
+  font-size: 1.2rem; /* Smaller value */
   font-weight: bold;
   color: #00ffff;
+  word-break: break-word; /* Allow long words to wrap */
+}
+
+.stat-item.highlight .stat-value {
+  color: var(--highlight-color);
+  font-size: 1.5rem; /* Slightly smaller highlight value */
 }
 
 /* Footer */
