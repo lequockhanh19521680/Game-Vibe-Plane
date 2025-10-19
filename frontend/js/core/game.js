@@ -385,23 +385,32 @@ function animate() {
   }
   if (score > GAME_CONFIG.entities.laserMines.spawnScore) {
     timers.mine++;
-    if (timers.mine % GAME_CONFIG.entities.laserMines.spawnInterval === 0)
-      laserMines.push(
-        new LaserMine(
-          Math.random() * width * 0.8 + width * 0.1,
-          Math.random() * height * 0.6
-        )
-      );
+    if (timers.mine % GAME_CONFIG.entities.laserMines.spawnInterval === 0) {
+      const x = Math.random() * width * 0.8 + width * 0.1;
+      const y = Math.random() * height * 0.6;
+      const warningSystem = spawnWithWarning("lasermine", x, y, {
+        duration: GAME_CONFIG.entities.laserMines.warningDuration,
+      });
+      warningSystem.spawn(() => {
+        laserMines.push(new LaserMine(x, y));
+      });
+    }
   }
   if (score > GAME_CONFIG.entities.crystalClusters.spawnScore) {
     timers.crystal++;
     if (
       timers.crystal % GAME_CONFIG.entities.crystalClusters.spawnInterval ===
       0
-    )
-      crystalClusters.push(
-        new CrystalCluster(Math.random() * width, Math.random() * height * 0.7)
-      );
+    ) {
+      const x = Math.random() * width;
+      const y = Math.random() * height * 0.7;
+      const warningSystem = spawnWithWarning("crystalcluster", x, y, {
+        duration: GAME_CONFIG.entities.crystalClusters.warningDuration,
+      });
+      warningSystem.spawn(() => {
+        crystalClusters.push(new CrystalCluster(x, y));
+      });
+    }
   }
 
   // --- Collision Detection ---

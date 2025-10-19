@@ -73,7 +73,7 @@ const GAME_CONFIG = {
     blackHoles: {
       spawnScore: 3000,
       spawnInterval: 1000,
-      warningDuration: 180,
+      warningDuration: 120, // 2 seconds at 60fps
       baseRadius: 8,
       baseMaxRadius: 40,
       radiusIncreasePerLevel: 15,
@@ -91,7 +91,7 @@ const GAME_CONFIG = {
     missiles: {
       spawnScore: 1500,
       spawnInterval: 700,
-      warningDuration: 150,
+      warningDuration: 120, // 2 seconds at 60fps
       radius: 5,
       baseSpeed: 0.15,
       speedIncreasePerLevel: 0.025,
@@ -117,7 +117,7 @@ const GAME_CONFIG = {
       baseTargetChance: 0.1,
       targetChanceIncreasePerLevel: 0.08,
       maxTargetChance: 0.85,
-      warningTime: 300,
+      warningTime: 120, // 2 seconds at 60fps
       beamDuration: 10,
       staggerDelay: 150,
       playerHitRadius: 7.5,
@@ -206,7 +206,7 @@ const GAME_CONFIG = {
     asteroidCircle: {
       count: 12,
       radius: 180,
-      warningTime: 180,
+      warningTime: 120, // 2 seconds at 60fps
       asteroidRadius: 15,
       speed: 1.5,
       centerVariation: 50,

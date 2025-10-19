@@ -44,6 +44,14 @@ class Warning extends Entity {
         warningColor = "#88ddff"; // Electric blue
         warningSymbol = "⚡";
         break;
+      case "lasermine":
+        warningColor = "#ff4444"; // Red for mines
+        warningSymbol = "!";
+        break;
+      case "crystalcluster":
+        warningColor = "#40c4ff"; // Crystal color
+        warningSymbol = "!";
+        break;
       default:
         warningColor = "#f48fb1"; // Pink for missiles and others
         warningSymbol = "!";

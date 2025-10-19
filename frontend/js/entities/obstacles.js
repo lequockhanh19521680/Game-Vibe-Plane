@@ -360,7 +360,7 @@ class LaserMine {
     this.maxTime = config.chargeTime;
     this.fireDuration = config.fireDuration;
     this.state = "charging";
-    this.alpha = 0;
+    this.alpha = 1;
     this.pattern =
       config.patterns[Math.floor(Math.random() * config.patterns.length)];
   }
@@ -388,13 +388,41 @@ class LaserMine {
   draw() {
     ctx.save();
     ctx.globalAlpha = this.alpha;
-    if (this.state === "charging") {
+
+    // Draw the central mine part (common for all states until fading)
+    if (this.state !== "fading") {
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.fillStyle = "#ff4444";
       ctx.shadowColor = "#ff4444";
       ctx.shadowBlur = 15;
       ctx.fill();
+    }
+
+    if (this.state === "charging") {
+      // Draw warning lines for upcoming beams
+      const warningAlpha =
+        Math.sin((this.timer / this.maxTime) * Math.PI) * 0.7;
+      ctx.globalAlpha = this.alpha * warningAlpha;
+
+      const angles = this.getFireAngles();
+      const len = Math.max(width, height) * 1.5; // A long enough length
+
+      ctx.strokeStyle = "#ff8a8a"; // Faint red, same as Laser warning
+      ctx.lineWidth = 2;
+      ctx.setLineDash([15, 10]);
+      ctx.shadowColor = "#ff4444";
+      ctx.shadowBlur = 10;
+
+      angles.forEach((angle) => {
+        const endX = this.x + Math.cos(angle) * len;
+        const endY = this.y + Math.sin(angle) * len;
+
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+      });
     } else if (this.state === "firing") {
       const angles = this.getFireAngles();
       angles.forEach((angle) => {
@@ -403,18 +431,36 @@ class LaserMine {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(angle);
-        ctx.fillStyle = "#fff";
+
+        ctx.globalAlpha = this.alpha * (0.8 + Math.random() * 0.2);
+
+        // Outer beam
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(length, 0);
+        ctx.strokeStyle = "rgba(255, 200, 200, 0.8)";
+        ctx.lineWidth = beamWidth;
         ctx.shadowColor = "#ff4444";
         ctx.shadowBlur = 20;
-        ctx.fillRect(0, -beamWidth / 2, length, beamWidth);
+        ctx.stroke();
+
+        // Inner beam
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(length, 0);
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = beamWidth / 2;
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+
         ctx.restore();
       });
     }
+
     ctx.restore();
   }
 
   update() {
-    if (this.alpha < 1 && this.state !== "fading") this.alpha += 0.02;
     this.timer++;
     if (this.state === "charging" && this.timer > this.maxTime) {
       this.state = "firing";
@@ -424,6 +470,9 @@ class LaserMine {
     }
     if (this.state === "firing" && this.timer > this.fireDuration) {
       this.state = "fading";
+    }
+    if (this.state === "fading") {
+      this.alpha -= 0.02;
     }
     this.draw();
   }
