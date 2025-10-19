@@ -81,7 +81,7 @@ function connectWebSocket() {
       isConnected = false;
       updateConnectionStatus("disconnected", "Disconnected");
       stopHeartbeat();
-      setTimeout(connectWebSocket, 5000);
+      setTimeout(connectWebSocket, 5000); // Attempt to reconnect
     };
 
     websocket.onerror = (error) => {
@@ -399,7 +399,8 @@ function updateConnectionStatus(status, text) {
   });
 }
 
-// Utility functions
+// --- Utility functions ---
+
 function getChangedEntries(prevIds, newList, idKey) {
   const changes = new Map();
   const newPositions = new Map(
@@ -409,11 +410,7 @@ function getChangedEntries(prevIds, newList, idKey) {
   prevIds.forEach((id, oldIndex) => {
     const newIndex = newPositions.get(id);
     if (newIndex !== undefined && newIndex !== oldIndex) {
-      if (newIndex < oldIndex) {
-        changes.set(id, "up");
-      } else {
-        changes.set(id, "down");
-      }
+      changes.set(id, newIndex < oldIndex ? "up" : "down");
     }
   });
   return changes;
@@ -455,16 +452,10 @@ function getCountryFlag(countryIdentifier) {
     Brazil: "BR",
     India: "IN",
   };
-
   if (!countryIdentifier) return "🌍";
   let countryCode = countryIdentifier.toUpperCase();
   if (countryIdentifier.length > 2) {
-    const mappedCode = countryCodeMap[countryIdentifier];
-    if (mappedCode) {
-      countryCode = mappedCode;
-    } else {
-      return "🌍";
-    }
+    countryCode = countryCodeMap[countryIdentifier] || countryCode;
   }
   if (countryCode.length !== 2) return "🌍";
   try {
@@ -472,7 +463,7 @@ function getCountryFlag(countryIdentifier) {
       .split("")
       .map((char) => 127397 + char.charCodeAt(0));
     return String.fromCodePoint(...codePoints);
-  } catch (error) {
+  } catch (e) {
     return "🌍";
   }
 }
@@ -499,6 +490,8 @@ function stopHeartbeat() {
   }
 }
 
+// --- Event Listeners & Initialization ---
+
 window.addEventListener("beforeunload", () => {
   stopHeartbeat();
   if (websocket) {
@@ -512,13 +505,7 @@ function renderCurrentLeaderboardData() {
   updatePlayerStats();
 }
 
-function updateLeaderboard() {
-  renderCurrentLeaderboardData();
-}
-
+// Make functions globally available
 window.initializeDashboard = initializeDashboard;
-window.updateLeaderboard = updateLeaderboard;
 window.updatePlayerStats = updatePlayerStats;
 window.renderCurrentLeaderboardData = renderCurrentLeaderboardData;
-
-document.addEventListener("DOMContentLoaded", initializeDashboard);

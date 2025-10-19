@@ -60,10 +60,10 @@
         <h1>Stellar Drift</h1>
         <h2>SINGULARITY</h2>
         <p>
-          <span data-translate="menu.description"
-            >Move to score points. Avoid asteroids, black holes & missiles.
-            Survive as long as possible!</span
-          >
+          <span data-translate="menu.description">
+            Move to score points. Avoid asteroids, black holes & missiles.
+            Survive as long as possible!
+          </span>
         </p>
 
         <div class="name-input-section" id="name-input-wrapper">
@@ -93,7 +93,7 @@
           <button id="how-to-play-button" data-translate="menu.howToPlay">
             How to Play
           </button>
-          <!-- Settings button will be added by settingsUI.js if needed -->
+          <!-- Settings button is added dynamically by settingsUI.js -->
         </div>
       </div>
 
@@ -153,49 +153,43 @@
 
       <!-- Leaderboard Screen -->
       <div id="leaderboard-screen" class="ui-element" style="display: none">
-        <h2>Live Dashboard</h2>
+        <h2 data-translate="leaderboard.title">Live Dashboard</h2>
         <div class="dashboard-tabs">
-          <button class="dashboard-tab active" data-tab="global-leaderboard">
+          <button
+            class="dashboard-tab active"
+            data-tab="global-leaderboard"
+            data-translate="leaderboard.topPlayers"
+          >
             🏆 Top Players
           </button>
-          <button class="dashboard-tab" data-tab="country-leaderboard">
+          <button
+            class="dashboard-tab"
+            data-tab="country-leaderboard"
+            data-translate="leaderboard.topCountries"
+          >
             🌍 Top Countries
           </button>
-          <button class="dashboard-tab" data-tab="my-stats">📊 My Stats</button>
+          <button
+            class="dashboard-tab"
+            data-tab="my-stats"
+            data-translate="leaderboard.myStats"
+          >
+            📊 My Stats
+          </button>
         </div>
 
-        <!-- Global Leaderboard Tab -->
         <div id="global-leaderboard-content" class="dashboard-content active">
-          <div class="leaderboard-header">
-            <h3>🏆 Global Top 10</h3>
-            <div class="live-indicator">
-              <span id="connection-indicator">🔴</span>
-              <span id="connection-text">Connecting...</span>
-            </div>
-          </div>
           <div id="global-leaderboard-list" class="leaderboard-container">
             <div class="loading">Loading leaderboard...</div>
           </div>
         </div>
 
-        <!-- Country Leaderboard Tab -->
         <div id="country-leaderboard-content" class="dashboard-content">
-          <div class="leaderboard-header">
-            <h3>🌍 Top 10 Countries</h3>
-            <div class="live-indicator">
-              <span class="live-dot"></span>
-              <span>LIVE</span>
-            </div>
-          </div>
-          <div class="country-info">
-            <p>Countries ranked by top 10% of players' combined score</p>
-          </div>
           <div id="country-leaderboard-list" class="leaderboard-container">
             <div class="loading">Loading country rankings...</div>
           </div>
         </div>
 
-        <!-- My Stats Tab -->
         <div id="my-stats-content" class="dashboard-content">
           <h3>📊 Your Statistics</h3>
           <div id="player-stats" class="stats-container">
@@ -208,7 +202,12 @@
             <span id="connection-indicator-footer">🔴</span>
             <span id="connection-text-footer">Connecting...</span>
           </div>
-          <button id="back-to-main-menu-button">Back to Menu</button>
+          <button
+            id="back-to-main-menu-button"
+            data-translate="leaderboard.back"
+          >
+            Back to Menu
+          </button>
         </div>
       </div>
 
@@ -216,10 +215,13 @@
       <div id="how-to-play-screen" class="ui-element" style="display: none">
         <h2>How to Play</h2>
         <p>
-          - **Move:** Use your mouse or finger to guide the ship.
-          <br />- **Score:** Earn points by moving and surviving. <br />-
-          **Avoid:** Dodge asteroids, missiles, black holes, and lasers. <br />-
-          **Power-ups:** Collect crystals to gain a temporary shield.
+          - <strong>Move:</strong> Use your mouse or finger to guide the
+          ship.<br />
+          - <strong>Score:</strong> Earn points by moving and surviving.<br />
+          - <strong>Avoid:</strong> Dodge asteroids, missiles, black holes, and
+          lasers.<br />
+          - <strong>Power-ups:</strong> Collect crystals to gain a temporary
+          shield.
         </p>
         <button id="back-to-main-from-how-to-play-button">Back</button>
       </div>
@@ -232,9 +234,7 @@
       >
         <div class="pause-header">
           <h2 data-translate="pause.title">Game Paused</h2>
-          <div class="pause-subtitle">Take a break, you're doing great!</div>
         </div>
-
         <div class="pause-stats">
           <div class="current-session">
             <h4>📊 Current Session</h4>
@@ -257,15 +257,11 @@
               </div>
             </div>
           </div>
-
           <div class="pause-tips">
             <h4>💡 Pro Tips</h4>
-            <div id="pause-tip" class="tip-text">
-              Collect crystal shards for temporary shields!
-            </div>
+            <div id="pause-tip" class="tip-text"></div>
           </div>
         </div>
-
         <div class="pause-actions">
           <button
             id="resume-button"
@@ -273,7 +269,7 @@
             data-translate="pause.resume"
           >
             <span class="button-icon">▶️</span>
-            <span class="button-text">Resume Game</span>
+            <span class="button-text">Resume</span>
           </button>
           <button
             id="restart-from-pause-button"
@@ -297,22 +293,19 @@
 
     <audio id="background-music" loop src="assets/audio/background.mp3"></audio>
 
-    <!-- CONFIG & API -->
+    <!-- SCRIPTS -->
     <script src="gameConfig.js"></script>
     <script src="js/config/endpoints.js"></script>
     <script src="js/api/backendApi.js"></script>
 
-    <!-- AUDIO -->
     <script src="js/audio/audioSystem.js"></script>
     <script src="js/audio/musicSystem.js"></script>
     <script src="js/audio/soundEffects.js"></script>
 
-    <!-- BASE & UTILS -->
     <script src="js/base/Entity.js"></script>
     <script src="js/utils/userIdentification.js"></script>
     <script src="js/utils/helpers.js"></script>
 
-    <!-- ENTITIES -->
     <script src="js/entities/visuals.js"></script>
     <script src="js/entities/player.js"></script>
     <script src="js/entities/warnings.js"></script>
@@ -321,14 +314,11 @@
     <script src="js/entities/hazards.js"></script>
     <script src="js/entities/portals.js"></script>
 
-    <!-- CORE -->
-    <script src="js/core/entityFactory.js"></script>
     <script src="js/core/gameStateManager.js"></script>
     <script src="js/core/game.js"></script>
     <script src="js/core/eventSystem.js"></script>
     <script src="js/config/settings.js"></script>
 
-    <!-- UI & MAIN -->
     <script src="js/ui/settingsUI.js"></script>
     <script src="js/ui/playerNameUI.js"></script>
     <script src="js/ui/dashboard.js"></script>

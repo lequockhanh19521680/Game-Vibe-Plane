@@ -1,169 +1,81 @@
 // User Identification System
-// Creates a unique user ID based on the user's IP address.
+// Creates and stores a unique, persistent user ID in localStorage.
 
 class UserIdentification {
   constructor() {
     this.localStorageKey = "stellarDriftUserId"; // Key for storing the ID
     this.userId = null;
-    this.clientIP = null;
     this.initialized = false;
-    this.loadSavedId(); // Load saved ID on initialization
   }
 
-  loadSavedId() {
+  /**
+   * Initializes the user ID.
+   * Tries to load an existing ID from localStorage, otherwise creates a new one.
+   */
+  initialize() {
+    if (this.initialized) return;
+
     try {
       const savedId = localStorage.getItem(this.localStorageKey);
       if (savedId) {
         this.userId = savedId;
-        this.initialized = true;
         console.log("Loaded saved User ID:", this.userId);
-      }
-    } catch (error) {
-      console.error("Error loading saved User ID:", error);
-    }
-  }
-
-  storeUserId() {
-    if (this.userId) {
-      try {
+      } else {
+        this.userId = this.generateNewId();
         localStorage.setItem(this.localStorageKey, this.userId);
-        console.log("Stored new User ID:", this.userId);
-      } catch (error) {
-        console.error("Error storing User ID:", error);
+        console.log("Generated and stored new User ID:", this.userId);
       }
-    }
-  }
-
-  /**
-   * Initialize user identification.
-   */
-  async initialize() {
-    if (this.userId && this.initialized) return this.userId; // Return existing ID
-
-    try {
-      // Get the client's IP address
-      this.clientIP = await this.getClientIP();
-
-      // Create a unique user ID based on the IP
-      this.userId = await this.generateUniqueUserId();
-      this.storeUserId(); // Save the new ID to localStorage
-
-      this.initialized = true;
-      console.log("User ID initialized based on IP:", this.userId);
-
-      return this.userId;
     } catch (error) {
-      console.error("Error initializing user identification:", error);
-      // Fallback: If IP cannot be fetched, generate a random ID
-      this.userId = this.generateFallbackId();
-      this.initialized = true;
-      this.storeUserId(); // Save the fallback ID
-      return this.userId;
+      console.error(
+        "Error accessing localStorage. Using a temporary ID.",
+        error
+      );
+      // Fallback if localStorage is not available (e.g., private browsing)
+      this.userId = this.generateNewId();
     }
+
+    this.initialized = true;
   }
 
   /**
-   * Get client IP.
+   * Generates a new unique user ID.
+   * Uses crypto.randomUUID() if available for a robust ID, otherwise falls back to a simpler method.
+   * @returns {string} A new unique user ID.
    */
-  async getClientIP() {
-    try {
-      // Try multiple services for reliability
-      const services = [
-        "https://api.ipify.org?format=json",
-        "https://ipapi.co/json/",
-        "https://api.ip.sb/jsonip",
-      ];
-
-      for (const service of services) {
-        try {
-          const response = await fetch(service, {
-            signal: AbortSignal.timeout(3000),
-          });
-          const data = await response.json();
-          const ip = data.ip || data.IP || data.query;
-          if (ip) return ip;
-        } catch (err) {
-          console.warn(`IP service ${service} failed. Trying next...`);
-          continue;
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.error("Could not detect client IP:", error);
-      return null;
+  generateNewId() {
+    if (crypto && crypto.randomUUID) {
+      return `user_${crypto.randomUUID()}`;
     }
-  }
-
-  /**
-   * Generate a unique user ID based on IP address.
-   */
-  async generateUniqueUserId() {
-    const combinedString = this.clientIP || "no-ip";
-    const hashedId = await this.hashString(combinedString);
-    return "user_ip_" + hashedId.substr(0, 12);
-  }
-
-  /**
-   * Hash a string using the Web Crypto API.
-   */
-  async hashString(str) {
-    try {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(str);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-    } catch (error) {
-      // Fallback for environments that don't support crypto
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash = hash & hash; // Convert to 32bit integer
-      }
-      return Math.abs(hash).toString(16);
-    }
-  }
-
-  /**
-   * Generate a random fallback ID.
-   */
-  generateFallbackId() {
+    // Fallback for older browsers or non-secure contexts
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substr(2, 9);
-    return "user_fallback_" + timestamp + "_" + random;
+    return `user_${timestamp}_${random}`;
   }
 
   /**
-   * Get the current user ID.
+   * Gets the current user ID.
+   * Initializes if it hasn't been done yet.
+   * @returns {string} The user's unique ID.
    */
   getUserId() {
+    if (!this.initialized) {
+      this.initialize();
+    }
     return this.userId;
   }
 
   /**
-   * Check if initialized.
+   * Checks if the user ID has been initialized.
+   * @returns {boolean} True if initialized, otherwise false.
    */
   isInitialized() {
     return this.initialized;
-  }
-
-  /**
-   * Get full user info.
-   */
-  getUserInfo() {
-    return {
-      userId: this.userId,
-      clientIP: this.clientIP,
-      initialized: this.initialized,
-    };
   }
 }
 
 // Create a global instance
 const userIdentification = new UserIdentification();
 
-// Export for use
+// Export for use in other modules if needed, or attach to window
 window.UserIdentification = UserIdentification;
 window.userIdentification = userIdentification;

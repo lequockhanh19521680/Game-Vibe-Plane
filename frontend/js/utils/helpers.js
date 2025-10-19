@@ -1,3 +1,7 @@
+/**
+ * Triggers a screen shake effect on the canvas.
+ * @param {number} intensity - The intensity of the shake (not currently used, but could be implemented).
+ */
 function triggerScreenShake(intensity) {
   canvas.classList.add("shake");
   setTimeout(
@@ -6,9 +10,11 @@ function triggerScreenShake(intensity) {
   );
 }
 
+/**
+ * Triggers the Asteroid Circle event.
+ */
 function triggerAsteroidCircle() {
   const config = GAME_CONFIG.events.asteroidCircle;
-
   const centerX =
     config.centerVariation +
     Math.random() * (canvas.width - 2 * config.centerVariation);
@@ -24,24 +30,24 @@ function triggerAsteroidCircle() {
     if (warningIndex > -1) {
       warnings.splice(warningIndex, 1);
     }
+    if (!isGameRunning) return;
 
     for (let i = 0; i < config.count; i++) {
       const angle = (i / config.count) * Math.PI * 2;
       const x = centerX + Math.cos(angle) * config.radius;
       const y = centerY + Math.sin(angle) * config.radius;
-
       const dx = Math.cos(angle) * config.speed;
       const dy = Math.sin(angle) * config.speed;
-
-      const asteroid = new Asteroid(x, y, config.asteroidRadius, "#ffbb33", {
-        x: dx,
-        y: dy,
-      });
-      asteroids.push(asteroid);
+      asteroids.push(
+        new Asteroid(x, y, config.asteroidRadius, "#ffbb33", { x: dx, y: dy })
+      );
     }
   }, config.warningTime * (1000 / 60));
 }
 
+/**
+ * Triggers the Asteroid Belt event.
+ */
 function triggerAsteroidBelt() {
   const config = GAME_CONFIG.events.asteroidBelt;
   const centerX = canvas.width / 2;
@@ -55,12 +61,12 @@ function triggerAsteroidBelt() {
     if (warningIndex > -1) {
       warnings.splice(warningIndex, 1);
     }
+    if (!isGameRunning) return;
 
     for (let i = 0; i < config.count; i++) {
       const angle = (i / config.count) * Math.PI * 2;
       const x = centerX + Math.cos(angle) * config.beltRadius;
       const y = centerY + Math.sin(angle) * config.beltRadius;
-
       asteroids.push(
         new Asteroid(x, y, 15 + Math.random() * 10, "#ffbb33", {
           x: -Math.sin(angle) * config.asteroidSpeed,
@@ -68,9 +74,14 @@ function triggerAsteroidBelt() {
         })
       );
     }
-  }, 180 * (1000 / 60));
+  }, 180 * (1000 / 60)); // Hardcoded 3-second warning
 }
 
+/**
+ * Creates a smaller asteroid for the "Asteroid Shower" event.
+ * @param {string} direction - The direction from which the asteroid should spawn ('top', 'left', 'right', 'bottom').
+ * @returns {Asteroid} A new Asteroid instance.
+ */
 function createMiniShowerAsteroid(direction) {
   const config = GAME_CONFIG.entities.asteroids;
   const radius =
@@ -118,6 +129,9 @@ function createMiniShowerAsteroid(direction) {
   );
 }
 
+/**
+ * A system to show a warning before spawning an entity.
+ */
 class WarningSystem {
   constructor(type, x, y, options = {}) {
     this.type = type;
@@ -145,6 +159,7 @@ class WarningSystem {
     }
 
     setTimeout(() => {
+      // Only spawn if the game is still running
       if (isGameRunning) {
         spawnCallback();
         const index = warnings.indexOf(this.warning);
@@ -156,6 +171,14 @@ class WarningSystem {
   }
 }
 
+/**
+ * Helper function to create a WarningSystem instance.
+ * @param {string} type - The type of entity to spawn.
+ * @param {number} x - The x-coordinate for the warning.
+ * @param {number} y - The y-coordinate for the warning.
+ * @param {object} options - Additional options for the warning.
+ * @returns {WarningSystem} A new WarningSystem instance.
+ */
 function spawnWithWarning(type, x, y, options = {}) {
   if (type === "magnetic") {
     options.duration = options.duration || 180;
@@ -167,8 +190,10 @@ function spawnWithWarning(type, x, y, options = {}) {
 }
 
 /**
- * Format time in MM:SS format
- * Moved from gameUI.js and dashboard.js to be centralized.
+ * Formats time in seconds to a MM:SS string.
+ * This is now the centralized function for time formatting.
+ * @param {number} seconds - The total seconds.
+ * @returns {string} The formatted time string.
  */
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
