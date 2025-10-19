@@ -97,7 +97,6 @@ function init() {
 }
 
 function animate() {
-  // Add a guard to ensure the animation loop stops when the game ends
   if (!isGameRunning) {
     cancelAnimationFrame(animationFrameId);
     return;
@@ -115,26 +114,19 @@ function animate() {
 
   timers.difficulty++;
 
-  // Update survival time
   survivalTime = Math.floor((Date.now() - gameStartTime) / 1000);
-  const minutes = Math.floor(survivalTime / 60);
-  const seconds = survivalTime % 60;
-  uiElements.survivalDisplay.innerText = `${minutes}:${seconds
-    .toString()
-    .padStart(2, "0")}`;
+  uiElements.survivalDisplay.innerText = formatTime(survivalTime);
 
   const distMoved = Math.hypot(mouse.x - prevMouse.x, mouse.y - prevMouse.y);
   const scorePerLevel = GAME_CONFIG.difficulty.scorePerLevel;
 
-  // Dynamic movement threshold
-  const currentLevel = Math.floor(score / scorePerLevel) + 1; // Level increases every scorePerLevel points
+  const currentLevel = Math.floor(score / scorePerLevel) + 1;
   const dynamicThreshold = Math.max(
     GAME_CONFIG.scoring.minMovementThreshold,
     GAME_CONFIG.scoring.baseMovementThreshold *
       Math.pow(GAME_CONFIG.scoring.thresholdDecreaseRate, currentLevel)
   );
 
-  // Only increase score when moving far enough (threshold decreases with level)
   if (distMoved >= dynamicThreshold) {
     score += distMoved * GAME_CONFIG.scoring.movementMultiplier;
   }
@@ -144,7 +136,6 @@ function animate() {
     uiElements.levelDisplay.innerText = `Level ${currentLevel}`;
   }
 
-  // Update level progress bar with corrected logic for accuracy
   const scoreForLevelUp = scorePerLevel;
   const scoreAtStartOfCurrentLevel = (currentLevel - 1) * scoreForLevelUp;
   const scoreProgressInLevel = score - scoreAtStartOfCurrentLevel;
@@ -154,7 +145,6 @@ function animate() {
     levelProgressBar.style.width = `${Math.min(100, progressPercentage)}%`;
   }
 
-  // OPTIMIZED UPDATE LOOP: Put all arrays into a parent array and process updates
   [
     particles,
     lasers,
@@ -177,23 +167,18 @@ function animate() {
   ].forEach((arr) =>
     arr.forEach((item) => (item.update ? item.update() : undefined))
   );
-  player.update(); // Update player last to draw over everything
+  player.update();
 
-  // --- Filter dead entities & Apply Hard Limits (Optimization) ---
-
-  // Filter and limit Fragments
   fragments = fragments.filter((f) => f.life > 0 && f.y < height + 50);
   if (fragments.length > GAME_CONFIG.core.maxFragments) {
     fragments.splice(0, fragments.length - GAME_CONFIG.core.maxFragments);
   }
 
-  // Filter and limit Particles
   particles = particles.filter((p) => p.alpha > 0);
   if (particles.length > GAME_CONFIG.core.maxParticles) {
     particles.splice(0, particles.length - GAME_CONFIG.core.maxParticles);
   }
 
-  // Filter other objects
   missiles = missiles.filter((m) => !m.isDead);
   asteroids = asteroids.filter(
     (a) => a.x > -50 && a.x < width + 50 && a.y > -50 && a.y < height + 50
@@ -211,12 +196,11 @@ function animate() {
   magneticStorms = magneticStorms.filter((m) => m.update() !== false);
   lightningStorms = lightningStorms.filter((l) => l.update() !== false);
 
-  // --- Event System ---
   if (score >= nextEventScore) {
     if (typeof window.triggerRandomEvent === "function") {
       window.triggerRandomEvent();
     }
-    const eventVariation = 0.7 + Math.random() * 0.6; // 70%-130% of base interval
+    const eventVariation = 0.7 + Math.random() * 0.6;
     nextEventScore += GAME_CONFIG.events.interval * eventVariation;
   }
   if (eventActive.type && timers.difficulty > eventActive.endTime) {
@@ -230,7 +214,6 @@ function animate() {
       ? GAME_CONFIG.events.denseField.spawnInterval
       : spawnInterval;
 
-  // --- Spawning Logic ---
   timers.asteroid++;
   if (timers.asteroid % currentSpawnInterval === 0) {
     const difficultyLevel = Math.floor(score / scorePerLevel);
@@ -308,10 +291,10 @@ function animate() {
     }
   }
 
-  if (score > GAME_CONFIG.specialObjects.energyOrb.spawnThreshold) {
+  if (score > GAME_CONFIG.newObjects.energyOrb.spawnThreshold) {
     timers.energyOrb = (timers.energyOrb || 0) + 1;
     if (
-      timers.energyOrb % GAME_CONFIG.specialObjects.energyOrb.spawnInterval ===
+      timers.energyOrb % GAME_CONFIG.newObjects.energyOrb.spawnInterval ===
       0
     ) {
       energyOrbs.push(
@@ -420,9 +403,12 @@ function animate() {
         )
       );
   }
-  if (score > 9000) {
+  if (score > GAME_CONFIG.entities.crystalClusters.spawnScore) {
     timers.crystal++;
-    if (timers.crystal % 800 === 0)
+    if (
+      timers.crystal % GAME_CONFIG.entities.crystalClusters.spawnInterval ===
+      0
+    )
       crystalClusters.push(
         new CrystalCluster(Math.random() * width, Math.random() * height * 0.7)
       );
@@ -430,7 +416,6 @@ function animate() {
 
   // --- Collision Detection ---
 
-  // Player vs Obstacles
   for (const ast of asteroids) {
     if (
       Math.hypot(player.x - ast.x, player.y - ast.y) -
@@ -468,7 +453,6 @@ function animate() {
     }
   }
 
-  // Lasers vs Player
   for (const laser of lasers) {
     if (laser.timer > laser.maxTime + GAME_CONFIG.entities.lasers.beamDuration)
       continue;
@@ -490,7 +474,6 @@ function animate() {
     (l) => l.timer < l.maxTime + GAME_CONFIG.entities.lasers.beamDuration
   );
 
-  // Mines & Crystals vs Player
   for (let i = laserMines.length - 1; i >= 0; i--) {
     const mine = laserMines[i];
     if (mine.state === "fading") {
@@ -556,36 +539,17 @@ function animate() {
   for (let i = fragments.length - 1; i >= 0; i--) {
     const fragment = fragments[i];
 
-    const isOverlapping =
-      player.x < fragment.x + fragment.radius &&
-      player.x + player.radius > fragment.x - fragment.radius &&
-      player.y < fragment.y + fragment.radius &&
-      player.y + player.radius > fragment.y - fragment.radius;
-
-    if (fragment.lethal && isOverlapping) {
-      for (let j = 0; j < 8; j++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 2 + Math.random() * 3;
-        particles.push(
-          new Particle(
-            player.x + Math.cos(angle) * player.radius,
-            player.y + Math.sin(angle) * player.radius,
-            Math.random() * 2 + 1,
-            "#ff6b9d",
-            {
-              x: Math.cos(angle) * speed,
-              y: Math.sin(angle) * speed,
-            }
-          )
-        );
-      }
-      triggerScreenShake(0.3);
-      playSound("collision", 0.5);
-      fragments.splice(i, 1);
+    if (
+      fragment.lethal &&
+      !player.shieldActive &&
+      Math.hypot(player.x - fragment.x, player.y - fragment.y) <
+        player.radius + fragment.radius
+    ) {
+      endGame("missile collision");
+      return;
     }
   }
 
-  // Inter-object collisions
   for (let i = fragments.length - 1; i >= 0; i--) {
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const f = fragments[i];
@@ -618,21 +582,6 @@ function animate() {
       const m = missiles[i];
       const a = asteroids[j];
       if (m && a && Math.hypot(m.x - a.x, m.y - a.y) < m.radius + a.radius) {
-        const fragmentCount =
-          GAME_CONFIG.entities.missiles.fragmentCountOnImpact;
-        for (let k = 0; k < fragmentCount; k++) {
-          const angle = (Math.PI * 2 * k) / fragmentCount + Math.random() * 0.5;
-          const speed =
-            GAME_CONFIG.fragments.missileFragments.speed *
-            (0.5 + Math.random() * 0.5);
-          const velocity = {
-            x: Math.cos(angle) * speed,
-            y: Math.sin(angle) * speed,
-          };
-          fragments.push(new MissileFragment(m.x, m.y, velocity));
-        }
-
-        playSound("fragmentHit", 0.5);
         m.explode(true);
         asteroids.splice(j, 1);
         break;
@@ -657,30 +606,19 @@ function animate() {
 
   for (let i = energyOrbs.length - 1; i >= 0; i--) {
     const orb = energyOrbs[i];
-    const dist = Math.hypot(player.x - orb.x, player.y - orb.y);
-    const isCollected = dist < orb.radius + player.radius;
-    const isBlocked =
-      dist < orb.radius + player.thunderShieldRadius &&
-      player.thunderShieldActive;
-    const isShielded =
-      dist < orb.radius + player.radius * 2.5 && player.shieldActive;
-
-    if (isCollected || isBlocked || isShielded) {
+    if (
+      Math.hypot(player.x - orb.x, player.y - orb.y) <
+      orb.radius + player.radius
+    ) {
       score += 50;
       playSound("powerup");
       for (let j = 0; j < 8; j++) {
         const angle = (j / 8) * Math.PI * 2;
         particles.push(
-          new Particle(
-            orb.x + Math.cos(angle) * 10,
-            orb.y + Math.sin(angle) * 10,
-            3,
-            "#00ffff",
-            {
-              x: Math.cos(angle) * 4,
-              y: Math.sin(angle) * 4,
-            }
-          )
+          new Particle(orb.x, orb.y, 3, "#00ffff", {
+            x: Math.cos(angle) * 4,
+            y: Math.sin(angle) * 4,
+          })
         );
       }
       energyOrbs.splice(i, 1);
@@ -688,13 +626,11 @@ function animate() {
   }
 
   for (const plasma of plasmaFields) {
-    const alpha = Math.max(0, (plasma.lifetime - plasma.age) / plasma.lifetime);
-    if (alpha < 0.05) {
-      continue;
-    }
-    const dist = Math.hypot(player.x - plasma.x, player.y - plasma.y);
-    if (dist < plasma.radius + player.radius) {
-      if (Math.random() < 0.02) {
+    if (
+      Math.hypot(player.x - plasma.x, player.y - plasma.y) <
+      plasma.radius + player.radius
+    ) {
+      if (!player.shieldActive && Math.random() < plasma.damageRate) {
         endGame("plasma field burn");
         return;
       }
@@ -703,140 +639,24 @@ function animate() {
 
   for (let i = crystalShards.length - 1; i >= 0; i--) {
     const crystal = crystalShards[i];
-    const dist = Math.hypot(player.x - crystal.x, player.y - crystal.y);
-    if (dist < crystal.size + player.radius) {
+    if (
+      Math.hypot(player.x - crystal.x, player.y - crystal.y) <
+      crystal.size + player.radius
+    ) {
       score += 50;
       player.activateShield();
-      if (typeof showEventText === "function") {
-        showEventText("Crystal Shield Activated!");
-      }
-      for (let j = 0; j < 12; j++) {
-        const angle = (j / 12) * Math.PI * 2;
-        particles.push(
-          new Particle(
-            crystal.x + Math.cos(angle) * 8,
-            crystal.y + Math.sin(angle) * 8,
-            3,
-            "#00ffff",
-            {
-              x: Math.cos(angle) * 4,
-              y: Math.sin(angle) * 4,
-            }
-          )
-        );
-      }
       crystalShards.splice(i, 1);
     }
   }
 
   for (const portal of quantumPortals) {
-    const dist = Math.hypot(player.x - portal.x, player.y - portal.y);
-    if (dist < portal.radius + player.radius) {
-      let newX,
-        newY,
-        attempts = 0;
-      do {
-        newX = 50 + Math.random() * (canvas.width - 100);
-        newY = 50 + Math.random() * (canvas.height - 100);
-        attempts++;
-      } while (
-        attempts < 10 &&
-        (asteroids.some(
-          (a) => Math.hypot(newX - a.x, newY - a.y) < a.radius + 30
-        ) ||
-          missiles.some(
-            (m) => Math.hypot(newX - m.x, newY - m.y) < m.radius + 30
-          ))
-      );
-
-      player.x = newX;
-      player.y = newY;
+    if (
+      Math.hypot(player.x - portal.x, player.y - portal.y) <
+      portal.radius + player.radius
+    ) {
+      player.x = Math.random() * width;
+      player.y = Math.random() * height;
       playSound("wormhole");
-
-      for (let j = 0; j < 12; j++) {
-        const angle = (j / 12) * Math.PI * 2;
-        particles.push(
-          new Particle(
-            portal.x + Math.cos(angle) * 15,
-            portal.y + Math.sin(angle) * 15,
-            3, // Radius
-            "#9c27b0", // Color
-            { x: Math.cos(angle) * 5, y: Math.sin(angle) * 5 }
-          )
-        );
-      }
-    }
-  }
-
-  for (const freeze of freezeZones) {
-    const dist = Math.hypot(player.x - freeze.x, player.y - freeze.y);
-    if (dist < freeze.radius + player.radius) {
-      player.velocity.x *= freeze.effectStrength;
-      player.velocity.y *= freeze.effectStrength;
-    }
-  }
-
-  for (let i = energyOrbs.length - 1; i >= 0; i--) {
-    const orb = energyOrbs[i];
-    for (let j = asteroids.length - 1; j >= 0; j--) {
-      const asteroid = asteroids[j];
-      const dist = Math.hypot(orb.x - asteroid.x, orb.y - asteroid.y);
-      if (dist < orb.radius + asteroid.radius) {
-        score += 25;
-        playSound("explosion");
-        for (let k = 0; k < 5; k++) {
-          const angle = Math.random() * Math.PI * 2;
-          fragments.push(
-            new Fragment(
-              asteroid.x + Math.cos(angle) * 10,
-              asteroid.y + Math.sin(angle) * 10,
-              { x: Math.cos(angle), y: Math.sin(angle) }
-            )
-          );
-        }
-        asteroids.splice(j, 1);
-        energyOrbs.splice(i, 1);
-        break;
-      }
-    }
-  }
-
-  for (const plasma of plasmaFields) {
-    for (let j = asteroids.length - 1; j >= 0; j--) {
-      const asteroid = asteroids[j];
-      const dist = Math.hypot(plasma.x - asteroid.x, plasma.y - asteroid.y);
-      if (dist < plasma.radius + asteroid.radius) {
-        asteroid.radius -= 0.5;
-        if (asteroid.radius <= 5) {
-          asteroids.splice(j, 1);
-          score += 15;
-        }
-      }
-    }
-  }
-
-  for (const crystal of crystalShards) {
-    for (let j = asteroids.length - 1; j >= 0; j--) {
-      const asteroid = asteroids[j];
-      const dist = Math.hypot(crystal.x - asteroid.x, crystal.y - asteroid.y);
-      if (dist < crystal.size + asteroid.radius) {
-        asteroid.velocity.x *= -0.8;
-        asteroid.velocity.y *= -0.8;
-      }
-    }
-  }
-
-  for (const portal of quantumPortals) {
-    for (const missile of missiles) {
-      const dist = Math.hypot(portal.x - missile.x, portal.y - missile.y);
-      if (dist < portal.radius + missile.radius) {
-        const awayFromPlayer = Math.atan2(
-          missile.y - player.y,
-          missile.x - player.x
-        );
-        missile.angle = awayFromPlayer;
-        playSound("wormhole");
-      }
     }
   }
 
@@ -844,67 +664,28 @@ function animate() {
 
   if (difficultyLevel > lastDifficultyLevel && difficultyLevel > 0) {
     lastDifficultyLevel = difficultyLevel;
-
-    if (typeof showEventText === "function") {
-      showEventText(`LEVEL ${difficultyLevel + 1}`);
-    }
+    showEventText(`LEVEL ${difficultyLevel + 1}`);
     playSound("powerup");
-
-    globalSpeedMultiplier +=
-      GAME_CONFIG.difficulty.speedIncreaseStep * (1 + difficultyLevel * 0.1);
+    globalSpeedMultiplier += GAME_CONFIG.difficulty.speedIncreaseStep;
     if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval) {
-      spawnInterval -=
-        GAME_CONFIG.difficulty.spawnDecreaseStep * (1 + difficultyLevel * 0.05);
-    }
-
-    if (difficultyLevel >= 3) {
-      if (Math.random() < 0.3) {
-        setTimeout(() => {
-          if (typeof window.triggerRandomEvent === "function") {
-            window.triggerRandomEvent();
-          }
-        }, 2000);
-      }
-    }
-
-    if (difficultyLevel >= 5) {
-      if (Math.random() < 0.4) {
-        setTimeout(() => {
-          if (typeof window.triggerRandomEvent === "function") {
-            window.triggerRandomEvent();
-          }
-        }, 1000);
-        setTimeout(() => {
-          if (typeof window.triggerRandomEvent === "function") {
-            window.triggerRandomEvent();
-          }
-        }, 3000);
-      }
-    }
-  }
-
-  if (timers.difficulty % (60 * 15) === 0 && timers.difficulty > 0) {
-    globalSpeedMultiplier += 0.02;
-
-    if (GAME_CONFIG.events.interval > 800) {
-      GAME_CONFIG.events.interval -= 20;
+      spawnInterval -= GAME_CONFIG.difficulty.spawnDecreaseStep;
     }
   }
 
   if (timers.difficulty % GAME_CONFIG.difficulty.microProgressInterval === 0) {
     if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval + 3)
       spawnInterval -= 1;
-    globalSpeedMultiplier +=
-      GAME_CONFIG.difficulty.microSpeedIncrease *
-      (1 + Math.floor(score / scorePerLevel) * 0.02);
+    globalSpeedMultiplier += GAME_CONFIG.difficulty.microSpeedIncrease;
   }
 }
 
 function endGame(reason = "unknown") {
   if (!isGameRunning) return;
+
+  // This call is removed because gameUIManager is being deleted.
+  // gameUIManager.handleEnemyCollision(reason);
+
   console.log(`Game Over! Reason: ${reason}`);
   cancelAnimationFrame(animationFrameId);
   gameStateManager.changeState("gameOver", { reason });
-
-  return;
 }

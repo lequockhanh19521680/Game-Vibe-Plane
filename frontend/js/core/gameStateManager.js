@@ -11,29 +11,21 @@ class GameStateManager {
     this.registerDefaultStates();
   }
 
-  /**
-   * Register a game state
-   */
   registerState(name, stateClass) {
     this.states.set(name, stateClass);
   }
 
-  /**
-   * Change to a new state
-   */
   changeState(stateName, data = {}) {
     if (!this.states.has(stateName)) {
       console.error(`Unknown state: ${stateName}`);
       return false;
     }
 
-    // Exit current state
     if (this.currentState) {
       this.currentState.exit();
       this.previousState = this.currentState;
     }
 
-    // Create and enter new state
     const StateClass = this.states.get(stateName);
     this.currentState = new StateClass(this, data);
     this.stateData = data;
@@ -42,35 +34,17 @@ class GameStateManager {
     return true;
   }
 
-  /**
-   * Update current state
-   */
   update() {
     if (this.currentState) {
       this.currentState.update();
     }
   }
 
-  /**
-   * Render current state
-   */
-  render() {
-    if (this.currentState) {
-      this.currentState.render();
-    }
-  }
-
-  /**
-   * Get current state name
-   */
   getCurrentStateName() {
     if (!this.currentState) return null;
     return this.currentState.constructor.name;
   }
 
-  /**
-   * Register default game states
-   */
   registerDefaultStates() {
     this.registerState("menu", MenuState);
     this.registerState("playing", PlayingState);
@@ -81,38 +55,18 @@ class GameStateManager {
   }
 }
 
-/**
- * Base Game State class
- */
 class GameState {
   constructor(manager, data = {}) {
     this.manager = manager;
     this.data = data;
   }
-
-  enter() {
-    // Override in subclasses
-  }
-
-  exit() {
-    // Override in subclasses
-  }
-
-  update() {
-    // Override in subclasses
-  }
-
-  render() {
-    // Override in subclasses
-  }
+  enter() {}
+  exit() {}
+  update() {}
 }
 
-/**
- * Menu State
- */
 class MenuState extends GameState {
   enter() {
-    // MODIFIED: Set body class to control cursor visibility
     document.body.className = "menu-active";
     uiElements.startScreen.style.display = "flex";
     uiElements.gameOverScreen.style.display = "none";
@@ -121,8 +75,6 @@ class MenuState extends GameState {
     uiElements.pauseMenu.style.display = "none";
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
     uiElements.pauseButton.style.display = "none";
-
-    // Draw background
     this.drawBackground();
   }
 
@@ -133,27 +85,20 @@ class MenuState extends GameState {
   drawBackground() {
     ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
     ctx.fillRect(0, 0, width, height);
-
-    // Draw nebulae and stars
     if (nebulae && nebulae.length > 0) {
       nebulae.forEach((n) => {
         ctx.fillStyle = n;
         ctx.fillRect(0, 0, width, height);
       });
     }
-
     if (stars && stars.length > 0) {
       stars.forEach((s) => s.draw());
     }
   }
 }
 
-/**
- * Playing State
- */
 class PlayingState extends GameState {
   enter() {
-    // MODIFIED: Set body class to hide cursor during gameplay
     document.body.className = "game-active";
     uiElements.startScreen.style.display = "none";
     uiElements.gameOverScreen.style.display = "none";
@@ -170,24 +115,10 @@ class PlayingState extends GameState {
       initAudioSystem();
     }
   }
-
-  exit() {
-    // No specific exit actions needed here, enter of next state will handle UI
-  }
-
-  update() {
-    if (isGameRunning && !isPaused) {
-      // Game update logic is handled in the main animate function
-    }
-  }
 }
 
-/**
- * Paused State
- */
 class PausedState extends GameState {
   enter() {
-    // MODIFIED: Set body class to show cursor during pause
     document.body.className = "paused-active";
     uiElements.pauseMenu.style.display = "flex";
     isPaused = true;
@@ -195,10 +126,51 @@ class PausedState extends GameState {
       cancelAnimationFrame(animationFrameId);
     }
     pauseBackgroundMusic();
+
+    // Update pause stats - logic moved from gameUI.js
+    this.updatePauseStats();
+    this.updatePauseTip();
+  }
+
+  updatePauseStats() {
+    const scoreEl = document.getElementById("pause-current-score");
+    if (scoreEl) scoreEl.textContent = score.toLocaleString();
+
+    const timeEl = document.getElementById("pause-current-time");
+    if (timeEl) timeEl.textContent = formatTime(survivalTime);
+
+    const levelEl = document.getElementById("pause-current-level");
+    if (levelEl) {
+      const currentLevel =
+        Math.floor(score / GAME_CONFIG.difficulty.scorePerLevel) + 1;
+      levelEl.textContent = currentLevel;
+    }
+
+    const highScoreEl = document.getElementById("pause-high-score");
+    if (highScoreEl) highScoreEl.textContent = highScore.toLocaleString();
+  }
+
+  updatePauseTip() {
+    const tipEl = document.getElementById("pause-tip");
+    if (tipEl) {
+      const tips = [
+        "Collect crystal shards for temporary shields!",
+        "Move constantly to avoid predictable patterns!",
+        "Higher levels spawn more dangerous enemies!",
+        "Use the edges of the screen for quick escapes!",
+        "Watch for warning indicators before events!",
+        "Power-ups appear more frequently at higher scores!",
+        "Different enemies have different movement patterns!",
+        "Your score increases faster when moving!",
+        "Survival time contributes to your final score!",
+        "Stay calm during intense moments!",
+      ];
+      const randomTip = tips[Math.floor(Math.random() * tips.length)];
+      tipEl.textContent = randomTip;
+    }
   }
 
   exit() {
-    // MODIFIED: Set body class back to game-active when resuming
     document.body.className = "game-active";
     uiElements.pauseMenu.style.display = "none";
     isPaused = false;
@@ -209,12 +181,8 @@ class PausedState extends GameState {
   }
 }
 
-/**
- * Game Over State
- */
 class GameOverState extends GameState {
   enter() {
-    // MODIFIED: Set body class to show cursor on game over
     document.body.className = "game-over";
     isGameRunning = false;
     uiElements.pauseButton.style.display = "none";
@@ -223,16 +191,10 @@ class GameOverState extends GameState {
     stopBackgroundMusic();
     playSound("explosion");
 
-    // Create death explosion
     this.createDeathExplosion();
-
-    // Send game over data to backend
     this.sendGameOverData();
-
-    // Check for high score
     this.checkHighScore();
 
-    // Show game over screen after delay
     setTimeout(() => {
       this.showGameOverScreen();
     }, GAME_CONFIG.ui.gameOverDelay);
@@ -272,30 +234,40 @@ class GameOverState extends GameState {
     score = ~~score;
     if (score > highScore) {
       highScore = score;
-      localStorage.setItem(
-        GAME_CONFIG.core.localStorageKey ||
-          GAME_CONFIG.advanced.localStorageKey,
-        highScore
-      );
-      uiElements.newHighscoreMsg.style.display = "block";
+      localStorage.setItem(GAME_CONFIG.core.localStorageKey, highScore);
+      uiElements.newHighscoreMsg.style.display = "flex";
     } else {
       uiElements.newHighscoreMsg.style.display = "none";
     }
   }
 
   showGameOverScreen() {
-    const minutes = Math.floor(survivalTime / 60);
-    const seconds = survivalTime % 60;
     uiElements.finalScoreEl.innerText = `${score}`;
-    uiElements.finalTimeEl.innerText = `${minutes}:${seconds
-      .toString()
-      .padStart(2, "0")}`;
+    uiElements.finalTimeEl.innerText = formatTime(survivalTime);
+
+    // Update death cause - logic moved from gameUI.js
+    const deathCauseEl = document.getElementById("death-cause");
+    if (deathCauseEl) {
+      const deathCauses = {
+        "asteroid collision": "Destroyed by ☄️ Asteroid",
+        "missile collision": "Hit by 🚀 Missile",
+        "black hole collision": "Consumed by 🕳️ Black Hole",
+        "laser collision": "Vaporized by ⚡ Laser",
+        "laser mine collision": "Triggered 💣 Mine",
+        "plasma field burn": "Burned by 🔥 Plasma Field",
+        "crystal cluster collision": "Shattered by 💎 Crystal Cluster",
+        "lightning strike": "Struck by ⚡ Lightning",
+        unknown: "Destroyed by Unknown Forces",
+      };
+      deathCauseEl.textContent =
+        deathCauses[this.data.reason] || deathCauses["unknown"];
+    }
+
     uiElements.gameOverScreen.style.display = "flex";
   }
 
   async sendGameOverData() {
     try {
-      // Get client IP
       let clientIP = null;
       try {
         clientIP = await BackendAPI.getClientIP();
@@ -303,7 +275,6 @@ class GameOverState extends GameState {
         console.log("Could not get client IP:", error);
       }
 
-      // Prepare game over data
       const gameOverData = {
         score: Math.floor(score),
         time: survivalTime,
@@ -312,10 +283,8 @@ class GameOverState extends GameState {
         clientIP: clientIP,
       };
 
-      // Send to backend if available
       if (window.BackendAPI && BACKEND_CONFIG.USE_BACKEND) {
         try {
-          // Get player name from playerNameUI or fallback
           const playerName =
             window.playerNameUI && window.playerNameUI.getPlayerName()
               ? window.playerNameUI.getPlayerName()
@@ -334,17 +303,14 @@ class GameOverState extends GameState {
         console.log("Backend not available, game over data logged locally");
       }
 
-      // Store locally as backup
       const localGameHistory = JSON.parse(
         localStorage.getItem("gameHistory") || "[]"
       );
       localGameHistory.push(gameOverData);
 
-      // Keep only last 100 games
       if (localGameHistory.length > 100) {
         localGameHistory.splice(0, localGameHistory.length - 100);
       }
-
       localStorage.setItem("gameHistory", JSON.stringify(localGameHistory));
     } catch (error) {
       console.error("Error sending game over data:", error);
@@ -356,23 +322,15 @@ class GameOverState extends GameState {
   }
 }
 
-/**
- * Leaderboard State
- */
 class LeaderboardState extends GameState {
   enter() {
-    // MODIFIED: Set body class for menu states
     document.body.className = "menu-active";
     uiElements.startScreen.style.display = "none";
     uiElements.howToPlayScreen.style.display = "none";
     uiElements.leaderboardScreen.style.display = "flex";
 
-    // Call function to render the currently stored leaderboard data
     if (typeof renderCurrentLeaderboardData === "function") {
       renderCurrentLeaderboardData();
-    } else if (typeof updateLeaderboard === "function") {
-      // Fallback for older structure
-      updateLeaderboard();
     }
   }
 
@@ -381,12 +339,8 @@ class LeaderboardState extends GameState {
   }
 }
 
-/**
- * How To Play State
- */
 class HowToPlayState extends GameState {
   enter() {
-    // MODIFIED: Set body class for menu states
     document.body.className = "menu-active";
     uiElements.howToPlayScreen.style.display = "flex";
   }
@@ -396,10 +350,8 @@ class HowToPlayState extends GameState {
   }
 }
 
-// Create global state manager
 const gameStateManager = new GameStateManager();
 
-// Export for use in other modules
 if (typeof module !== "undefined" && module.exports) {
   module.exports = { GameStateManager, gameStateManager };
 } else if (typeof window !== "undefined") {

@@ -93,9 +93,7 @@
           <button id="how-to-play-button" data-translate="menu.howToPlay">
             How to Play
           </button>
-          <!-- <button id="settings-button" data-translate="menu.settings">
-            Settings
-          </button> -->
+          <!-- Settings button will be added by settingsUI.js if needed -->
         </div>
       </div>
 
@@ -109,30 +107,21 @@
         <div class="game-over-stats">
           <div class="primary-stats">
             <div class="stat-item highlight">
-              <div class="stat-label" data-translate="gameOver.yourScore">
-                Final Score
-              </div>
+              <div class="stat-label">Final Score</div>
               <div id="final-score" class="stat-value">0</div>
             </div>
             <div class="stat-item">
-              <div class="stat-label" data-translate="gameOver.survivalTime">
-                Survival Time
-              </div>
+              <div class="stat-label">Survival Time</div>
               <div id="final-time" class="stat-value">0:00</div>
             </div>
           </div>
-
-          <div
-            class="achievement-section"
-            id="achievements-section"
-            style="display: none"
-          >
-            <h4>🏆 Achievements Unlocked</h4>
-            <div id="achievements-list" class="achievements-list"></div>
-          </div>
         </div>
 
-        <div id="new-highscore-msg" class="new-record-banner">
+        <div
+          id="new-highscore-msg"
+          class="new-record-banner"
+          style="display: none"
+        >
           <div class="record-icon">👑</div>
           <div class="record-text">
             <div class="record-title" data-translate="gameOver.newHighScore">
@@ -308,18 +297,23 @@
 
     <audio id="background-music" loop src="assets/audio/background.mp3"></audio>
 
+    <!-- CONFIG & API -->
     <script src="gameConfig.js"></script>
     <script src="js/config/endpoints.js"></script>
     <script src="js/api/backendApi.js"></script>
+
+    <!-- AUDIO -->
     <script src="js/audio/audioSystem.js"></script>
     <script src="js/audio/musicSystem.js"></script>
     <script src="js/audio/soundEffects.js"></script>
+
+    <!-- BASE & UTILS -->
     <script src="js/base/Entity.js"></script>
     <script src="js/utils/userIdentification.js"></script>
     <script src="js/utils/helpers.js"></script>
-    <script src="js/entities/visuals.js"></script>
 
-    <!-- Entity classes must be loaded before the factory that uses them -->
+    <!-- ENTITIES -->
+    <script src="js/entities/visuals.js"></script>
     <script src="js/entities/player.js"></script>
     <script src="js/entities/warnings.js"></script>
     <script src="js/entities/obstacles.js"></script>
@@ -327,21 +321,17 @@
     <script src="js/entities/hazards.js"></script>
     <script src="js/entities/portals.js"></script>
 
-    <!-- The factory is loaded after all entity classes are defined -->
+    <!-- CORE -->
     <script src="js/core/entityFactory.js"></script>
-
-    <!-- Core game logic files -->
     <script src="js/core/gameStateManager.js"></script>
     <script src="js/core/game.js"></script>
     <script src="js/core/eventSystem.js"></script>
     <script src="js/config/settings.js"></script>
 
-    <!-- UI and main application entry point -->
+    <!-- UI & MAIN -->
     <script src="js/ui/settingsUI.js"></script>
     <script src="js/ui/playerNameUI.js"></script>
-    <script src="js/main.js"></script>
     <script src="js/ui/dashboard.js"></script>
-
-    <!-- The file menuSystem.js has been removed as it was obsolete -->
+    <script src="js/main.js"></script>
   </body>
 </html>

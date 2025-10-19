@@ -25,14 +25,11 @@ function setupTabSwitching() {
     tab.addEventListener("click", () => {
       const targetTab = tab.getAttribute("data-tab");
 
-      // Remove active class from all tabs and contents
       tabs.forEach((t) => t.classList.remove("active"));
       contents.forEach((c) => c.classList.remove("active"));
 
-      // Add active class to clicked tab
       tab.classList.add("active");
 
-      // Show corresponding content
       const targetContent = document.getElementById(`${targetTab}-content`);
       if (targetContent) {
         targetContent.classList.add("active");
@@ -63,11 +60,7 @@ function connectWebSocket() {
       console.log("WebSocket connection established successfully.");
       isConnected = true;
       updateConnectionStatus("connected", "Live");
-
-      // Subscribe to real-time updates
       websocket.send(JSON.stringify({ action: "subscribe" }));
-
-      // Start heartbeat
       startHeartbeat();
     };
 
@@ -87,11 +80,7 @@ function connectWebSocket() {
       );
       isConnected = false;
       updateConnectionStatus("disconnected", "Disconnected");
-
-      // Stop heartbeat
       stopHeartbeat();
-
-      // Attempt to reconnect after 5 seconds
       setTimeout(connectWebSocket, 5000);
     };
 
@@ -139,7 +128,6 @@ function handleWebSocketMessage(message) {
       break;
 
     case "pong":
-      // Keep-alive response - connection is healthy
       console.log("Received pong from server");
       break;
 
@@ -155,7 +143,6 @@ function handleWebSocketMessage(message) {
 // Load initial leaderboard data
 async function loadInitialData() {
   try {
-    // Load global leaderboard
     const globalData = await BackendAPI.fetchLeaderboard(10);
     if (globalData && globalData.leaderboard) {
       globalLeaderboard = globalData.leaderboard;
@@ -163,7 +150,6 @@ async function loadInitialData() {
       updateGlobalLeaderboard();
     }
 
-    // Load country leaderboard
     const countryData = await BackendAPI.fetchLeaderboardByCountry(null, 10);
     if (countryData && countryData.countries) {
       countryLeaderboard = countryData.countries;
@@ -193,7 +179,6 @@ function updateGlobalLeaderboard(changedEntries = new Map()) {
     const entryElement = document.createElement("div");
     entryElement.className = "leaderboard-entry";
 
-    // Add special styling for top 3
     if (index < 3) {
       entryElement.classList.add(`rank-${index + 1}`);
     }
@@ -246,7 +231,6 @@ function updateCountryLeaderboard(changedEntries = new Map()) {
     const entryElement = document.createElement("div");
     entryElement.className = "country-entry";
 
-    // Add special styling for top 3
     if (index < 3) {
       entryElement.classList.add(`rank-${index + 1}`);
     }
@@ -330,7 +314,6 @@ function updatePlayerStats() {
   const playerStats = document.getElementById("player-stats");
   if (!playerStats) return;
 
-  // Get stats from localStorage
   const highScore = localStorage.getItem(GAME_CONFIG.core.localStorageKey) || 0;
   const gameHistory = JSON.parse(localStorage.getItem("gameHistory") || "[]");
   const gamesPlayed = gameHistory.length;
@@ -345,7 +328,6 @@ function updatePlayerStats() {
         )
       : 0;
 
-  // Calculate death statistics
   const deathStats = {};
   gameHistory.forEach((game) => {
     const cause = game.deathBy || "unknown";
@@ -428,19 +410,13 @@ function getChangedEntries(prevIds, newList, idKey) {
     const newIndex = newPositions.get(id);
     if (newIndex !== undefined && newIndex !== oldIndex) {
       if (newIndex < oldIndex) {
-        changes.set(id, "up"); // Moved up
+        changes.set(id, "up");
       } else {
-        changes.set(id, "down"); // Moved down
+        changes.set(id, "down");
       }
     }
   });
   return changes;
-}
-
-function formatTime(seconds) {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
 function formatDeathCause(cause) {
@@ -481,9 +457,7 @@ function getCountryFlag(countryIdentifier) {
   };
 
   if (!countryIdentifier) return "🌍";
-
   let countryCode = countryIdentifier.toUpperCase();
-
   if (countryIdentifier.length > 2) {
     const mappedCode = countryCodeMap[countryIdentifier];
     if (mappedCode) {
@@ -492,11 +466,7 @@ function getCountryFlag(countryIdentifier) {
       return "🌍";
     }
   }
-
-  if (countryCode.length !== 2) {
-    return "🌍";
-  }
-
+  if (countryCode.length !== 2) return "🌍";
   try {
     const codePoints = countryCode
       .split("")
@@ -513,18 +483,15 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Start heartbeat to keep connection alive
 function startHeartbeat() {
-  stopHeartbeat(); // Clear any existing interval
-
+  stopHeartbeat();
   heartbeatInterval = setInterval(() => {
     if (websocket && websocket.readyState === WebSocket.OPEN) {
       websocket.send(JSON.stringify({ action: "ping" }));
     }
-  }, 30000); // Ping every 30 seconds
+  }, 30000);
 }
 
-// Stop heartbeat
 function stopHeartbeat() {
   if (heartbeatInterval) {
     clearInterval(heartbeatInterval);
@@ -532,7 +499,6 @@ function stopHeartbeat() {
   }
 }
 
-// Cleanup WebSocket on page unload
 window.addEventListener("beforeunload", () => {
   stopHeartbeat();
   if (websocket) {
@@ -540,27 +506,19 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
-/**
- * Renders the leaderboard UI using the currently stored data in `globalLeaderboard` and `countryLeaderboard`.
- * This avoids re-fetching data unnecessarily.
- */
 function renderCurrentLeaderboardData() {
   updateGlobalLeaderboard();
   updateCountryLeaderboard();
   updatePlayerStats();
 }
 
-// Legacy function for backward compatibility, now points to the new render function
 function updateLeaderboard() {
   renderCurrentLeaderboardData();
 }
 
-// Make functions globally available
 window.initializeDashboard = initializeDashboard;
 window.updateLeaderboard = updateLeaderboard;
 window.updatePlayerStats = updatePlayerStats;
-// Make the new render function globally available as well
 window.renderCurrentLeaderboardData = renderCurrentLeaderboardData;
 
-// Call initialization when the script loads
 document.addEventListener("DOMContentLoaded", initializeDashboard);

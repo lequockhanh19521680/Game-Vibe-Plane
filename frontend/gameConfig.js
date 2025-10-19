@@ -1,8 +1,7 @@
 // =============================================================================
-// STELLAR DRIFT: SINGULARITY - GAME CONFIGURATION
+// STELLAR DRIFT: SINGULARITY - GAME CONFIGURATION (REFACTORED)
 // =============================================================================
-// Centralized configuration file for all game parameters
-// Version: Refactored for better organization and maintainability
+// Unused properties have been removed for a cleaner and more maintainable config.
 // =============================================================================
 
 const GAME_CONFIG = {
@@ -22,7 +21,6 @@ const GAME_CONFIG = {
   // =============================================================================
   canvas: {
     backgroundColor: "#050510",
-    cursorVisible: false,
   },
 
   // =============================================================================
@@ -49,7 +47,7 @@ const GAME_CONFIG = {
     baseSpeed: 0.5,
     speedIncreaseStep: 0.05,
     microSpeedIncrease: 0.01,
-    levelUpInterval: 30,
+    levelUpInterval: 30, // Not directly used, but influences logic
     microProgressInterval: 900,
     scorePerLevel: 3000,
   },
@@ -58,7 +56,6 @@ const GAME_CONFIG = {
   // ENTITY CONFIGURATIONS
   // =============================================================================
   entities: {
-    // Asteroid Configuration
     asteroids: {
       minRadius: 12,
       maxRadius: 40,
@@ -78,13 +75,10 @@ const GAME_CONFIG = {
         diagonal: 0.1,
       },
     },
-
-    // Black Hole Configuration
     blackHoles: {
       spawnScore: 3000,
       spawnInterval: 1000,
       warningDuration: 180,
-      warningDelay: 3000,
       baseRadius: 8,
       baseMaxRadius: 40,
       radiusIncreasePerLevel: 15,
@@ -99,13 +93,10 @@ const GAME_CONFIG = {
       shakeIntensity: 0.05,
       temporaryLifetime: 200,
     },
-
-    // Missile Configuration
     missiles: {
       spawnScore: 1500,
       spawnInterval: 700,
       warningDuration: 150,
-      warningDelay: 2500,
       radius: 5,
       baseSpeed: 0.15,
       speedIncreasePerLevel: 0.025,
@@ -121,8 +112,6 @@ const GAME_CONFIG = {
         friction: 0.92,
       },
     },
-
-    // Laser Configuration
     lasers: {
       spawnScore: 4500,
       baseInterval: 450,
@@ -138,12 +127,9 @@ const GAME_CONFIG = {
       staggerDelay: 150,
       playerHitRadius: 7.5,
     },
-
-    // Laser Mine Configuration
     laserMines: {
       spawnScore: 8000,
       spawnInterval: 500,
-      warningDuration: 150,
       radius: 10,
       chargeTime: 180,
       fireDuration: 15,
@@ -151,8 +137,6 @@ const GAME_CONFIG = {
       beamWidth: 10,
       warningOpacity: 0.3,
     },
-
-    // Crystal Cluster Configuration
     crystalClusters: {
       spawnScore: 2000,
       spawnInterval: 800,
@@ -160,12 +144,7 @@ const GAME_CONFIG = {
       lifetime: 300,
       crystalCount: 6,
       colors: ["#40c4ff", "#81d4fa"],
-      pulseSpeed: 0.15,
       rotationSpeed: 0.02,
-      chargeTime: 90,
-      dischargeTime: 30,
-      dischargeRadius: 150,
-      dischargeColor: "#40c4ff",
     },
   },
 
@@ -177,11 +156,7 @@ const GAME_CONFIG = {
     maxRadius: 5,
     minLife: 100,
     maxLife: 150,
-    gravity: 0.1,
-    airResistance: 0.98,
-    rotationSpeed: 0.2,
     color: "#ffbb33",
-    shadowBlur: 5,
     explosionParticles: 6,
     scoreBonus: 15,
     missileFragments: {
@@ -215,10 +190,8 @@ const GAME_CONFIG = {
       plasmaStorm: 11000,
       voidRifts: 15000,
     },
-    // Event-specific configurations
     denseField: { spawnInterval: 35 },
     speedZone: { speedMultiplier: 1.4 },
-    laserSwarm: { laserCount: 3, targetChance: 0.6, delay: 400 },
     laserGrid: { gridSize: 3, delay: 350 },
     asteroidRain: {
       count: 18,
@@ -239,59 +212,26 @@ const GAME_CONFIG = {
     asteroidBelt: {
       count: 20,
       beltRadius: 300,
-      rotationSpeed: 0.02,
       asteroidSpeed: 1.5,
     },
     missileBarrage: { count: 5, delay: 500 },
-    blackHoleChain: { count: 3, delay: 1000, warningDelay: 2000 },
-    gravitationalAnomaly: { blackHoleCount: 2 },
+    blackHoleChain: { count: 3, delay: 1000 },
     wormholePortal: {
       count: 3,
       lifetime: 600,
-      shootInterval: 120,
-      asteroidSpeed: 4,
     },
-    shieldGenerator: {
-      count: 3,
-      lifetime: 300,
-      shieldRadius: 80,
-      chargeTime: 60,
-    },
-
-    freezeZone: { count: 4, radius: 100, slowFactor: 0.3, duration: 200 },
-    magneticStorm: {
-      lifetime: 480,
-      maxIntensity: 1.2,
-      fieldCount: 4,
-      fieldRadius: 120,
-      playerAffectMultiplier: 0.3,
-      objectAffectMultiplier: 0.5,
-    },
-    laserTurrets: {
-      count: 4,
-      rotationSpeed: 0.05,
-      fireInterval: 90,
-      laserSpeed: 8,
-      lifetime: 300,
-    },
-    plasmaStorm: {
-      count: 6,
-      minRadius: 60,
-      maxRadius: 90,
-      duration: 400,
-      intensity: 0.8,
-    },
-    crystalRain: { count: 5, delay: 80, clusterSize: 8, driftSpeed: 1.2 },
-    quantumTunnels: { count: 3, lifetime: 350, teleportForce: 0.9 },
-    gravityWells: { count: 5, radius: 80, strength: 0.08, lifetime: 300 },
-    meteorBombardment: { count: 25, delay: 60, speed: 5, explosionRadius: 40 },
-    voidRifts: { count: 4, radius: 60, pullStrength: 0.2, lifetime: 320 },
+    crystalRain: { count: 5, delay: 80 },
+    quantumTunnels: { count: 3, lifetime: 350 },
+    gravityWells: { count: 5, radius: 80 },
+    meteorBombardment: { count: 25, delay: 60, speed: 5 },
+    voidRifts: { count: 4, radius: 60 },
   },
 
   // =============================================================================
-  // SPECIAL OBJECTS
+  // SPECIAL/NEW OBJECTS
+  // Renamed for consistency with code
   // =============================================================================
-  specialObjects: {
+  newObjects: {
     energyOrb: {
       baseRadius: 2.5,
       baseVelocity: 1.0,
@@ -308,8 +248,6 @@ const GAME_CONFIG = {
       shieldRadius: 80,
       chargeTime: 60,
       activeTime: 180,
-      color: "#2196f3",
-      shieldColor: "#4fc3f7",
     },
     freezeZone: {
       radius: 100,
@@ -317,20 +255,6 @@ const GAME_CONFIG = {
       particleCount: 20,
       color: "#81d4fa",
       pulseSpeed: 0.05,
-      pulseMinFactor: 0.3,
-      pulseMaxFactor: 0.7,
-      drawAlpha: 0.6,
-      lineWidth: 4,
-      lineDash: [8, 4],
-      fillAlphaHex: "20",
-      shadowBlur: 5,
-      distancePulseSpeed: 0.02,
-      distancePulseAmount: 0.5,
-      freezeChance: 0.005,
-      missileFreezeChance: 0.01,
-      fullFreezeFactor: 0.1,
-      crystalSpawnDistance: 20,
-      crystalSpawnFactor: 0.7,
       duration: 300,
     },
     laserTurret: {
@@ -339,36 +263,12 @@ const GAME_CONFIG = {
       rotationSpeed: 0.05,
       trackingRange: 200,
       fireInterval: 90,
-      laserDamage: 1,
       color: "#ff5722",
       laserColor: "#ff5722",
-      baseShadowBlur: 10,
-      barrelWidth: 6,
       barrelColor: "#d32f2f",
       chargeColor: "#ffeb3b",
-      glowDuration: 10,
-      tipRadius: 4,
-      chargeShadowBlur: 15,
-      trackingAlpha: 0.2,
-      trackingLineWidth: 2,
-      trackingLineDash: [5, 5],
-      trackingSpeed: 0.15,
-      laserLength: 1000,
-      laserHitRadius: 8,
       asteroidScore: 20,
       missileScore: 15,
-      maxPriorityDistance: 300,
-      nonPlayerTargetRateMultiplier: 1.5,
-      freezeSlowdownFactor: 0.05,
-      unfreezeFireFactor: 0.99,
-      unfreezeRotationFactor: 1.02,
-      laserParticleCount: 5,
-      particleVelocityBase: 5,
-      asteroidFragmentCount: 4,
-      fragmentSpawnOffset: 8,
-      fragmentSpeed: 3,
-      fragmentBaseSpeed: 4,
-      fragmentSpeedVariation: 6,
     },
     magneticStorm: {
       lifetime: 480,
@@ -379,66 +279,21 @@ const GAME_CONFIG = {
       fieldRadius: 100,
       radiusVariation: 80,
       lightningInterval: 30,
-      fieldDrawAlpha: 0.4,
       rampDuration: 60,
-      pulseSpeed: 0.1,
-      pulseMinFactor: 0.8,
-      pulseMaxFactor: 0.2,
-      fieldRotationSpeed: 0.02,
-      arcSpawnChance: 0.1,
-      lethalTargetRange: 300,
-      arcFadeSpeed: 0.1,
-      lethalCollisionMinAlpha: 0.7,
       playerAffectMultiplier: 0.3,
       objectAffectMultiplier: 0.5,
       missileAffectMultiplier: 0.3,
-      lethalHitTolerance: 10,
       chargeColor: "#88ddff",
+      attractColor: "#00ff88",
+      repelColor: "#ff4444",
       arcColor: "#88ddff",
       lethalBoltColor: "#ffff00",
-      lethalBoltLineWidth: 5,
-      lethalBoltShadowBlur: 15,
-      arcLineWidth: 3,
-      arcShadowBlur: 10,
-      lineCount: 8,
-      startRadiusFactor: 0.3,
-      controlRadiusFactor: 0.7,
-      controlAngleOffset: 0.3,
-      fieldLineWidth: 2,
-      coreRadius: 8,
-      arcJitter: 40,
-      lethalJitter: 40,
-      lethalBoltSoundVolume: 0.5,
     },
     lightningStorm: {
       lifetime: 600,
-      gateCount: 2,
-      gatePlacementRange: 200,
-      gateRadius: 40,
-      gateChargeTime: 120,
+      lightningInterval: 120,
       lightningJitter: 60,
-      speedBoostMultiplier: 0.8,
       boostDuration: 600,
-      segmentCount: 12,
-      chargeColor: "#88ddff",
-      ringLineWidth: 4,
-      ringShadowBlur: 15,
-      chargeInnerRadiusFactor: 0.7,
-      chargeLineWidth: 2,
-      particleSpawnChance: 0.3,
-      particleVelocity: 2,
-      particleMaxSize: 3,
-      boltFadeSpeed: 0.1,
-      collisionMinAlpha: 0.5,
-      hitRadius: 25,
-      boltColor: "#ffffff",
-      boltLineWidth: 4,
-      boltShadowBlur: 20,
-      boltSoundVolume: 0.7,
-      particleFadeSpeed: 0.05,
-      particleSpawnMinDistFactor: 0.5,
-      particleSpawnMaxDistFactor: 0.5,
-      boltWidth: 8,
     },
     plasmaField: {
       radius: 80,
@@ -452,17 +307,11 @@ const GAME_CONFIG = {
       particleMaxSpeed: 0.03,
       particleMinSize: 2,
       particleMaxSize: 3,
-      drawAlpha: 0.6,
-      lineWidth: 3,
-      lineDash: [10, 5],
-      shadowBlur: 8,
       rotationSpeed: 0.02,
-      rotationAcceleration: 0,
       distancePulseSpeed: 0.05,
       distancePulseAmount: 0.5,
       pushRadiusMultiplier: 1.5,
       pushForce: 0.05,
-      missilePushMultiplier: 1.0,
       fragmentPushMultiplier: 1.6,
     },
   },
@@ -488,29 +337,6 @@ const GAME_CONFIG = {
       wormhole: 0.15,
       shield: 0.15,
       freeze: 0.15,
-      blackholeGrowth: 0.02,
-      blackholeDestroy: 0.04,
-      plasmaStorm: 0.07,
-      temporalRift: 0.06,
-      quantumFluctuation: 0.05,
-      cosmicRadiation: 0.04,
-      pulsarBurst: 0.06,
-      ambientSpace: 0.02,
-    },
-    backgroundMusic: {
-      frequencies: [110, 146.83, 196, 220, 293.66, 329.63, 392],
-      patterns: [
-        [0, 2, 4, 6],
-        [1, 3, 5, 3],
-        [6, 4, 2, 0],
-        [2, 0, 3, 5],
-      ],
-      waveTypes: ["sine", "triangle", "sine", "triangle"],
-      interval: 2000,
-      duration: 3.5,
-      fadeTime: 2,
-      spaceModulation: { enable: true, depth: 3, speed: 0.1 },
-      spatialSettings: { reverbLevel: 0.3, stereoWidth: 0.7 },
     },
   },
 
@@ -550,7 +376,7 @@ const GAME_CONFIG = {
   // UI SETTINGS
   // =============================================================================
   ui: {
-    eventText: { duration: 3000, fontSize: "2.5rem" }, // duration in milliseconds
+    eventText: { duration: 3000, fontSize: "2.5rem" },
     warning: {
       radius: 30,
       pulseIntensity: 15,
@@ -569,7 +395,6 @@ const GAME_CONFIG = {
   scoring: {
     movementMultiplier: 0.2,
     asteroidDestroy: 25,
-    survivalBonus: 0,
     baseMovementThreshold: 5,
     minMovementThreshold: 2,
     thresholdDecreasePerLevel: 0.5,
@@ -577,7 +402,6 @@ const GAME_CONFIG = {
   },
 };
 
-// Export for use
 if (typeof module !== "undefined" && module.exports) {
   module.exports = GAME_CONFIG;
 } else if (typeof window !== "undefined") {

@@ -104,7 +104,6 @@ startButton.addEventListener("click", (e) => {
   if (startButton.classList.contains("disabled") || startButton.disabled) {
     e.preventDefault();
     e.stopPropagation();
-
     if (window.playerNameUI) {
       window.playerNameUI.show();
     }
@@ -113,9 +112,7 @@ startButton.addEventListener("click", (e) => {
     }
     return false;
   }
-
   playSound("buttonHover");
-
   if (window.playerNameUI && !window.playerNameUI.hasValidName()) {
     window.playerNameUI.show();
     if (typeof showEventText === "function") {
@@ -123,82 +120,67 @@ startButton.addEventListener("click", (e) => {
     }
     return;
   }
-
   if (window.playerNameUI) {
     window.playerNameUI.saveName();
   }
-
   startGame();
 });
 restartButton.addEventListener("click", () => {
   playSound("buttonHover");
   startGame();
 });
-
 leaderboardButton.addEventListener("click", () => {
   initAudioSystem();
   playSound("buttonHover");
   gameStateManager.changeState("leaderboard");
 });
-
 howToPlayButton.addEventListener("click", () => {
   initAudioSystem();
   playSound("buttonHover");
   gameStateManager.changeState("howToPlay");
 });
-
 backToMainMenuButton.addEventListener("click", () => {
   playSound("buttonHover");
   gameStateManager.changeState("menu");
 });
-
 backToMainFromHowToPlayButton.addEventListener("click", () => {
   playSound("buttonHover");
   gameStateManager.changeState("menu");
 });
-
 uiElements.pauseButton.addEventListener("click", () => {
   playSound("buttonHover");
   togglePause();
 });
-
 resumeButton.addEventListener("click", () => {
   playSound("buttonHover");
   togglePause();
 });
-
 restartFromPauseButton.addEventListener("click", () => {
   playSound("buttonHover");
   togglePause();
   startGame();
 });
-
 mainMenuFromPauseButton.addEventListener("click", () => {
   playSound("buttonHover");
   togglePause();
   isGameRunning = false;
   uiElements.pauseButton.style.display = "none";
   uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
-
   ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
   ctx.fillRect(0, 0, width, height);
   if (stars && stars.length > 0) {
     stars.forEach((s) => s.draw());
   }
-
   gameStateManager.changeState("menu");
 });
-
 mainMenuFromOverButton.addEventListener("click", () => {
   playSound("buttonHover");
   uiElements.gameOverScreen.style.display = "none";
-
   ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
   ctx.fillRect(0, 0, width, height);
   if (stars && stars.length > 0) {
     stars.forEach((s) => s.draw());
   }
-
   gameStateManager.changeState("menu");
 });
 
@@ -247,11 +229,9 @@ window.addEventListener("keydown", (e) => {
 // --- Initial Setup ---
 width = canvas.width = window.innerWidth;
 height = canvas.height = window.innerHeight;
-
 nebulae = Array(GAME_CONFIG.visual.nebula.count)
   .fill(null)
   .map(() => createNebula());
-
 stars = [];
 for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
   const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
@@ -265,7 +245,6 @@ for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
       )
     );
 }
-
 highScore = localStorage.getItem(GAME_CONFIG.core.localStorageKey) || 0;
 if (uiElements.highscoreDisplay) {
   uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
@@ -290,22 +269,25 @@ async function initializeApp() {
   if (window.BackendAPI && window.BackendAPI.initialize) {
     await window.BackendAPI.initialize();
   }
-
   if (window.gameSettings) {
     await window.gameSettings.initialize();
   }
-
   if (window.settingsUI) {
     window.settingsUI.initialize();
   }
-
   if (window.playerNameUI) {
     window.playerNameUI.initialize();
   }
-
   if (window.initializeDashboard) {
     window.initializeDashboard();
   }
+
+  // Set up hover sounds for all buttons, moved from initUI.js
+  document.querySelectorAll("button").forEach((button) => {
+    if (typeof playSound === "function") {
+      button.addEventListener("mouseenter", () => playSound("buttonHover"));
+    }
+  });
 
   gameStateManager.changeState("menu");
 
