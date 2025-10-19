@@ -63,7 +63,6 @@ function playSound(soundType, volume) {
     score: createScoreSound,
     powerup: createPowerUpSound,
     blackhole: createBlackHoleSound,
-    fragmentHit: createFragmentHitSound,
     laserMine: createLaserMineSound,
     wormhole: createWormholeSound,
     shield: createShieldSound,

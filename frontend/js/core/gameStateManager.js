@@ -268,19 +268,11 @@ class GameOverState extends GameState {
 
   async sendGameOverData() {
     try {
-      let clientIP = null;
-      try {
-        clientIP = await BackendAPI.getClientIP();
-      } catch (error) {
-        console.log("Could not get client IP:", error);
-      }
-
       const gameOverData = {
         score: Math.floor(score),
         time: survivalTime,
         deathBy: this.data.reason || "unknown",
         deathTime: new Date().toISOString(),
-        clientIP: clientIP,
       };
 
       if (window.BackendAPI && BACKEND_CONFIG.USE_BACKEND) {

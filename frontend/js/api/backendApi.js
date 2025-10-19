@@ -61,29 +61,6 @@ const BackendAPI = {
 
     return null;
   },
-  /**
-   * Get client IP address (backend will also detect it from request headers)
-   */
-  async getClientIP() {
-    try {
-      // Try multiple IP detection services
-      const services = ["https://api.ipify.org?format=json"];
-
-      for (const service of services) {
-        try {
-          const response = await fetch(service, { timeout: 3000 });
-          const data = await response.json();
-          return data.ip || data.IP || null;
-        } catch (err) {
-          continue;
-        }
-      }
-      return null;
-    } catch (error) {
-      console.log("Could not detect client IP:", error);
-      return null;
-    }
-  },
 
   /**
    * Submit game score to backend
@@ -97,9 +74,6 @@ const BackendAPI = {
     }
 
     try {
-      // Get client IP (optional, backend can also extract from headers)
-      const clientIP = await this.getClientIP();
-
       // Get user identification
       let userId = null;
 
@@ -107,8 +81,7 @@ const BackendAPI = {
         window.userIdentification &&
         window.userIdentification.isInitialized()
       ) {
-        const userInfo = window.userIdentification.getUserInfo();
-        userId = userInfo.userId;
+        userId = window.userIdentification.getUserId();
       }
 
       const response = await fetch(`${apiBaseUrl}/submit-score`, {
@@ -121,7 +94,6 @@ const BackendAPI = {
           score: Math.floor(score),
           survivalTime: Math.floor(survivalTime),
           deathCause: deathCause || "unknown",
-          clientIP: clientIP, // Send client IP to backend
           userId: userId, // Unique user identifier
           userAgent: navigator.userAgent,
           timestamp: new Date().toISOString(),
@@ -209,59 +181,6 @@ const BackendAPI = {
     } catch (error) {
       console.error("Error fetching country leaderboard:", error);
       return null;
-    }
-  },
-
-  /**
-   * Fetch death statistics from backend
-   */
-  async fetchDeathStatistics() {
-    const apiBaseUrl = this.getApiBaseUrl();
-
-    if (!BACKEND_CONFIG.USE_BACKEND || !apiBaseUrl) {
-      console.log("Backend integration disabled");
-      return null;
-    }
-
-    try {
-      const response = await fetch(`${apiBaseUrl}/death-stats`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error fetching death statistics:", error);
-      return null;
-    }
-  },
-
-  /**
-   * Test connection to backend
-   */
-  async testConnection() {
-    const apiBaseUrl = this.getApiBaseUrl();
-
-    if (!BACKEND_CONFIG.USE_BACKEND || !apiBaseUrl) {
-      throw new Error("Backend integration disabled");
-    }
-
-    try {
-      const response = await fetch(`${apiBaseUrl}/health`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Backend connection test failed:", error);
-      throw error;
     }
   },
 };

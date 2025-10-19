@@ -121,7 +121,7 @@ const GAME_CONFIG = {
       warningTime: 300,
       beamDuration: 10,
       staggerDelay: 150,
-      playerHitRadius: 7.5, // Note: Not used in Laser class collision logic
+      playerHitRadius: 7.5,
     },
     laserMines: {
       spawnScore: 8000,
@@ -131,7 +131,6 @@ const GAME_CONFIG = {
       fireDuration: 15,
       patterns: ["cross", "diagonal", "star"],
       beamWidth: 10,
-      warningOpacity: 0.3,
     },
     crystalClusters: {
       spawnScore: 2000,
@@ -334,11 +333,7 @@ const GAME_CONFIG = {
   // =============================================================================
   visual: {
     colors: {
-      // These seem unused, colors are defined per-entity
-      primary: "#00ffff",
-      danger: "#ff4444",
-      energy: "#aa66cc",
-      highlight: "#ffbb33",
+      danger: "#ff4444", // Only color used directly from config
     },
     screenShake: {
       duration: 0.3,
