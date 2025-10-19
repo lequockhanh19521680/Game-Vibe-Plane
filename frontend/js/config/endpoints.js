@@ -18,9 +18,9 @@ class EndpointManager {
       // Obfuscated endpoint data (in production, this could be fetched from a secure endpoint)
       const obfuscatedData = {
         // Base64 encoded API endpoint
-        api: "aHR0cHM6Ly8wamZlaWl2ZnBiLmV4ZWN1dGUtYXBpLmFwLXNvdXRoZWFzdC0xLmFtYXpvbmF3cy5jb20vcHJvZA==",
+        api: "https://414laz8ylc.execute-api.ap-southeast-1.amazonaws.com/prod",
         // Base64 encoded WebSocket endpoint
-        ws: "d3NzOi8vaWU4MWh4b2lvNy5leGVjdXRlLWFwaS5hcC1zb3V0aGVhc3QtMS5hbWF6b25hd3MuY29tL3Byb2Q=",
+        ws: "wss://w86y8zp3ck.execute-api.ap-southeast-1.amazonaws.com/prod/",
         // Additional security token (could be used for API key rotation)
         token: "c3RlbGxhcl9kcmlmdF9zZWN1cmVfdG9rZW5fdjE=",
       };
