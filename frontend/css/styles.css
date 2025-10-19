@@ -103,6 +103,7 @@ button,
   max-height: 90vh; /* Reduced max-height */
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* FIX: Enable smooth scrolling on mobile */
 }
 
 #leaderboard-screen {
@@ -434,8 +435,6 @@ button.disabled:hover {
     border-radius: 12px;
     max-width: 96vw;
     max-height: 92vh;
-    overflow-y: auto;
-    overflow-x: hidden;
   }
 
   /* Improved Start Menu for mobile */
@@ -557,13 +556,6 @@ button.disabled:hover {
   }
 
   /* Pause elements */
-  #pause-button {
-    font-size: 1.1rem;
-    padding: 0.5rem 0.7rem;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
   #pause-menu {
     gap: 1rem;
     padding: 1.5rem 1rem;
@@ -665,5 +657,325 @@ button.disabled:hover {
   button {
     padding: 0.6rem 1.2rem;
     font-size: 0.9rem;
+  }
+}
+
+/* Tablet devices - Enhanced */
+@media (min-width: 769px) and (max-width: 1024px) {
+  h1 {
+    font-size: 2.8rem;
+  }
+
+  h2 {
+    font-size: 1.8rem;
+  }
+
+  button {
+    padding: 0.9rem 2rem;
+    font-size: 1rem;
+    min-height: 44px;
+  }
+
+  .ui-element {
+    padding: 1.5rem 2rem;
+    max-width: 70vw;
+    max-height: 85vh;
+  }
+
+  /* Tablet-optimized start screen */
+  #start-screen {
+    max-width: 600px;
+  }
+
+  #start-screen .menu-buttons-group {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* HUD adjustments */
+  #score-display,
+  #level-display,
+  #survival-display {
+    font-size: 1.5rem;
+  }
+
+  #level-progress-bar-container {
+    width: 200px;
+  }
+
+  /* Dashboard optimizations */
+  .dashboard-content {
+    max-height: 50vh;
+  }
+
+  .dashboard-tabs {
+    gap: 8px;
+  }
+
+  .dashboard-tab {
+    padding: 0.8rem 1.5rem;
+    font-size: 0.95rem;
+  }
+
+  /* Event and game elements */
+  #event-text {
+    font-size: 2.2rem;
+  }
+
+  #pause-menu {
+    padding: 2rem;
+    gap: 1.2rem;
+  }
+}
+
+/* Large desktop screens - Enhanced */
+@media (min-width: 1440px) {
+  h1 {
+    font-size: 3.8rem;
+    letter-spacing: 5px;
+  }
+
+  h2 {
+    font-size: 2.4rem;
+    letter-spacing: 3px;
+  }
+
+  p {
+    font-size: 1.2rem;
+    max-width: 550px;
+    line-height: 1.7;
+  }
+
+  button {
+    padding: 1.1rem 2.8rem;
+    font-size: 1.3rem;
+  }
+
+  .ui-element {
+    padding: 2.5rem 3.5rem;
+    max-width: 600px;
+    border-radius: 25px;
+  }
+
+  #start-screen {
+    max-width: 900px;
+    gap: 15px;
+  }
+
+  #start-screen .menu-buttons-group {
+    gap: 18px;
+  }
+
+  /* Large screen HUD */
+  #top-bar {
+    padding: 20px 25px;
+  }
+
+  #score-display,
+  #level-display,
+  #survival-display {
+    font-size: 2.2rem;
+  }
+
+  #highscore-display {
+    font-size: 1.3rem;
+  }
+
+  #level-progress-bar-container {
+    width: 350px;
+    height: 12px;
+  }
+
+  /* Enhanced dashboard */
+  .dashboard-content {
+    max-height: 60vh;
+  }
+
+  .dashboard-tab {
+    padding: 1.2rem 2.5rem;
+    font-size: 1.1rem;
+  }
+
+  /* Large screen elements */
+  #event-text {
+    font-size: 3.5rem;
+  }
+
+  #pause-menu {
+    padding: 3rem;
+    gap: 2rem;
+  }
+}
+
+/* Touch-friendly improvements - Enhanced */
+@media (hover: none) and (pointer: coarse) {
+  button {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 0.8rem 1.5rem;
+  }
+
+  #pause-button {
+    min-height: 48px;
+    min-width: 48px;
+    font-size: 1.4rem;
+    padding: 0.6rem;
+  }
+
+  .dashboard-tab {
+    min-height: 48px;
+    padding: 0.8rem 1.5rem;
+    touch-action: manipulation;
+  }
+
+  .name-input {
+    min-height: 48px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .settings-select {
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  .volume-slider {
+    height: 8px;
+  }
+
+  .volume-slider::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .checkmark {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Small mobile devices (320px and below) */
+@media (max-width: 320px) {
+  h1 {
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+  }
+
+  p {
+    font-size: 0.8rem;
+    max-width: 250px;
+  }
+
+  .ui-element {
+    padding: 0.8rem;
+    max-width: 98vw;
+  }
+
+  #start-screen .menu-buttons-group {
+    gap: 6px;
+  }
+
+  button {
+    padding: 0.7rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  #top-bar {
+    padding: 6px 8px;
+  }
+
+  #score-display,
+  #level-display,
+  #survival-display {
+    font-size: 1rem;
+  }
+
+  #event-text {
+    font-size: 1.2rem;
+    padding: 0 5px;
+  }
+}
+
+/* Ultra-wide screens */
+@media (min-width: 1920px) {
+  .ui-element {
+    max-width: 800px;
+    padding: 3rem 4rem;
+  }
+
+  #start-screen {
+    max-width: 1000px;
+  }
+
+  h1 {
+    font-size: 4.5rem;
+  }
+
+  h2 {
+    font-size: 2.8rem;
+  }
+
+  #event-text {
+    font-size: 4rem;
+  }
+}
+
+/* Foldable and narrow screens */
+@media (max-width: 480px) and (min-height: 600px) {
+  .ui-element {
+    max-height: 88vh;
+  }
+
+  .dashboard-content {
+    max-height: 35vh;
+  }
+
+  #start-screen .menu-buttons-group {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .live-dot {
+    animation: none;
+  }
+
+  button {
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .ui-element {
+    border-width: 3px;
+    background: rgba(0, 0, 0, 0.9);
+  }
+
+  button {
+    border-width: 3px;
+  }
+
+  #event-text {
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000,
+      -2px 2px 0 #000;
+  }
+}
+
+/* High DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  #game-canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
   }
 }

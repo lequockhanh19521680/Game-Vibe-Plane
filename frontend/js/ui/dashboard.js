@@ -223,7 +223,7 @@ function updateCountryLeaderboard() {
       entryElement.classList.add(`rank-${index + 1}`);
     }
 
-    const countryFlag = getCountryFlag(entry.country);
+    const countryFlag = getCountryFlag(entry.countryCode || entry.country);
     const top10Score = entry.top10PercentScore || entry.totalScore;
 
     entryElement.innerHTML = `
@@ -232,15 +232,16 @@ function updateCountryLeaderboard() {
       </div>
       <div class="country-info">
         <div class="country-name">
-          ${countryFlag} ${entry.country}
+          <span class="country-flag">${countryFlag}</span>
+          <span>${escapeHtml(entry.country)}</span>
         </div>
-        <div class="country-stats">
-          ${entry.playerCount} players
-        </div>
+        <div class="country-player-count">${entry.playerCount} players</div>
       </div>
       <div class="country-scores">
         <div class="top-score">${top10Score.toLocaleString()}</div>
-        <div class="avg-score">Avg: ${entry.averageScore.toLocaleString()}</div>
+        <div class="avg-score">Avg: ${Math.round(
+          entry.averageScore
+        ).toLocaleString()}</div>
       </div>
     `;
 
@@ -404,15 +405,49 @@ function getRankMedal(rank) {
   return medals[rank - 1] || `#${rank}`;
 }
 
-function getCountryFlag(countryCode) {
-  if (!countryCode || countryCode === "XX") return "🌍";
+function getCountryFlag(countryIdentifier) {
+  const countryCodeMap = {
+    Vietnam: "VN",
+    "United Arab Emirates": "AE",
+    "United States": "US",
+    Russia: "RU",
+    Germany: "DE",
+    China: "CN",
+    Japan: "JP",
+    "South Korea": "KR",
+    France: "FR",
+    "United Kingdom": "GB",
+    Canada: "CA",
+    Australia: "AU",
+    Brazil: "BR",
+    India: "IN",
+  };
 
-  // Convert country code to flag emoji
-  const codePoints = countryCode
-    .toUpperCase()
-    .split("")
-    .map((char) => 127397 + char.charCodeAt());
-  return String.fromCodePoint(...codePoints);
+  if (!countryIdentifier) return "🌍";
+
+  let countryCode = countryIdentifier.toUpperCase();
+
+  if (countryIdentifier.length > 2) {
+    const mappedCode = countryCodeMap[countryIdentifier];
+    if (mappedCode) {
+      countryCode = mappedCode;
+    } else {
+      return "🌍";
+    }
+  }
+
+  if (countryCode.length !== 2) {
+    return "🌍";
+  }
+
+  try {
+    const codePoints = countryCode
+      .split("")
+      .map((char) => 127397 + char.charCodeAt(0));
+    return String.fromCodePoint(...codePoints);
+  } catch (error) {
+    return "🌍";
+  }
 }
 
 function escapeHtml(text) {
