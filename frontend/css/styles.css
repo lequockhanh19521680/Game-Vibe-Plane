@@ -13,13 +13,13 @@ html {
   padding: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden; /* Cực kỳ quan trọng để ngăn overflow của body */
+  /* REMOVED: overflow: hidden; was preventing all scrolling on mobile */
   background-color: #000;
   font-family: "Exo 2", sans-serif;
   color: #fff;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none;
+  touch-action: manipulation; /* CHANGED: from 'none' to allow scrolling */
 }
 
 /* === CURSOR FIX START === */
@@ -44,7 +44,6 @@ button,
 #game-canvas {
   display: block;
   background-color: #050510; /* Darker base */
-  /* REMOVED: cursor: none; is now handled by body classes */
   transition: transform 0.1s ease-out;
 }
 
@@ -101,9 +100,8 @@ button,
   width: 90%;
   max-width: 90vw; /* Reduced max-width */
   max-height: 90vh; /* Reduced max-height */
-  overflow-y: auto;
   overflow-x: hidden;
-  -webkit-overflow-scrolling: touch; /* FIX: Enable smooth scrolling on mobile */
+  /* REMOVED: overflow-y: auto from here, scrolling is handled by specific containers now */
 }
 
 #leaderboard-screen {

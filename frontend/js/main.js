@@ -238,7 +238,11 @@ window.addEventListener(
   "touchmove",
   (e) => {
     if (e.touches.length > 0) {
-      e.preventDefault();
+      // ONLY prevent default scroll behavior (like pull-to-refresh or page scrolling)
+      // when the game is actively being played.
+      if (isGameRunning && !isPaused) {
+        e.preventDefault();
+      }
       mouse.x = e.touches[0].clientX;
       mouse.y = e.touches[0].clientY;
     }

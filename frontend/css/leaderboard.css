@@ -1,10 +1,27 @@
 /* Real-time Leaderboard Styles */
 
+/* This new rule ensures the main leaderboard card uses flexbox to manage its height
+   and prevents the whole card from scrolling, forcing the inner list to scroll instead. */
+#leaderboard-screen {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* PREVENTS THE WHOLE CARD FROM SCROLLING */
+}
+
 .dashboard-tabs {
   display: flex;
   justify-content: center;
   margin-bottom: 2rem;
   border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+  flex-shrink: 0; /* Prevent tabs from shrinking */
+}
+
+/* Make sure header/tabs/footer do not grow, they only take the space they need */
+#leaderboard-screen .leaderboard-header,
+#leaderboard-screen .country-info,
+#leaderboard-screen .leaderboard-footer,
+#my-stats-content h3 {
+  flex-shrink: 0;
 }
 
 .dashboard-tab {
@@ -38,8 +55,12 @@
   box-sizing: border-box;
 }
 
+/* MODIFIED: This makes the active tab content a flex container that grows to fill available space */
 .dashboard-content.active {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Use flex-grow for clarity */
+  min-height: 0; /* Crucial for allowing a child element to scroll */
 }
 
 @keyframes fadeIn {
@@ -94,15 +115,19 @@
   }
 }
 
-/* Leaderboard Container */
-.leaderboard-container {
+/* NEW COMBINED RULE: This makes both list and stats containers scrollable and flexible */
+.leaderboard-container,
+.stats-container {
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(0, 255, 255, 0.3);
   border-radius: 10px;
   padding: 1rem;
-  max-height: 55vh; /* Allow more vertical space */
-  overflow-y: auto;
-  overflow-x: hidden; /* Prevent horizontal scroll */
+  flex-grow: 1; /* Grow to fill the parent flex container */
+  min-height: 0; /* Crucial for scrolling within a flex container */
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  touch-action: pan-y; /* Prioritize vertical scrolling */
 }
 
 /* Leaderboard Entries */
@@ -111,8 +136,8 @@
   justify-content: flex-start;
   align-items: center;
   gap: 1rem;
-  padding: 0.5rem 0.75rem; /* Reduced padding */
-  margin-bottom: 0.3rem; /* Reduced margin */
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.3rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -158,33 +183,33 @@
 }
 
 .rank {
-  font-size: 1rem; /* Smaller rank */
+  font-size: 1rem;
   font-weight: bold;
   text-align: center;
   color: #00ffff;
-  flex: 0 0 50px; /* Fixed width */
+  flex: 0 0 50px;
 }
 
 .player-info {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  overflow: hidden; /* For text-overflow */
-  flex: 1; /* Takes up remaining space */
+  overflow: hidden;
+  flex: 1;
   text-align: left;
 }
 
 .username {
   font-weight: bold;
   color: white;
-  font-size: 0.9rem; /* Smaller username */
+  font-size: 0.9rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .country {
-  font-size: 0.75rem; /* Smaller country */
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.7);
   white-space: nowrap;
   overflow: hidden;
@@ -192,18 +217,18 @@
 }
 
 .score {
-  font-size: 1rem; /* Smaller score */
+  font-size: 1rem;
   font-weight: bold;
   color: #ffff00;
   text-align: right;
-  flex: 0 0 100px; /* Fixed width */
+  flex: 0 0 100px;
 }
 
 .time {
-  font-size: 0.8rem; /* Smaller time */
+  font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.8);
   text-align: right;
-  flex: 0 0 70px; /* Fixed width */
+  flex: 0 0 70px;
 }
 
 /* Country Leaderboard */
@@ -212,7 +237,7 @@
   justify-content: flex-start;
   align-items: center;
   gap: 1rem;
-  padding: 0.5rem 0.75rem; /* Reduced padding */
+  padding: 0.5rem 0.75rem;
   margin-bottom: 0.3rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -237,26 +262,26 @@
   border-color: rgba(255, 215, 0, 0.5);
 }
 
-.country-info {
+.country-entry .country-info {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  overflow: hidden; /* For text-overflow */
-  flex: 1; /* Takes up remaining space */
+  overflow: hidden;
+  flex: 1;
   text-align: left;
 }
 
 .country-name {
   font-weight: bold;
   color: white;
-  font-size: 0.9rem; /* Smaller country name */
+  font-size: 0.9rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .country-stats {
-  font-size: 0.75rem; /* Smaller stats */
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -265,53 +290,48 @@
   flex-direction: column;
   gap: 0.2rem;
   text-align: right;
-  flex: 0 0 120px; /* Fixed width */
+  flex: 0 0 120px;
 }
 
 .top-score {
-  font-size: 1rem; /* Smaller score */
+  font-size: 1rem;
   font-weight: bold;
   color: #ffff00;
 }
 
 .avg-score {
-  font-size: 0.75rem; /* Smaller average */
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* Country Info box */
-.country-info-box {
+/* Country Info box - a more specific selector to avoid conflict */
+#country-leaderboard-content > .country-info {
   text-align: center;
   margin-bottom: 1rem;
-  padding: 0.5rem;
-  background: rgba(0, 255, 255, 0.1);
+  padding: 0.8rem;
+  background: rgba(0, 255, 255, 0.05);
   border-radius: 5px;
   color: rgba(255, 255, 255, 0.8);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+#country-leaderboard-content > .country-info p {
+  margin: 0;
 }
 
 /* My Stats Tab */
-.stats-container {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(0, 255, 255, 0.3);
-  border-radius: 10px;
-  padding: 1rem; /* Slightly reduced padding */
-}
-
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(150px, 1fr)
-  ); /* Flexible grid */
-  gap: 0.8rem; /* Reduced gap */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.8rem;
 }
 
 .stat-item {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  padding: 0.8rem; /* Reduced padding */
+  padding: 0.8rem;
   text-align: center;
   transition: all 0.3s ease;
 }
@@ -332,36 +352,32 @@
 }
 
 .stat-label {
-  font-size: 0.8rem; /* Smaller label */
+  font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.7);
   margin-bottom: 0.3rem;
 }
 
 .stat-value {
-  font-size: 1.2rem; /* Smaller value */
+  font-size: 1.2rem;
   font-weight: bold;
   color: #00ffff;
-  word-break: break-word; /* Allow long words to wrap */
+  word-break: break-word;
 }
 
 .stat-item.highlight .stat-value {
   color: var(--highlight-color);
-  font-size: 1.5rem; /* Slightly smaller highlight value */
+  font-size: 1.5rem;
 }
 
 /* Footer */
 .leaderboard-footer {
   display: flex;
   flex-direction: column;
-
   align-items: center;
-
   margin-top: 2rem;
   padding-top: 1rem;
   padding-bottom: 2rem;
-
   gap: 1.5rem;
-
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -404,14 +420,13 @@
   }
 }
 
-/* Enhanced Responsive Design */
+/* Responsive Design */
 @media (max-width: 768px) {
   .dashboard-tabs {
     flex-wrap: wrap;
     gap: 0.3rem;
     margin-bottom: 1.5rem;
   }
-
   .dashboard-tab {
     flex: 1;
     min-width: 100px;
@@ -419,197 +434,149 @@
     font-size: 0.8rem;
     border-radius: 8px;
   }
-
   .leaderboard-entry,
   .country-entry {
-    flex-direction: row; /* Ensure row direction */
-    flex-wrap: nowrap; /* Prevent wrapping inside the entry */
-    justify-content: space-between; /* Space out items */
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
     padding: 0.4rem;
     font-size: 0.85rem;
   }
-
   .stats-grid {
     grid-template-columns: 1fr;
     gap: 0.8rem;
   }
-
   .stat-item {
     padding: 0.8rem;
   }
-
   .leaderboard-header {
     flex-direction: column;
     gap: 0.8rem;
     text-align: center;
   }
-
   .leaderboard-header h3 {
     font-size: 1.2rem;
   }
-
   .leaderboard-footer {
     flex-direction: column;
     gap: 0.8rem;
     text-align: center;
   }
-
-  .leaderboard-container {
-    max-height: 300px;
+  .leaderboard-container,
+  .stats-container {
     padding: 0.8rem;
   }
-
   .rank {
     font-size: 1rem;
     flex-basis: 40px;
   }
-
   .username {
     font-size: 0.9rem;
-    max-width: 120px; /* Adjust for mobile */
+    max-width: 120px;
   }
-
   .country {
     font-size: 0.7rem;
     max-width: 120px;
   }
-
   .score {
     font-size: 0.9rem;
     flex-basis: 80px;
   }
-
   .time {
     font-size: 0.75rem;
     flex-basis: 60px;
   }
 }
 
-/* Small mobile devices */
 @media (max-width: 480px) {
   .dashboard-tabs {
     flex-direction: column;
     gap: 0.4rem;
   }
-
   .dashboard-tab {
     width: 100%;
     padding: 0.8rem;
     font-size: 0.85rem;
   }
-
   .leaderboard-entry {
     padding: 0.3rem;
   }
-
   .time {
-    display: none; /* Hide time on very small screens */
+    display: none;
   }
-
   .leaderboard-entry {
-    grid-template-columns: 35px 1fr 70px; /* Re-apply grid for small screens if time is hidden */
+    grid-template-columns: 35px 1fr 70px;
   }
-
   .country-entry {
     grid-template-columns: 35px 1fr 80px;
   }
-
   .leaderboard-header h3 {
     font-size: 1.1rem;
   }
-
   .live-indicator {
     font-size: 0.8rem;
   }
-
   .stat-value {
     font-size: 1.2rem;
   }
-
   .stat-label {
     font-size: 0.8rem;
   }
 }
 
-/* Landscape mobile */
 @media (max-width: 768px) and (orientation: landscape) and (max-height: 500px) {
-  .dashboard-content {
-    max-height: 25vh;
-  }
-
-  .leaderboard-container {
-    max-height: 200px;
-  }
-
   .dashboard-tabs {
     margin-bottom: 1rem;
   }
-
   .leaderboard-header {
     margin-bottom: 1rem;
   }
-
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-/* Tablet improvements */
 @media (min-width: 769px) and (max-width: 1024px) {
   .dashboard-tabs {
     gap: 0.5rem;
   }
-
   .dashboard-tab {
     padding: 0.9rem 1.8rem;
     font-size: 0.95rem;
   }
-
   .leaderboard-entry,
   .country-entry {
     gap: 0.8rem;
     padding: 0.6rem;
   }
-
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-
-  .leaderboard-container {
-    max-height: 450px;
-  }
 }
 
-/* Large screens */
 @media (min-width: 1440px) {
   .dashboard-tab {
     padding: 1.2rem 2.5rem;
     font-size: 1.1rem;
   }
-
   .leaderboard-entry,
   .country-entry {
     gap: 1.2rem;
     padding: 1rem;
   }
-
   .stats-grid {
     grid-template-columns: repeat(3, 1fr);
   }
-
-  .leaderboard-container {
-    max-height: 500px;
+  .leaderboard-container,
+  .stats-container {
     padding: 1.5rem;
   }
-
   .rank {
     font-size: 1.4rem;
   }
-
   .username {
     font-size: 1.1rem;
   }
-
   .score {
     font-size: 1.2rem;
   }

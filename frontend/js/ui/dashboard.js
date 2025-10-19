@@ -44,7 +44,7 @@ function connectWebSocket() {
   const wsUrl = window.BackendAPI ? window.BackendAPI.getWsUrl() : null;
 
   if (!BACKEND_CONFIG.USE_BACKEND || !wsUrl) {
-    updateConnectionStatus("offline", "Backend disabled");
+    updateConnectionStatus("offline", "Offline");
     console.log(
       "WebSocket connection skipped: Backend is disabled or URL is missing."
     );
