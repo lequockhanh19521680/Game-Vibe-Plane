@@ -246,13 +246,21 @@ function animate() {
   wormholes = wormholes.filter((w) => w.update() !== false);
   decoyPowerUps = decoyPowerUps.filter((d) => d.update() !== false);
 
-  if (score >= nextEventScore) {
+  // --- FIX: Logic for triggering events based on score range ---
+  const eventConfig = GAME_CONFIG.events;
+  if (
+    score >= nextEventScore &&
+    score >= eventConfig.scoreThreshold.min &&
+    score < eventConfig.scoreThreshold.max
+  ) {
     if (typeof window.triggerRandomEvent === "function") {
       window.triggerRandomEvent();
     }
     const eventVariation = 0.7 + Math.random() * 0.6;
-    nextEventScore += GAME_CONFIG.events.interval * eventVariation;
+    nextEventScore += eventConfig.interval * eventVariation;
   }
+  // --- END FIX ---
+
   if (eventActive.type && timers.difficulty > eventActive.endTime) {
     if (eventActive.type === "speedZone")
       globalSpeedMultiplier /= GAME_CONFIG.events.speedZone.speedMultiplier;
@@ -261,16 +269,15 @@ function animate() {
 
   // --- FIX: Logic Level Up và Pop-up ---
   if (currentLevel > lastDifficultyLevel) {
-    // FIX: Cập nhật biến trạng thái cấp độ
+    // FIX: Don't show level up message for Level 1
+    if (currentLevel > 1) {
+      const levelUpText = window.safeT
+        ? window.safeT("level.levelUp", `LEVEL ${currentLevel} REACHED!`)
+        : `LEVEL ${currentLevel} REACHED!`;
+      showEventText(levelUpText);
+      playSound("powerup");
+    }
     lastDifficultyLevel = currentLevel;
-
-    // FIX: Gọi showEventText với text đã dịch (sử dụng safeT từ eventSystem.js)
-    const levelUpText = window.safeT
-      ? window.safeT("level.levelUp", `LEVEL ${currentLevel} REACHED!`)
-      : `LEVEL ${currentLevel} REACHED!`;
-
-    showEventText(levelUpText);
-    playSound("powerup");
 
     // Logic tăng độ khó
     globalSpeedMultiplier += GAME_CONFIG.difficulty.speedIncreaseStep;
@@ -711,9 +718,6 @@ function animate() {
       crystalShards.splice(i, 1);
     }
   }
-
-  // REMOVED: Unused old logic for level-up difficulty calculation and event call
-  // The new logic is placed above the hazard spawning logic to update lastDifficultyLevel correctly
 
   if (timers.difficulty % GAME_CONFIG.difficulty.microProgressInterval === 0) {
     if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval + 3)

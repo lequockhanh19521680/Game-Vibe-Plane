@@ -172,8 +172,13 @@ const GAME_CONFIG = {
   // EVENT SYSTEM
   // =============================================================================
   events: {
-    interval: 3000, // Events are more frequent
+    interval: 1500, // Events are more frequent
     duration: 5000,
+    // NEW: Score range for random events
+    scoreThreshold: {
+      min: 5000,
+      max: 9000,
+    },
     unlockThresholds: {
       crystalRain: 500,
       shieldGenerator: 1000,
@@ -392,7 +397,7 @@ const GAME_CONFIG = {
   // UI SETTINGS
   // =============================================================================
   ui: {
-    eventText: { duration: 3000, fontSize: "2.5rem" },
+    eventText: { duration: 1500, fontSize: "2.5rem" }, // FIX: Reduced duration
     warning: {
       radius: 30,
       pulseIntensity: 15,

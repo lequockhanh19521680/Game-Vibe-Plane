@@ -462,64 +462,76 @@ class CrystalCluster {
       }));
   }
   draw() {
-    if (this.alpha <= 0 && this.state !== "charging") return;
     ctx.save();
-    ctx.globalAlpha = this.alpha;
     ctx.translate(this.x, this.y);
 
-    // Draw orbiting crystals
-    this.crystals.forEach((c) => {
-      ctx.save();
-      ctx.rotate(c.angle);
+    // Chỉ vẽ lõi và các tinh thể quay quanh nếu chúng còn hiển thị
+    if (this.alpha > 0) {
+      ctx.globalAlpha = this.alpha;
+
+      // Vẽ các tinh thể quay quanh
+      this.crystals.forEach((c) => {
+        ctx.save();
+        ctx.rotate(c.angle);
+        ctx.beginPath();
+        ctx.rect(c.dist, -c.size / 2, c.size * 1.5, c.size);
+        ctx.fillStyle = "var(--crystal-color)";
+        ctx.shadowColor = "var(--crystal-color)";
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Vẽ lõi trung tâm
       ctx.beginPath();
-      ctx.rect(c.dist, -c.size / 2, c.size * 1.5, c.size);
-      ctx.fillStyle = "var(--crystal-color)";
+      ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = "white";
       ctx.shadowColor = "var(--crystal-color)";
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 20;
       ctx.fill();
-      ctx.restore();
-    });
 
-    // Draw central core
-    ctx.beginPath();
-    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = "white";
-    ctx.shadowColor = "var(--crystal-color)";
-    ctx.shadowBlur = 20;
-    ctx.fill();
-
-    if (this.state === "charging") {
-      const chargeProgress = this.timer / this.maxChargeTime;
-      const chargeAuraRadius = this.radius + chargeProgress * 30;
-      ctx.beginPath();
-      ctx.arc(0, 0, chargeAuraRadius, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(64, 196, 255, ${0.5 * chargeProgress})`;
-      ctx.lineWidth = 4;
-      ctx.stroke();
-    } else if (this.state === "discharging") {
-      // Vòng tròn xả năng lượng
-      ctx.beginPath();
-      ctx.arc(0, 0, this.dischargeRadius, 0, Math.PI * 2);
-
-      // Độ trong suốt giảm dần khi vòng tròn mở rộng
-      const fadeAlpha = 1 - this.dischargeRadius / this.maxDischargeRadius;
-
-      ctx.strokeStyle = `rgba(64, 196, 255, ${Math.max(0, fadeAlpha)})`;
-      ctx.lineWidth = 10;
-      ctx.shadowColor = "var(--crystal-color)";
-      ctx.shadowBlur = 15;
-      ctx.stroke();
+      // Vẽ hào quang khi đang sạc
+      if (this.state === "charging") {
+        const chargeProgress = this.timer / this.maxChargeTime;
+        const chargeAuraRadius = this.radius + chargeProgress * 30;
+        ctx.beginPath();
+        ctx.arc(0, 0, chargeAuraRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(64, 196, 255, ${0.5 * chargeProgress})`;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+      }
     }
+
+    // Vẽ sóng xả năng lượng một cách riêng biệt
+    if (this.state === "discharging") {
+      const fadeAlpha = 1 - this.dischargeRadius / this.maxDischargeRadius;
+      if (fadeAlpha > 0) {
+        ctx.globalAlpha = Math.max(0, fadeAlpha);
+        ctx.beginPath();
+        ctx.arc(0, 0, this.dischargeRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(64, 196, 255, ${Math.max(0, fadeAlpha)})`;
+        ctx.lineWidth = 10;
+        ctx.shadowColor = "var(--crystal-color)";
+        ctx.shadowBlur = 15;
+        ctx.stroke();
+      }
+    }
+
     ctx.restore();
   }
   update() {
-    if (this.alpha < 1 && this.state === "charging") this.alpha += 0.02;
-    this.crystals.forEach((c) => (c.angle += this.config.rotationSpeed)); // Sử dụng rotationSpeed
+    // Tăng độ mờ khi đang sạc
+    if (this.alpha < 1 && this.state === "charging") {
+      this.alpha += 0.02;
+    }
+
+    // Luôn xoay các tinh thể
+    this.crystals.forEach((c) => (c.angle += this.config.rotationSpeed));
     this.timer++;
 
     if (this.state === "charging" && this.timer > this.maxChargeTime) {
       this.state = "discharging";
-      this.timer = 0; // Reset timer for discharge phase
+      this.timer = 0; // Đặt lại timer cho giai đoạn xả
       triggerScreenShake(0.3);
       playSound("powerup"); // Chơi âm thanh khi xả
 
@@ -530,17 +542,18 @@ class CrystalCluster {
 
     if (this.state === "discharging") {
       this.dischargeRadius += this.dischargeSpeed;
-      this.alpha -= 0.01; // Fade out central core
+      // Làm mờ lõi trung tâm
+      this.alpha -= 0.02;
 
-      // Nếu vòng xả đã vượt quá giới hạn tối đa, kết thúc
+      // Nếu sóng xả đã vượt quá bán kính tối đa, vòng đời của đối tượng kết thúc.
       if (this.dischargeRadius > this.maxDischargeRadius) {
-        return false;
+        return false; // Điều này sẽ khiến đối tượng bị lọc ra trong game.js
       }
     }
 
     this.draw();
 
-    // Nếu ở trạng thái sạc, luôn trả về true để cluster tồn tại
-    return this.state === "charging" || this.state === "discharging";
+    // Đối tượng vẫn tồn tại miễn là nó đang sạc, hoặc đang xả và sóng vẫn còn nhìn thấy.
+    return true;
   }
 }
