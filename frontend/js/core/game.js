@@ -123,6 +123,7 @@ function init() {
   lightningStorms = [];
   quantumPortals = [];
   wormholes = [];
+  decoyPowerUps = []; // NEW: Array for decoy power-ups
   for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
     const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
     for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
@@ -164,9 +165,8 @@ function animate() {
   uiElements.survivalDisplay.innerText = formatTime(survivalTime);
 
   const distMoved = Math.hypot(mouse.x - prevMouse.x, mouse.y - prevMouse.y);
-  const scorePerLevel = GAME_CONFIG.difficulty.scorePerLevel;
+  const { level: currentLevel, progressPercentage } = getLevelInfo(score);
 
-  const currentLevel = Math.floor(score / scorePerLevel) + 1;
   const dynamicThreshold = Math.max(
     GAME_CONFIG.scoring.minMovementThreshold,
     GAME_CONFIG.scoring.baseMovementThreshold *
@@ -178,14 +178,11 @@ function animate() {
   }
   prevMouse = { ...mouse };
   uiElements.scoreDisplay.innerText = `${~~score}`;
+
   if (uiElements.levelDisplay) {
     uiElements.levelDisplay.innerText = `Level ${currentLevel}`;
   }
 
-  const scoreForLevelUp = scorePerLevel;
-  const scoreAtStartOfCurrentLevel = (currentLevel - 1) * scoreForLevelUp;
-  const scoreProgressInLevel = score - scoreAtStartOfCurrentLevel;
-  const progressPercentage = (scoreProgressInLevel / scoreForLevelUp) * 100;
   const levelProgressBar = document.getElementById("level-progress-bar");
   if (levelProgressBar) {
     levelProgressBar.style.width = `${Math.min(100, progressPercentage)}%`;
@@ -210,6 +207,7 @@ function animate() {
     lightningStorms,
     quantumPortals,
     wormholes,
+    decoyPowerUps,
   ].forEach((arr) =>
     arr.forEach((item) => (item.update ? item.update() : undefined))
   );
@@ -230,7 +228,9 @@ function animate() {
     (a) => a.x > -50 && a.x < width + 50 && a.y > -50 && a.y < height + 50
   );
   blackHoles = blackHoles.filter((bh) => bh.alpha > 0);
-  crystalClusters = crystalClusters.filter((cc) => cc.alpha > 0);
+  crystalClusters = crystalClusters.filter((cc) =>
+    cc.update ? cc.update() : false
+  );
   warnings = warnings.filter((w) => w.timer < w.duration);
   energyOrbs = energyOrbs.filter((e) => e.update() !== false);
   plasmaFields = plasmaFields.filter((p) => p.update() !== false);
@@ -241,6 +241,7 @@ function animate() {
   lightningStorms = lightningStorms.filter((l) => l.update() !== false);
   quantumPortals = quantumPortals.filter((p) => p.update() !== false);
   wormholes = wormholes.filter((w) => w.update() !== false);
+  decoyPowerUps = decoyPowerUps.filter((d) => d.update() !== false);
 
   if (score >= nextEventScore) {
     if (typeof window.triggerRandomEvent === "function") {
@@ -260,7 +261,7 @@ function animate() {
 
   timers.asteroid++;
   if (timers.asteroid % currentSpawnInterval === 0) {
-    const difficultyLevel = Math.floor(score / scorePerLevel);
+    const difficultyLevel = currentLevel - 1;
     const radius =
       GAME_CONFIG.entities.asteroids.minRadius +
       Math.random() *
@@ -398,7 +399,7 @@ function animate() {
   }
   if (score > GAME_CONFIG.entities.lasers.spawnScore) {
     timers.laser++;
-    const difficultyLevel = Math.floor(score / scorePerLevel);
+    const difficultyLevel = currentLevel - 1;
     const laserInterval = Math.max(
       GAME_CONFIG.entities.lasers.minInterval,
       GAME_CONFIG.entities.lasers.baseInterval -
@@ -560,28 +561,16 @@ function animate() {
 
   for (const cluster of crystalClusters) {
     if (cluster.state !== "discharging") continue;
-    let alpha = 1;
-    if (
-      typeof cluster.lifetime === "number" &&
-      typeof cluster.age === "number"
-    ) {
-      alpha = Math.max(0, (cluster.lifetime - cluster.age) / cluster.lifetime);
-    } else if (typeof cluster.alpha === "number") {
-      alpha = cluster.alpha;
-    }
-    if (alpha <= 0.45) continue;
 
     const dist = Math.hypot(player.x - cluster.x, player.y - cluster.y);
-    const collisionDist = cluster.dischargeRadius + player.radius;
-
-    if (dist >= collisionDist) continue;
-
-    if (!player.shieldActive) {
-      endGame("crystal cluster collision");
-      return;
+    const waveRadius = cluster.dischargeRadius;
+    const waveWidth = 10; // The visual width of the wave
+    if (Math.abs(dist - waveRadius) < player.radius + waveWidth / 2) {
+      if (!player.shieldActive) {
+        endGame("crystal cluster collision");
+        return;
+      }
     }
-
-    cluster.state = "fading";
   }
 
   for (let i = fragments.length - 1; i >= 0; i--) {
@@ -697,7 +686,7 @@ function animate() {
     }
   }
 
-  const difficultyLevel = Math.floor(score / scorePerLevel);
+  const difficultyLevel = currentLevel - 1;
 
   if (difficultyLevel > lastDifficultyLevel && difficultyLevel > 0) {
     lastDifficultyLevel = difficultyLevel;

@@ -48,7 +48,12 @@ const GAME_CONFIG = {
     speedIncreaseStep: 0.05,
     microSpeedIncrease: 0.01,
     microProgressInterval: 900,
-    scorePerLevel: 3000,
+    // NEW: Non-linear level progression. Score needed to reach level X.
+    levelUpScores: [
+      500, 1500, 3000, 5000, 7500, 10000, 15000, 20000, 30000, 40000,
+    ],
+    // Score needed for each level after the ones defined above.
+    scorePerLevelAfterMax: 10000,
   },
 
   // =============================================================================
@@ -139,6 +144,7 @@ const GAME_CONFIG = {
       crystalCount: 6,
       colors: ["#40c4ff", "#81d4fa"],
       rotationSpeed: 0.02,
+      warningDuration: 120,
     },
   },
 
@@ -152,7 +158,7 @@ const GAME_CONFIG = {
     maxLife: 150,
     color: "#ffbb33",
     explosionParticles: 6,
-    scoreBonus: 15,
+    scoreBonus: 5, // Reduced score bonus
     missileFragments: {
       minRadius: 3,
       maxRadius: 6,
@@ -167,7 +173,7 @@ const GAME_CONFIG = {
   // EVENT SYSTEM
   // =============================================================================
   events: {
-    interval: 4000,
+    interval: 3000, // Events are more frequent
     duration: 5000,
     unlockThresholds: {
       crystalRain: 500,
@@ -193,6 +199,8 @@ const GAME_CONFIG = {
       speedZone: 1000,
       gravityWells: 16000,
       wormholePortal: 9000,
+      decoyPowerUp: 4000, // New event
+      chaosMode: 12000, // New event
     },
     speedZone: { speedMultiplier: 1.4 },
     laserGrid: { gridSize: 3, delay: 350 },
@@ -215,7 +223,7 @@ const GAME_CONFIG = {
     missileBarrage: { count: 5, delay: 500 },
     blackHoleChain: { count: 3, delay: 1000 },
     crystalRain: { count: 5, delay: 80 },
-    gravityWells: { count: 5 },
+    gravityWells: { count: 5, radius: 100 },
     meteorBombardment: { count: 25, delay: 60, speed: 5 },
     voidRifts: { count: 4 },
     wormholePortal: { count: 1 },
@@ -256,6 +264,9 @@ const GAME_CONFIG = {
       color: "#81d4fa",
       pulseSpeed: 0.05,
       duration: 300,
+      freezeChance: 0.005,
+      missileFreezeChance: 0.01,
+      fullFreezeFactor: 0.1,
     },
     magneticStorm: {
       lifetime: 480,
@@ -274,12 +285,33 @@ const GAME_CONFIG = {
       repelColor: "#ff4444",
       arcColor: "#88ddff",
       lethalBoltColor: "#ffff00",
+      lethalTargetRange: 300,
+      lethalHitTolerance: 10,
+      segmentCount: 8,
+      arcFadeSpeed: 0.1,
+      arcSpawnChance: 0.1,
+      fieldRotationSpeed: 0.02,
+      lethalJitter: 40,
+      arcJitter: 40,
+      pulseMinFactor: 0.8,
+      pulseMaxFactor: 0.2,
     },
     lightningStorm: {
       lifetime: 600,
       lightningInterval: 120,
       lightningJitter: 60,
       boostDuration: 600,
+      speedBoostMultiplier: 0.8,
+      gateCount: 2,
+      gatePlacementRange: 200,
+      gateRadius: 40,
+      gateChargeTime: 120,
+      chargeColor: "#88ddff",
+      boltColor: "#88ddff",
+      particleSpawnChance: 0.3,
+      segmentCount: 12,
+      boltFadeSpeed: 0.1,
+      hitRadius: 25,
     },
     plasmaField: {
       radius: 80,
@@ -288,6 +320,25 @@ const GAME_CONFIG = {
       color: "#ff6b35",
       particleCount: 15,
       pushForce: 0.05,
+      rotationSpeed: 0.02,
+      particleMinDist: 20,
+      particleMaxDist: 40,
+      particleMinSpeed: 0.02,
+      particleMaxSpeed: 0.03,
+      particleMinSize: 2,
+      particleMaxSize: 3,
+      distancePulseSpeed: 0.05,
+      distancePulseAmount: 0.5,
+      pushRadiusMultiplier: 1.5,
+      fragmentPushMultiplier: 1.6,
+    },
+    decoyPowerUp: {
+      size: 10,
+      lifetime: 500,
+      triggerRadius: 45,
+      explosionParticles: 20,
+      asteroidCount: 4,
+      asteroidSpeed: 3,
     },
   },
 
@@ -310,6 +361,7 @@ const GAME_CONFIG = {
       wormhole: 0.15,
       shield: 0.15,
       freeze: 0.15,
+      trap: 0.3,
     },
   },
 
@@ -359,7 +411,7 @@ const GAME_CONFIG = {
   // SCORING SYSTEM
   // =============================================================================
   scoring: {
-    movementMultiplier: 0.2,
+    movementMultiplier: 0.08, // Significantly harder to earn points
     baseMovementThreshold: 0.5,
     minMovementThreshold: 10,
     thresholdDecreaseRate: 0.95,

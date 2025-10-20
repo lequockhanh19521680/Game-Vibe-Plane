@@ -1,5 +1,128 @@
 // Hazard entities - environmental dangers
 
+// NEW: Decoy Power-up Class
+class DecoyPowerUp {
+  constructor(x, y) {
+    this.config = GAME_CONFIG.newObjects.decoyPowerUp;
+    this.x = x;
+    this.y = y;
+    this.size = this.config.size + Math.random() * 4;
+    this.velocity = {
+      x: (Math.random() - 0.5) * 1.5,
+      y: (Math.random() - 0.5) * 1.5,
+    };
+    this.rotation = Math.random() * Math.PI * 2;
+    this.rotationSpeed = (Math.random() - 0.5) * 0.05;
+    this.lifetime = this.config.lifetime;
+    this.age = 0;
+    this.sparkleTimer = Math.random() * 60;
+    this.triggered = false;
+  }
+
+  draw() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+
+    const alpha = Math.max(0, (this.lifetime - this.age) / this.lifetime);
+    ctx.globalAlpha = alpha * 0.9;
+
+    // Outer glow effect (menacing red)
+    const glowRadius = this.size * 2 + Math.sin(this.sparkleTimer * 0.1) * 3;
+    const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowRadius);
+    glowGradient.addColorStop(0, `rgba(255, 68, 68, ${alpha * 0.4})`);
+    glowGradient.addColorStop(1, "rgba(255, 68, 68, 0)");
+    ctx.beginPath();
+    ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
+    ctx.fillStyle = glowGradient;
+    ctx.fill();
+
+    // Main body (looks like a crystal shard)
+    ctx.beginPath();
+    ctx.moveTo(0, -this.size);
+    ctx.lineTo(this.size * 0.9, this.size * 0.2);
+    ctx.lineTo(-this.size * 0.3, this.size);
+    ctx.lineTo(-this.size * 0.9, this.size * 0.2);
+    ctx.closePath();
+    ctx.fillStyle = "#ff4444";
+    ctx.shadowColor = "#ff4444";
+    ctx.shadowBlur = 15;
+    ctx.fill();
+    ctx.strokeStyle = "#ff8a8a";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  update() {
+    if (this.triggered) return false;
+
+    this.age++;
+    this.sparkleTimer++;
+    this.rotation += this.rotationSpeed;
+    this.x += this.velocity.x;
+    this.y += this.velocity.y;
+
+    // Bounce off walls
+    const wallDamping = 0.5;
+    if (this.x < this.size || this.x > canvas.width - this.size) {
+      this.velocity.x *= -wallDamping;
+    }
+    if (this.y < this.size || this.y > canvas.height - this.size) {
+      this.velocity.y *= -wallDamping;
+    }
+
+    // Check if player is nearby
+    const dist = Math.hypot(this.x - player.x, this.y - player.y);
+    if (dist < this.config.triggerRadius) {
+      this.explode();
+      return false; // Remove from array
+    }
+
+    this.draw();
+    return this.age < this.lifetime;
+  }
+
+  explode() {
+    this.triggered = true;
+    playSound("trap");
+
+    // Visual explosion
+    for (let i = 0; i < this.config.explosionParticles; i++) {
+      particles.push(
+        new Particle(
+          this.x,
+          this.y,
+          Math.random() * 3,
+          GAME_CONFIG.visual.colors.danger,
+          {
+            x: (Math.random() - 0.5) * 8,
+            y: (Math.random() - 0.5) * 8,
+          }
+        )
+      );
+    }
+
+    // Spawn small, fast asteroids as a trap
+    for (let i = 0; i < this.config.asteroidCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      asteroids.push(
+        new Asteroid(
+          this.x,
+          this.y,
+          Math.random() * 10 + 5,
+          GAME_CONFIG.visual.colors.danger,
+          {
+            x: Math.cos(angle) * this.config.asteroidSpeed,
+            y: Math.sin(angle) * this.config.asteroidSpeed,
+          }
+        )
+      );
+    }
+  }
+}
+
 class PlasmaField {
   constructor(x, y) {
     this.config = GAME_CONFIG.newObjects.plasmaField || {};

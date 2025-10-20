@@ -159,6 +159,8 @@ function triggerRandomEvent() {
     { type: "mineFieldDetonation", weight: 8 },
     { type: "shieldGenerator", weight: 20 },
     { type: "gravityWells", weight: 10 },
+    { type: "decoyPowerUp", weight: 18 }, // New Event
+    { type: "chaosMode", weight: 8 }, // New Event
   ];
 
   const unlockThresholds = GAME_CONFIG.events.unlockThresholds || {};
@@ -201,9 +203,40 @@ function triggerRandomEvent() {
     timers.difficulty + Math.floor(GAME_CONFIG.events.duration * 0.75);
 
   switch (randomEventType) {
+    case "decoyPowerUp":
+      eventActive.type = "decoyPowerUp";
+      showEventText(gameSettings.t("event.decoyPowerUp"));
+      if (typeof decoyPowerUps !== "undefined") {
+        decoyPowerUps.push(
+          new DecoyPowerUp(
+            Math.random() * (width - 100) + 50,
+            Math.random() * (height / 2) + 50
+          )
+        );
+      }
+      break;
+
+    case "chaosMode":
+      eventActive.type = "chaosMode";
+      showEventText(gameSettings.t("event.chaosMode"));
+      // Rapidly spawn a few different hazards
+      setTimeout(() => {
+        if (isGameRunning) lasers.push(new Laser(true));
+      }, 200);
+      setTimeout(() => {
+        if (isGameRunning)
+          missiles.push(new Missile(0, Math.random() * height, 0));
+      }, 800);
+      setTimeout(() => {
+        if (isGameRunning)
+          for (let i = 0; i < 5; i++)
+            asteroids.push(createMiniShowerAsteroid("top"));
+      }, 1200);
+      break;
+
     case "asteroidShower":
       eventActive.type = "asteroidShower";
-      showEventText("⚠️ ASTEROID SHOWER! ⚠️");
+      showEventText(gameSettings.t("event.asteroidShower"));
       const totalAsteroids = 25;
       const waves = 3;
       const asteroidsPerWave = Math.floor(totalAsteroids / waves);
@@ -227,7 +260,7 @@ function triggerRandomEvent() {
 
     case "instantMissiles":
       eventActive.type = "instantMissiles";
-      showEventText("⚠️ MISSILES INCOMING ⚠️");
+      showEventText(gameSettings.t("event.missileIncoming"));
       const instantSides = ["left", "right", "top", "bottom"];
       const missileCount = 2;
       for (let i = 0; i < missileCount; i++) {
@@ -283,7 +316,6 @@ function triggerRandomEvent() {
             );
             warningSystem.spawn(() => {
               missiles.push(new Missile(spawnX, spawnY, missileAngle));
-              showEventText("🚀 MISSILE LAUNCHED! 🚀");
             });
           }
         }, i * GAME_CONFIG.entities.missiles.warningDuration * (1000 / 60));
@@ -298,7 +330,7 @@ function triggerRandomEvent() {
 
     case "missileBarrage":
       eventActive.type = "missileBarrage";
-      showEventText("🚀 MISSILE BARRAGE INCOMING! 🚀");
+      showEventText(gameSettings.t("event.missileIncoming"));
       const barrageSides = ["left", "right", "top", "bottom"];
       for (let i = 0; i < GAME_CONFIG.events.missileBarrage.count; i++) {
         const side =
@@ -488,7 +520,7 @@ function triggerRandomEvent() {
 
     case "plasmaStorm":
       eventActive.type = "plasmaStorm";
-      showEventText("⚠️ PLASMA INFERNO IMMINENT ⚠️");
+      showEventText(gameSettings.t("event.plasmaInferno"));
       const plasmaConfig = GAME_CONFIG.events.plasmaStorm || {};
       const waveCount = plasmaConfig.waveCount || 4;
       const fieldsPerWave = plasmaConfig.fieldsPerWave || 5;
@@ -588,7 +620,7 @@ function triggerRandomEvent() {
           }
         }, Math.random() * 3000);
       }
-      playSound("crystal");
+      playSound("powerup"); // Changed from crystal to powerup for better sound
       break;
 
     case "quantumTunnels":
@@ -615,14 +647,11 @@ function triggerRandomEvent() {
           duration: 120,
         });
         warningSystem.spawn(() => {
-          blackHoles.push(
-            new BlackHole(
-              x,
-              y,
-              true,
-              GAME_CONFIG.events.gravityWells.radius / 2
-            )
-          );
+          const bh = new BlackHole(x, y, true);
+          bh.radius = GAME_CONFIG.events.gravityWells.radius;
+          bh.maxRadius = GAME_CONFIG.events.gravityWells.radius;
+          bh.strength *= 0.5;
+          blackHoles.push(bh);
         });
       }
       break;
@@ -640,9 +669,6 @@ function triggerRandomEvent() {
             const impactY = Math.random() * (canvas.height - 100) + 50;
             const warningSystem = spawnWithWarning("meteor", x, impactY, {
               duration: warningDurationM,
-              spawnX: x,
-              spawnY: y,
-              speed: meteorCfg.speed,
             });
             warningSystem.spawn(() => {
               if (isGameRunning) {
@@ -735,3 +761,4 @@ function triggerRandomEvent() {
 // Expose to global scope for access from game.js
 window.triggerRandomEvent = triggerRandomEvent;
 window.showEventText = showEventText;
+window.resetEventSystem = resetEventSystem;

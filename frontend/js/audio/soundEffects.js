@@ -245,3 +245,13 @@ function createFreezeSound() {
     modDepth: 10,
   });
 }
+
+// NEW: Sound for the decoy power-up trap
+function createTrapSound() {
+  createSound(200, 0.5, "sawtooth", GAME_CONFIG.audio.volumes.trap, true, {
+    attack: 0.02,
+    modulate: true,
+    modFreq: 40,
+    modDepth: 80,
+  });
+}
