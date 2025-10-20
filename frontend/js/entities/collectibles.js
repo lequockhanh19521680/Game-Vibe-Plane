@@ -465,10 +465,11 @@ class CrystalCluster {
     this.maxChargeTime = this.config.lifetime;
     this.state = "charging";
     this.dischargeRadius = 0;
-    this.dischargeSpeed = 5;
+    // YÊU CẦU 1: Giảm vận tốc mở rộng, mở rộng từ từ
+    this.dischargeSpeed = 1.5; // Giảm từ 5 xuống 1.5
     this.alpha = 0;
 
-    this.maxDischargeRadius = canvas ? Math.min(width, height) * 0.4 : 300;
+    this.maxDischargeRadius = canvas ? Math.min(width, height) * 0.3 : 300;
 
     this.crystals = Array(this.config.crystalCount)
       .fill(null)
@@ -567,6 +568,37 @@ class CrystalCluster {
       this.dischargeRadius += this.dischargeSpeed;
       // Làm mờ lõi trung tâm
       this.alpha -= 0.02;
+
+      // YÊU CẦU 2: Đẩy các vật thể khác ra khi chạm
+      const waveWidth = 20; // Độ rộng của sóng va chạm
+      const repulsionForce = 0.5; // Lực đẩy
+      const objectsToRepel = [
+        player,
+        ...asteroids,
+        ...missiles,
+        ...fragments,
+        ...laserMines,
+        ...energyOrbs,
+      ];
+
+      objectsToRepel.forEach((obj) => {
+        if (!obj || !obj.velocity) return;
+
+        const dist = Math.hypot(obj.x - this.x, obj.y - this.y);
+        const objectRadius = obj.radius || obj.size / 2 || 10;
+
+        // Kiểm tra va chạm với sóng năng lượng
+        if (
+          Math.abs(dist - this.dischargeRadius) <
+          objectRadius + waveWidth / 2
+        ) {
+          const angle = Math.atan2(obj.y - this.y, obj.x - this.x);
+
+          // Đẩy vật thể ra ngoài
+          obj.velocity.x += Math.cos(angle) * repulsionForce;
+          obj.velocity.y += Math.sin(angle) * repulsionForce;
+        }
+      });
 
       if (this.dischargeRadius > this.maxDischargeRadius) {
         return false;

@@ -41,7 +41,7 @@ const GAME_CONFIG = {
   difficulty: {
     baseSpawnInterval: 80,
     minSpawnInterval: 20,
-    spawnDecreaseStep: 2.5, // SỬA ĐỔI: Tăng độ khó
+    spawnDecreaseStep: 3.5, // SỬA ĐỔI: Tăng độ khó
     baseSpeed: 0.5,
     speedIncreaseStep: 0.07, // SỬA ĐỔI: Tăng độ khó
     microSpeedIncrease: 0.01,
@@ -96,7 +96,7 @@ const GAME_CONFIG = {
       spawnScore: 1500,
       spawnInterval: 700,
       minSpawnInterval: 120, // Tên lửa xuất hiện tối thiểu mỗi 2 giây
-      intervalDecreasePerLevel: 40, // SỬA ĐỔI: Tăng độ khó
+      intervalDecreasePerLevel: 60, // SỬA ĐỔI: Tăng độ khó
       warningDuration: 120, // 2 seconds at 60fps
       radius: 5,
       baseSpeed: 0.15,
@@ -116,7 +116,7 @@ const GAME_CONFIG = {
     lasers: {
       spawnScore: 4500,
       baseInterval: 450,
-      intervalDecreasePerLevel: 30, // SỬA ĐỔI: Tăng độ khó
+      intervalDecreasePerLevel: 45, // SỬA ĐỔI: Tăng độ khó
       minInterval: 60,
       maxConcurrent: 1,
       lasersPerLevel: 3,
