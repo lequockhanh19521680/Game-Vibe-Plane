@@ -157,8 +157,11 @@ resumeButton.addEventListener("click", () => {
 });
 restartFromPauseButton.addEventListener("click", () => {
   playSound("buttonHover");
-  // BUG FIX: Directly call startGame() to reset the game state.
-  // Do not call togglePause() as it interferes with the reset logic.
+  // SỬA LỖI: Game đang resume thay vì restart.
+  // Bằng cách đặt isGameRunning thành false, chúng ta đảm bảo hàm init() của game
+  // được gọi để reset hoàn toàn.
+  isGameRunning = false;
+  isPaused = false;
   startGame();
 });
 mainMenuFromPauseButton.addEventListener("click", () => {

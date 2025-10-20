@@ -6,6 +6,9 @@ function startBackgroundMusic() {
     // Set volume from config
     backgroundMusicElement.volume = GAME_CONFIG.audio.volumes.backgroundMusic;
 
+    // SỬA LỖI: Luôn tua lại nhạc về đầu khi bắt đầu game mới.
+    backgroundMusicElement.currentTime = 0;
+
     // play() returns a promise which can reject if the user hasn't interacted
     const playPromise = backgroundMusicElement.play();
 
