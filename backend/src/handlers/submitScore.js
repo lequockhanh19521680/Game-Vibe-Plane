@@ -12,28 +12,43 @@ async function updateCountryStats(country, newScore, oldScoreItem) {
   if (!country || country === "Unknown") return;
 
   try {
-    // Tính toán sự khác biệt về điểm số. Nếu là người chơi mới, scoreDifference = newScore.
+    // Lấy bản ghi hiện tại để tính toán chính xác Average Score MỚI
+    const countryData = await getItem(process.env.COUNTRIES_TABLE, { country });
+    const currentTotalScore = countryData?.totalScore || 0;
+    const currentPlayerCount = countryData?.playerCount || 0;
+
+    // Tính toán sự khác biệt về điểm số (High Score cũ so với High Score mới)
     const oldScore = oldScoreItem ? oldScoreItem.score : 0;
     const scoreDifference = newScore - oldScore;
-    const playerCountIncrement = oldScoreItem ? 0 : 1; // Chỉ tăng số lượng người chơi nếu đây là lần gửi đầu tiên
 
-    // Sử dụng UpdateExpression với increment để cập nhật an toàn
+    // Chỉ tăng số lượng người chơi nếu đây là lần gửi đầu tiên (oldScoreItem là null)
+    const playerCountIncrement = oldScoreItem ? 0 : 1;
+
+    // Tính toán giá trị MỚI
+    const updatedTotalScore = currentTotalScore + scoreDifference;
+    const updatedPlayerCount = currentPlayerCount + playerCountIncrement;
+    const updatedAverageScore =
+      updatedPlayerCount > 0
+        ? Math.floor(updatedTotalScore / updatedPlayerCount)
+        : 0;
+
+    // --- Sử dụng UpdateItem để cập nhật an toàn và nhất quán ---
     await updateItem(
       process.env.COUNTRIES_TABLE,
       { country },
-      "SET totalScore = if_not_exists(totalScore, :startTotal) + :scoreDiff, \
-            playerCount = if_not_exists(playerCount, :startCount) + :playerInc, \
-            lastUpdated = :lastUpdated \
-            REMOVE averageScore", // Loại bỏ averageScore khỏi SET vì nó được tính toán lại trong Get handler.
+      "SET totalScore = :totalScore, playerCount = :playerCount, averageScore = :averageScore, lastUpdated = :lastUpdated",
       {
-        ":scoreDiff": scoreDifference,
-        ":playerInc": playerCountIncrement,
+        ":totalScore": updatedTotalScore,
+        ":playerCount": updatedPlayerCount,
+        ":averageScore": updatedAverageScore,
         ":lastUpdated": new Date().toISOString(),
-        ":startTotal": 0,
-        ":startCount": 0,
       }
+      // KHÔNG CẦN ExpressionAttributeNames vì các trường không phải là từ khóa bảo mật.
     );
-    console.log(`Country stats for ${country} updated successfully.`);
+
+    console.log(
+      `Country stats for ${country} updated successfully. New AVG: ${updatedAverageScore}`
+    );
   } catch (error) {
     console.error("Error updating country stats:", error);
     // Lỗi không quan trọng, không cần re-throw
