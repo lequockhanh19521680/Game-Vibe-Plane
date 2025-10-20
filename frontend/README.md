@@ -5,6 +5,7 @@ A modern space survival game with real-time multiplayer features.
 ## 🚀 Quick Start
 
 ### For Players
+
 1. Open `index.html` in a modern web browser
 2. Enter your name and click "Start Battle"
 3. Use mouse/touch to control your spacecraft
@@ -66,14 +67,14 @@ npx serve -p 8080
 
 All environment variables are prefixed with `VITE_` for Vite compatibility:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_API_BASE_URL` | Backend API URL | None |
-| `VITE_WEBSOCKET_URL` | WebSocket URL | None |
-| `VITE_ENVIRONMENT` | Environment name | `production` |
-| `VITE_DEBUG_MODE` | Enable debug logging | `false` |
-| `VITE_ENABLE_LEADERBOARD` | Enable leaderboard | `true` |
-| `VITE_ENABLE_REAL_TIME_UPDATES` | Enable WebSocket updates | `true` |
+| Variable                        | Description              | Default      |
+| ------------------------------- | ------------------------ | ------------ |
+| `VITE_API_BASE_URL`             | Backend API URL          | None         |
+| `VITE_WEBSOCKET_URL`            | WebSocket URL            | None         |
+| `VITE_ENVIRONMENT`              | Environment name         | `production` |
+| `VITE_DEBUG_MODE`               | Enable debug logging     | `false`      |
+| `VITE_ENABLE_LEADERBOARD`       | Enable leaderboard       | `true`       |
+| `VITE_ENABLE_REAL_TIME_UPDATES` | Enable WebSocket updates | `true`       |
 
 #### Configuration API
 
@@ -81,16 +82,16 @@ Access configuration in your code:
 
 ```javascript
 // Get configuration value
-const apiUrl = window.getConfig('apiBaseUrl');
+const apiUrl = window.getConfig("apiBaseUrl");
 
 // Check if feature is enabled
-if (window.isFeatureEnabled('leaderboard')) {
+if (window.isFeatureEnabled("leaderboard")) {
   // Initialize leaderboard
 }
 
 // Get environment info
 const env = window.environmentConfig.getEnvironmentInfo();
-console.log('Running in:', env.environment);
+console.log("Running in:", env.environment);
 ```
 
 ## 🎮 Game Features
@@ -159,17 +160,7 @@ languages: {
 }
 ```
 
-2. Add translations:
-
-```javascript
-translations: {
-  // ... existing translations
-  xx: {
-    'menu.title': 'Translated Title',
-    // ... other translations
-  }
-}
-```
+````
 
 ## 🚨 Troubleshooting
 
@@ -203,11 +194,12 @@ localStorage.setItem('stellarDriftConfig', JSON.stringify({
 
 // Reload the page
 location.reload();
-```
+````
 
 ### Performance Issues
 
 1. **Low FPS on mobile**:
+
    - Disable particle effects in settings
    - Reduce screen shake effects
    - Close other browser tabs

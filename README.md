@@ -501,18 +501,6 @@ languages: {
 }
 ```
 
-2. **Add translations**:
-
-```javascript
-translations: {
-  xx: {
-    'menu.title': 'Translated Title',
-    'menu.startBattle': 'Start Battle Translation',
-    // ... add all translation keys
-  }
-}
-```
-
 3. **Test the language**:
 
 ```javascript

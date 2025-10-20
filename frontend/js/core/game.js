@@ -272,8 +272,11 @@ function animate() {
     // FIX: Don't show level up message for Level 1
     if (currentLevel > 1) {
       const levelUpText = window.safeT
-        ? window.safeT("level.levelUp", `LEVEL ${currentLevel} REACHED!`)
-        : `LEVEL ${currentLevel} REACHED!`;
+        ? window.safeT(
+            "level.levelUp",
+            `LEVEL ${currentLevel} REACHED!\n🔥 Difficulty Up!`
+          )
+        : `LEVEL ${currentLevel} REACHED!\n🔥 Difficulty Up!`;
       showEventText(levelUpText);
       playSound("powerup");
     }
