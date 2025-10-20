@@ -41,9 +41,9 @@ const GAME_CONFIG = {
   difficulty: {
     baseSpawnInterval: 80,
     minSpawnInterval: 20,
-    spawnDecreaseStep: 2.0, // Tăng mật độ thiên thạch nhanh hơn
+    spawnDecreaseStep: 2.5, // SỬA ĐỔI: Tăng độ khó
     baseSpeed: 0.5,
-    speedIncreaseStep: 0.05,
+    speedIncreaseStep: 0.07, // SỬA ĐỔI: Tăng độ khó
     microSpeedIncrease: 0.01,
     microProgressInterval: 900,
     // NEW: Non-linear level progression. Score needed to reach level X.
@@ -80,13 +80,13 @@ const GAME_CONFIG = {
       warningDuration: 120, // 2 seconds at 60fps
       baseRadius: 8,
       baseMaxRadius: 40,
-      radiusIncreasePerLevel: 15,
+      radiusIncreasePerLevel: 20, // SỬA ĐỔI: Tăng độ khó
       baseGravityRadius: 120,
-      gravityRadiusIncreasePerLevel: 30,
+      gravityRadiusIncreasePerLevel: 40, // SỬA ĐỔI: Tăng độ khó
       baseStrength: 0.015,
-      strengthIncreasePerLevel: 0.018,
+      strengthIncreasePerLevel: 0.02, // SỬA ĐỔI: Tăng độ khó
       baseGrowthRate: 0.018,
-      growthRateIncreasePerLevel: 0.03,
+      growthRateIncreasePerLevel: 0.035, // SỬA ĐỔI: Tăng độ khó
       playerForceMultiplier: 1.8,
       shakeThreshold: 0.7,
       shakeIntensity: 0.05,
@@ -96,13 +96,13 @@ const GAME_CONFIG = {
       spawnScore: 1500,
       spawnInterval: 700,
       minSpawnInterval: 120, // Tên lửa xuất hiện tối thiểu mỗi 2 giây
-      intervalDecreasePerLevel: 30, // Thời gian hồi chiêu giảm 0.5 giây mỗi cấp
+      intervalDecreasePerLevel: 40, // SỬA ĐỔI: Tăng độ khó
       warningDuration: 120, // 2 seconds at 60fps
       radius: 5,
       baseSpeed: 0.15,
-      speedIncreasePerLevel: 0.025,
+      speedIncreasePerLevel: 0.03, // SỬA ĐỔI: Tăng độ khó
       baseTurnSpeed: 0.015,
-      turnSpeedIncreasePerLevel: 0.02,
+      turnSpeedIncreasePerLevel: 0.025, // SỬA ĐỔI: Tăng độ khó
       speedUpTime: 350,
       speedUpMultiplier: 1.9,
       turnSpeedUpMultiplier: 1.6,
@@ -116,12 +116,12 @@ const GAME_CONFIG = {
     lasers: {
       spawnScore: 4500,
       baseInterval: 450,
-      intervalDecreasePerLevel: 25,
+      intervalDecreasePerLevel: 30, // SỬA ĐỔI: Tăng độ khó
       minInterval: 60,
       maxConcurrent: 1,
       lasersPerLevel: 3,
       baseTargetChance: 0.1,
-      targetChanceIncreasePerLevel: 0.08,
+      targetChanceIncreasePerLevel: 0.1, // SỬA ĐỔI: Tăng độ khó
       maxTargetChance: 0.85,
       warningTime: 120, // 2 seconds at 60fps
       beamDuration: 10,
@@ -324,18 +324,17 @@ const GAME_CONFIG = {
       damageRate: 0.02,
       color: "#ff6b35",
       particleCount: 15,
-      pushForce: 0.05,
+      pushForce: 0.2,
       rotationSpeed: 0.02,
       particleMinDist: 20,
       particleMaxDist: 40,
       particleMinSpeed: 0.02,
       particleMaxSpeed: 0.03,
-      particleMinSize: 2,
-      particleMaxSize: 3,
       distancePulseSpeed: 0.05,
       distancePulseAmount: 0.5,
       pushRadiusMultiplier: 1.5,
       fragmentPushMultiplier: 1.6,
+      asteroidPushMultiplier: 1.2,
     },
     decoyPowerUp: {
       size: 10,

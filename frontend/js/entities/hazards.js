@@ -200,27 +200,21 @@ class PlasmaField {
     const pushRadius = this.radius * (this.config.pushRadiusMultiplier || 1.5);
     const pushForce = this.config.pushForce || 0.05;
 
-    missiles.forEach((missile) => {
-      const dist = Math.hypot(missile.x - this.x, missile.y - this.y);
+    // SỬA ĐỔI: Thêm logic đẩy thiên thạch
+    const objectsToPush = [...asteroids, ...missiles, ...fragments];
+    objectsToPush.forEach((obj) => {
+      if (!obj || !obj.velocity) return;
+      const dist = Math.hypot(obj.x - this.x, obj.y - this.y);
       if (dist < pushRadius && dist > 0) {
-        const force = (pushForce * (pushRadius - dist)) / pushRadius;
-        const angle = Math.atan2(missile.y - this.y, missile.x - this.x);
-        missile.velocity.x += Math.cos(angle) * force;
-        missile.velocity.y += Math.sin(angle) * force;
-      }
-    });
-
-    fragments.forEach((fragment) => {
-      const dist = Math.hypot(fragment.x - this.x, fragment.y - this.y);
-      if (dist < pushRadius && dist > 0) {
-        const fragmentPushMultiplier =
-          this.config.fragmentPushMultiplier || 1.6;
+        let forceMultiplier = 1;
+        if (obj instanceof Fragment) {
+          forceMultiplier = this.config.fragmentPushMultiplier || 1.6;
+        }
         const force =
-          (pushForce * fragmentPushMultiplier * (pushRadius - dist)) /
-          pushRadius;
-        const angle = Math.atan2(fragment.y - this.y, fragment.x - this.x);
-        fragment.velocity.x += Math.cos(angle) * force;
-        fragment.velocity.y += Math.sin(angle) * force;
+          (pushForce * forceMultiplier * (pushRadius - dist)) / pushRadius;
+        const angle = Math.atan2(obj.y - this.y, obj.x - this.x);
+        obj.velocity.x += Math.cos(angle) * force;
+        obj.velocity.y += Math.sin(angle) * force;
       }
     });
 

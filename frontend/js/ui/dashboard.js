@@ -451,6 +451,7 @@ function getCountryFlag(countryIdentifier) {
     Australia: "AU",
     Brazil: "BR",
     India: "IN",
+    Thailand: "TH", // SỬA ĐỔI: Thêm Thái Lan
   };
   if (!countryIdentifier) return "🌍";
   let countryCode = countryIdentifier.toUpperCase();
