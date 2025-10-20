@@ -106,13 +106,20 @@ class PlayingState extends GameState {
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarOpacity;
     uiElements.pauseButton.style.display = "block";
 
-    if (!isGameRunning || isPaused) {
+    // If restarting or starting for the first time
+    if (this.data.restart || !isGameRunning) {
       isPaused = false;
       isGameRunning = true;
       init();
       animate();
       startBackgroundMusic();
       initAudioSystem();
+    } else {
+      // Resuming from pause
+      isPaused = false;
+      // isGameRunning is already true
+      animate();
+      resumeBackgroundMusic();
     }
   }
 }
@@ -126,58 +133,13 @@ class PausedState extends GameState {
       cancelAnimationFrame(animationFrameId);
     }
     pauseBackgroundMusic();
-
-    // Update pause stats - logic moved from gameUI.js
-    this.updatePauseStats();
-    this.updatePauseTip();
-  }
-
-  updatePauseStats() {
-    const scoreEl = document.getElementById("pause-current-score");
-    if (scoreEl) scoreEl.textContent = score.toLocaleString();
-
-    const timeEl = document.getElementById("pause-current-time");
-    if (timeEl) timeEl.textContent = formatTime(survivalTime);
-
-    const levelEl = document.getElementById("pause-current-level");
-    if (levelEl) {
-      const currentLevel =
-        Math.floor(score / GAME_CONFIG.difficulty.scorePerLevel) + 1;
-      levelEl.textContent = currentLevel;
-    }
-
-    const highScoreEl = document.getElementById("pause-high-score");
-    if (highScoreEl) highScoreEl.textContent = highScore.toLocaleString();
-  }
-
-  updatePauseTip() {
-    const tipEl = document.getElementById("pause-tip");
-    if (tipEl) {
-      const tips = [
-        "Collect crystal shards for temporary shields!",
-        "Move constantly to avoid predictable patterns!",
-        "Higher levels spawn more dangerous enemies!",
-        "Use the edges of the screen for quick escapes!",
-        "Watch for warning indicators before events!",
-        "Power-ups appear more frequently at higher scores!",
-        "Different enemies have different movement patterns!",
-        "Your score increases faster when moving!",
-        "Survival time contributes to your final score!",
-        "Stay calm during intense moments!",
-      ];
-      const randomTip = tips[Math.floor(Math.random() * tips.length)];
-      tipEl.textContent = randomTip;
-    }
   }
 
   exit() {
     document.body.className = "game-active";
     uiElements.pauseMenu.style.display = "none";
     isPaused = false;
-    if (isGameRunning) {
-      animate();
-      resumeBackgroundMusic();
-    }
+    // The next state's `enter` method will handle resuming animations/music.
   }
 }
 

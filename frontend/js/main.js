@@ -157,20 +157,16 @@ resumeButton.addEventListener("click", () => {
 });
 restartFromPauseButton.addEventListener("click", () => {
   playSound("buttonHover");
-  togglePause();
+  // BUG FIX: Directly call startGame() to reset the game state.
+  // Do not call togglePause() as it interferes with the reset logic.
   startGame();
 });
 mainMenuFromPauseButton.addEventListener("click", () => {
   playSound("buttonHover");
-  togglePause();
+  // REFACTOR: Cleanly exit to main menu by setting game state flags
+  // and letting the gameStateManager handle the transition.
   isGameRunning = false;
-  uiElements.pauseButton.style.display = "none";
-  uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
-  ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
-  ctx.fillRect(0, 0, width, height);
-  if (stars && stars.length > 0) {
-    stars.forEach((s) => s.draw());
-  }
+  isPaused = false;
   gameStateManager.changeState("menu");
 });
 mainMenuFromOverButton.addEventListener("click", () => {
