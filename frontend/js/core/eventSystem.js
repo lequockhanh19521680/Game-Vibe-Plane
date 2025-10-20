@@ -3,6 +3,15 @@ let eventTextQueue = [];
 let isShowingEventText = false;
 let currentEventTimeout = null;
 
+// FIX: Safe translation helper to prevent crashes if gameSettings.t is missing
+const safeT = (key, fallback) => {
+  if (window.gameSettings && typeof window.gameSettings.t === "function") {
+    return window.gameSettings.t(key) || fallback;
+  }
+  return fallback;
+};
+// END FIX
+
 /**
  * Public function to show event text, using a queue system to handle overlaps.
  * This function should be the ONLY way to show event text.
@@ -205,7 +214,7 @@ function triggerRandomEvent() {
   switch (randomEventType) {
     case "decoyPowerUp":
       eventActive.type = "decoyPowerUp";
-      showEventText(gameSettings.t("event.decoyPowerUp"));
+      showEventText(safeT("event.decoyPowerUp", "Decoy Power-up Deployed!"));
       if (typeof decoyPowerUps !== "undefined") {
         decoyPowerUps.push(
           new DecoyPowerUp(
@@ -218,7 +227,7 @@ function triggerRandomEvent() {
 
     case "chaosMode":
       eventActive.type = "chaosMode";
-      showEventText(gameSettings.t("event.chaosMode"));
+      showEventText(safeT("event.chaosMode", "CHAOS MODE ACTIVATED!"));
       // Rapidly spawn a few different hazards
       setTimeout(() => {
         if (isGameRunning) lasers.push(new Laser(true));
@@ -236,7 +245,7 @@ function triggerRandomEvent() {
 
     case "asteroidShower":
       eventActive.type = "asteroidShower";
-      showEventText(gameSettings.t("event.asteroidShower"));
+      showEventText(safeT("event.asteroidShower", "Asteroid Shower!"));
       const totalAsteroids = 25;
       const waves = 3;
       const asteroidsPerWave = Math.floor(totalAsteroids / waves);
@@ -260,7 +269,7 @@ function triggerRandomEvent() {
 
     case "instantMissiles":
       eventActive.type = "instantMissiles";
-      showEventText(gameSettings.t("event.missileIncoming"));
+      showEventText(safeT("event.missileIncoming", "Missile Incoming!"));
       const instantSides = ["left", "right", "top", "bottom"];
       const missileCount = 2;
       for (let i = 0; i < missileCount; i++) {
@@ -324,13 +333,15 @@ function triggerRandomEvent() {
 
     case "asteroidCircle":
       eventActive.type = "asteroidCircle";
-      showEventText("Asteroid Circle Formation!");
+      showEventText(
+        safeT("event.asteroidCircle", "Asteroid Circle Formation!")
+      );
       triggerAsteroidCircle();
       break;
 
     case "missileBarrage":
       eventActive.type = "missileBarrage";
-      showEventText(gameSettings.t("event.missileIncoming"));
+      showEventText(safeT("event.missileBarrage", "Missile Barrage Incoming!"));
       const barrageSides = ["left", "right", "top", "bottom"];
       for (let i = 0; i < GAME_CONFIG.events.missileBarrage.count; i++) {
         const side =
@@ -393,7 +404,7 @@ function triggerRandomEvent() {
 
     case "laserGrid":
       eventActive.type = "laserGrid";
-      showEventText("Laser Grid!");
+      showEventText(safeT("event.laserGrid", "Laser Grid!"));
       for (let i = 0; i < GAME_CONFIG.events.laserGrid.gridSize; i++) {
         setTimeout(() => {
           if (isGameRunning) {
@@ -409,7 +420,7 @@ function triggerRandomEvent() {
 
     case "blackHoleChain":
       eventActive.type = "blackHoleChain";
-      showEventText("Black Hole Chain!");
+      showEventText(safeT("event.blackHoleChain", "Black Hole Chain!"));
       for (let i = 0; i < GAME_CONFIG.events.blackHoleChain.count; i++) {
         setTimeout(() => {
           if (isGameRunning) {
@@ -429,7 +440,9 @@ function triggerRandomEvent() {
 
     case "shieldGenerator":
       eventActive.type = "shieldGenerator";
-      showEventText("Shield Generator Deployed!");
+      showEventText(
+        safeT("event.shieldGenerator", "Shield Generator Deployed!")
+      );
       const genX = Math.random() * (width - 200) + 100;
       const genY = Math.random() * (height / 2) + 50;
       if (typeof shieldGenerators !== "undefined") {
@@ -439,7 +452,9 @@ function triggerRandomEvent() {
 
     case "mineFieldDetonation":
       eventActive.type = "mineFieldDetonation";
-      showEventText("⚠️ Mine Field Detonation! ⚠️");
+      showEventText(
+        safeT("event.mineFieldDetonation", "⚠️ Mine Field Detonation! ⚠️")
+      );
       const mineConfig = GAME_CONFIG.events.mineFieldDetonation;
       for (let i = 0; i < mineConfig.count; i++) {
         setTimeout(() => {
@@ -461,7 +476,7 @@ function triggerRandomEvent() {
 
     case "wormholePortal":
       eventActive.type = "wormholePortal";
-      showEventText("Wormhole Opened!");
+      showEventText(safeT("event.wormholePortal", "Wormhole Opened!"));
       const wormholeX = Math.random() * (width - 200) + 100;
       const wormholeY = Math.random() * (height / 2) + 100;
       if (typeof wormholes !== "undefined") {
@@ -472,7 +487,7 @@ function triggerRandomEvent() {
 
     case "freezeZone":
       eventActive.type = "freezeZone";
-      showEventText("❄️ FREEZE ZONES IMMINENT ❄️");
+      showEventText(safeT("event.freezeZone", "❄️ FREEZE ZONES IMMINENT ❄️"));
       for (let i = 0; i < (GAME_CONFIG.events.freezeZone.count || 3); i++) {
         setTimeout(() => {
           if (isGameRunning) {
@@ -493,7 +508,12 @@ function triggerRandomEvent() {
 
     case "magneticStorm":
       eventActive.type = "magneticStorm";
-      showEventText("⚠️ MAGNETIC STORM INCOMING! ⚠️ (3s)");
+      showEventText(
+        safeT(
+          "event.magneticStormIncoming",
+          "⚠️ MAGNETIC STORM INCOMING! ⚠️ (3s)"
+        )
+      );
       const magneticWarningSystem = spawnWithWarning(
         "magnetic",
         width / 2,
@@ -505,7 +525,9 @@ function triggerRandomEvent() {
       magneticWarningSystem.spawn(() => {
         if (isGameRunning) {
           magneticStorms.push(new MagneticStorm());
-          showEventText("⚡ MAGNETIC STORM ACTIVE ⚡");
+          showEventText(
+            safeT("event.magneticStormActive", "⚡ MAGNETIC STORM ACTIVE ⚡")
+          );
           playSound("warning");
           triggerScreenShake(0.3);
         }
@@ -514,13 +536,13 @@ function triggerRandomEvent() {
 
     case "asteroidBelt":
       eventActive.type = "asteroidBelt";
-      showEventText("Asteroid Belt!");
+      showEventText(safeT("event.asteroidBelt", "Asteroid Belt!"));
       triggerAsteroidBelt();
       break;
 
     case "plasmaStorm":
       eventActive.type = "plasmaStorm";
-      showEventText(gameSettings.t("event.plasmaInferno"));
+      showEventText(safeT("event.plasmaInferno", "Plasma Inferno Incoming!"));
       const plasmaConfig = GAME_CONFIG.events.plasmaStorm || {};
       const waveCount = plasmaConfig.waveCount || 4;
       const fieldsPerWave = plasmaConfig.fieldsPerWave || 5;
@@ -560,7 +582,9 @@ function triggerRandomEvent() {
       }
       setTimeout(() => {
         if (isGameRunning) {
-          showEventText("🔥 PLASMA INFERNO UNLEASHED 🔥");
+          showEventText(
+            safeT("event.plasmaUnleashed", "🔥 PLASMA INFERNO UNLEASHED 🔥")
+          );
           triggerScreenShake(plasmaConfig.shakeIntensity || 0.8);
           playSound("explosion");
         }
@@ -569,7 +593,7 @@ function triggerRandomEvent() {
 
     case "crystalRain":
       eventActive.type = "crystalRain";
-      showEventText("Cosmic Crystal Storm!");
+      showEventText(safeT("event.crystalStorm", "Cosmic Crystal Storm!"));
       for (let cluster = 0; cluster < 4; cluster++) {
         const clusterX = (canvas.width / 5) * (cluster + 1);
         const clusterY = Math.random() * canvas.height * 0.3;
@@ -625,7 +649,7 @@ function triggerRandomEvent() {
 
     case "quantumTunnels":
       eventActive.type = "quantumTunnels";
-      showEventText("Quantum Portal Pair!");
+      showEventText(safeT("event.quantumPortal", "Quantum Portal Pair!"));
       const tunnelX1 = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
       const tunnelY1 =
         Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
@@ -639,7 +663,7 @@ function triggerRandomEvent() {
 
     case "gravityWells":
       eventActive.type = "gravityWells";
-      showEventText("Gravity Well Field!");
+      showEventText(safeT("event.gravityWells", "Gravity Well Field!"));
       for (let i = 0; i < GAME_CONFIG.events.gravityWells.count; i++) {
         const x = 100 + Math.random() * (canvas.width - 200);
         const y = 100 + Math.random() * (canvas.height - 200);
@@ -658,7 +682,9 @@ function triggerRandomEvent() {
 
     case "meteorBombardment":
       eventActive.type = "meteorBombardment";
-      showEventText("⚠️ METEOR BOMBARDMENT IMMINENT ⚠️");
+      showEventText(
+        safeT("event.meteorBombardment", "⚠️ METEOR BOMBARDMENT IMMINENT ⚠️")
+      );
       const meteorCfg = GAME_CONFIG.events.meteorBombardment;
       const warningDurationM = 180;
       for (let i = 0; i < meteorCfg.count; i++) {
@@ -693,7 +719,7 @@ function triggerRandomEvent() {
 
     case "voidRifts":
       eventActive.type = "voidRifts";
-      showEventText("⚠️ Void Rifts Detected ⚠️");
+      showEventText(safeT("event.voidRifts", "⚠️ Void Rifts Detected ⚠️"));
       for (let i = 0; i < GAME_CONFIG.events.voidRifts.count; i++) {
         const x = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
         const y = Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
@@ -714,7 +740,7 @@ function triggerRandomEvent() {
 
     case "lightningStorm":
       eventActive.type = "lightningStorm";
-      showEventText("⚡ THUNDER SHIELD! ⚡");
+      showEventText(safeT("event.lightningStorm", "⚡ THUNDER SHIELD! ⚡"));
       lightningStorms.push(new LightningStorm());
       playSound("warning");
       triggerScreenShake(0.4);
@@ -723,12 +749,12 @@ function triggerRandomEvent() {
     case "speedZone":
       eventActive.type = "speedZone";
       globalSpeedMultiplier *= GAME_CONFIG.events.speedZone.speedMultiplier;
-      showEventText("Difficulty Spike!");
+      showEventText(safeT("event.difficultySpike", "Difficulty Spike!"));
       break;
 
     case "asteroidRain":
       eventActive.type = "asteroidRain";
-      showEventText("Asteroid Rain!");
+      showEventText(safeT("event.asteroidRain", "Asteroid Rain!"));
       for (let i = 0; i < GAME_CONFIG.events.asteroidRain.count; i++) {
         setTimeout(() => {
           if (isGameRunning) {

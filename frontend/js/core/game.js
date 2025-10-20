@@ -4,7 +4,7 @@
  * THÊM MỚI: Hàm tính toán cấp độ và tiến trình dựa trên điểm số hiện tại.
  * Sử dụng cấu hình `levelUpScores` mới để có độ khó tăng dần.
  * @param {number} currentScore - The player's current score.
- * @returns {{level: number, progressPercentage: number}} - The current level and progress percentage to the next level.
+ * @returns {{level: number, scoreToNext: number}} - The current level and score to the next level.
  */
 function getLevelInfo(currentScore) {
   const levelUpScores = GAME_CONFIG.difficulty.levelUpScores;
@@ -28,9 +28,10 @@ function getLevelInfo(currentScore) {
 
   // Calculate for levels beyond the predefined array
   const lastDefinedScore = levelUpScores[levelUpScores.length - 1];
+  const levelsDefined = levelUpScores.length;
   const scoreAfter = currentScore - lastDefinedScore;
   const levelsAfter = Math.floor(scoreAfter / scorePerLevelAfterMax);
-  const level = levelUpScores.length + 1 + levelsAfter;
+  const level = levelsDefined + 1 + levelsAfter;
   const scoreAtStartOfLevel =
     lastDefinedScore + levelsAfter * scorePerLevelAfterMax;
   const scoreForNextLevel = scoreAtStartOfLevel + scorePerLevelAfterMax;
@@ -92,6 +93,7 @@ function init() {
     missile: 0,
     mine: 0,
     crystal: 0,
+    energyOrb: 0, // Ensure energyOrb timer is initialized
   };
 
   if (typeof resetEventSystem === "function") {
@@ -256,7 +258,27 @@ function animate() {
     eventActive.type = null;
   }
 
-  // REMOVED: Unused 'denseField' event logic
+  // --- FIX: Logic Level Up và Pop-up ---
+  if (currentLevel > lastDifficultyLevel) {
+    // FIX: Cập nhật biến trạng thái cấp độ
+    lastDifficultyLevel = currentLevel;
+
+    // FIX: Gọi showEventText với text đã dịch (sử dụng safeT từ eventSystem.js)
+    const levelUpText = window.safeT
+      ? window.safeT("level.levelUp", `LEVEL ${currentLevel} REACHED!`)
+      : `LEVEL ${currentLevel} REACHED!`;
+
+    showEventText(levelUpText);
+    playSound("powerup");
+
+    // Logic tăng độ khó
+    globalSpeedMultiplier += GAME_CONFIG.difficulty.speedIncreaseStep;
+    if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval) {
+      spawnInterval -= GAME_CONFIG.difficulty.spawnDecreaseStep;
+    }
+  }
+  // --- END FIX ---
+
   let currentSpawnInterval = spawnInterval;
 
   timers.asteroid++;
@@ -686,17 +708,8 @@ function animate() {
     }
   }
 
-  const difficultyLevel = currentLevel - 1;
-
-  if (difficultyLevel > lastDifficultyLevel && difficultyLevel > 0) {
-    lastDifficultyLevel = difficultyLevel;
-    showEventText(`LEVEL ${difficultyLevel + 1}`);
-    playSound("powerup");
-    globalSpeedMultiplier += GAME_CONFIG.difficulty.speedIncreaseStep;
-    if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval) {
-      spawnInterval -= GAME_CONFIG.difficulty.spawnDecreaseStep;
-    }
-  }
+  // REMOVED: Unused old logic for level-up difficulty calculation and event call
+  // The new logic is placed above the hazard spawning logic to update lastDifficultyLevel correctly
 
   if (timers.difficulty % GAME_CONFIG.difficulty.microProgressInterval === 0) {
     if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval + 3)
