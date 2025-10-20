@@ -26,10 +26,8 @@ function triggerAsteroidCircle() {
   warnings.push(circleWarning);
 
   setTimeout(() => {
-    const warningIndex = warnings.indexOf(circleWarning);
-    if (warningIndex > -1) {
-      warnings.splice(warningIndex, 1);
-    }
+    // Note: The CircleWarning must be removed by the game loop logic (w.timer < w.duration)
+    // We only need to check if the game is still running to spawn the asteroids.
     if (!isGameRunning) return;
 
     for (let i = 0; i < config.count; i++) {
@@ -46,8 +44,43 @@ function triggerAsteroidCircle() {
 }
 
 /**
- * REMOVED: Unused function triggerAsteroidBelt
+ * Triggers the Asteroid Belt event (Implementation added to avoid errors if referenced).
+ * Spawns asteroids in an orbiting belt pattern.
  */
+function triggerAsteroidBelt() {
+  const config = GAME_CONFIG.events.asteroidCircle; // Reusing config for simplicity
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = 250;
+
+  const beltWarning = new BeltWarning(centerX, centerY, radius);
+  warnings.push(beltWarning);
+
+  setTimeout(() => {
+    if (!isGameRunning) return;
+
+    const asteroidCount = 18;
+    const orbitSpeed = 0.02;
+    const asteroidRadius = 15;
+
+    for (let i = 0; i < asteroidCount; i++) {
+      const angle = (i / asteroidCount) * Math.PI * 2;
+      const x = centerX + Math.cos(angle) * radius;
+      const y = centerY + Math.sin(angle) * radius;
+
+      // Calculate velocity for orbiting movement (perpendicular to radius vector)
+      const perpendicularAngle = angle + Math.PI / 2;
+      const speed = 1.5 * globalSpeedMultiplier;
+
+      asteroids.push(
+        new Asteroid(x, y, asteroidRadius, "#ffbb33", {
+          x: Math.cos(perpendicularAngle) * speed,
+          y: Math.sin(perpendicularAngle) * speed,
+        })
+      );
+    }
+  }, beltWarning.duration * (1000 / 60)); // Use the belt warning duration
+}
 
 /**
  * Creates a smaller asteroid for the "Asteroid Shower" event.
@@ -109,9 +142,14 @@ class WarningSystem {
     this.type = type;
     this.x = x;
     this.y = y;
-    this.warningDuration = options.duration || 120;
+    // FIX: Default duration to a value from a warning entity or a reasonable fallback
+    this.warningDuration =
+      options.duration ||
+      GAME_CONFIG.entities.blackHoles.warningDuration ||
+      120;
 
-    if (options.angle !== undefined || type === "missile") {
+    // Use specific warning classes if applicable, otherwise default to generic Warning
+    if (type === "missile") {
       this.warning = new DirectionalWarning(
         x,
         y,
@@ -119,6 +157,11 @@ class WarningSystem {
         options.angle !== undefined ? options.angle : 0,
         this.warningDuration
       );
+    } else if (type === "asteroidCircle") {
+      // For CircleWarning, use its specific constructor
+      this.warning = new CircleWarning(x, y, options.radius);
+    } else if (type === "asteroidBelt") {
+      this.warning = new BeltWarning(x, y, options.radius);
     } else {
       this.warning = new Warning(x, y, type, this.warningDuration);
     }
@@ -134,10 +177,10 @@ class WarningSystem {
       // Only spawn if the game is still running
       if (isGameRunning) {
         spawnCallback();
-        const index = warnings.indexOf(this.warning);
-        if (index > -1) {
-          warnings.splice(index, 1);
-        }
+        // The game loop (in game.js) now handles the removal of the warning:
+        // `warnings = warnings.filter((w) => w.timer < w.duration);`
+        // We no longer need to manually splice it here, as it will naturally reach
+        // timer > duration after the timeout, or soon after.
       }
     }, this.warningDuration * (1000 / 60));
   }
@@ -152,6 +195,7 @@ class WarningSystem {
  * @returns {WarningSystem} A new WarningSystem instance.
  */
 function spawnWithWarning(type, x, y, options = {}) {
+  // Pass duration through options if defined, otherwise the WarningSystem will use defaults
   if (type === "magnetic") {
     options.duration = options.duration || 180;
   } else if (type === "missile") {

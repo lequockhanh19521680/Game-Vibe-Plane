@@ -77,7 +77,7 @@ class MissileFragment extends Fragment {
     this.color = config.color;
     this.life =
       config.minLife + Math.random() * (config.maxLife - config.minLife);
-    this.lethal = config.lethal;
+    this.lethal = false; // SỬA LỖI 2: Mảnh tên lửa không gây kết thúc game
   }
 
   draw() {
@@ -88,13 +88,19 @@ class MissileFragment extends Fragment {
     ctx.beginPath();
     ctx.rect(-this.radius / 2, -this.radius / 2, this.radius, this.radius);
     ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 8; // Giảm shadow blur cho mảnh vỡ
     ctx.fill();
 
+    // Loại bỏ viền sát thương nếu không còn lethal
+    /*
     if (this.lethal) {
       ctx.strokeStyle = "#ff0088";
       ctx.lineWidth = 1;
       ctx.stroke();
     }
+    */
+
     ctx.restore();
   }
 }

@@ -192,6 +192,7 @@ const GAME_CONFIG = {
       mineFieldDetonation: 21000,
       speedZone: 1000,
       gravityWells: 16000,
+      wormholePortal: 9000,
     },
     speedZone: { speedMultiplier: 1.4 },
     laserGrid: { gridSize: 3, delay: 350 },
@@ -217,6 +218,14 @@ const GAME_CONFIG = {
     gravityWells: { count: 5 },
     meteorBombardment: { count: 25, delay: 60, speed: 5 },
     voidRifts: { count: 4 },
+    wormholePortal: { count: 1 },
+    shieldGenerator: { count: 1 },
+    mineFieldDetonation: {
+      count: 8,
+      delay: 200,
+      chargeTime: 60,
+      warningTime: 90,
+    },
   },
 
   // =============================================================================

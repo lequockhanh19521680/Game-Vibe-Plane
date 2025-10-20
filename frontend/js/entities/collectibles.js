@@ -439,8 +439,8 @@ class ShieldGenerator {
 
 class CrystalCluster {
   constructor(x, y) {
-    // SỬA LỖI: Sử dụng GAME_CONFIG
-    this.config = GAME_CONFIG.crystalClusters;
+    // SỬA LỖI: Sử dụng đường dẫn config chính xác
+    this.config = GAME_CONFIG.entities.crystalClusters;
     this.x = x;
     this.y = y;
     this.radius = this.config.radius;

@@ -156,7 +156,9 @@ function triggerRandomEvent() {
     { type: "temporalChaos", weight: 7 },
     { type: "lightningNetwork", weight: 7 },
     { type: "voidStorm", weight: 6 },
-    { type: "mineFieldDetonation", weight: 6 },
+    { type: "mineFieldDetonation", weight: 8 },
+    { type: "shieldGenerator", weight: 20 },
+    { type: "gravityWells", weight: 10 },
   ];
 
   const unlockThresholds = GAME_CONFIG.events.unlockThresholds || {};
@@ -393,16 +395,59 @@ function triggerRandomEvent() {
       }
       break;
 
+    case "shieldGenerator":
+      eventActive.type = "shieldGenerator";
+      showEventText("Shield Generator Deployed!");
+      const genX = Math.random() * (width - 200) + 100;
+      const genY = Math.random() * (height / 2) + 50;
+      if (typeof shieldGenerators !== "undefined") {
+        shieldGenerators.push(new ShieldGenerator(genX, genY));
+      }
+      break;
+
+    case "mineFieldDetonation":
+      eventActive.type = "mineFieldDetonation";
+      showEventText("⚠️ Mine Field Detonation! ⚠️");
+      const mineConfig = GAME_CONFIG.events.mineFieldDetonation;
+      for (let i = 0; i < mineConfig.count; i++) {
+        setTimeout(() => {
+          if (isGameRunning) {
+            const x = Math.random() * width * 0.8 + width * 0.1;
+            const y = Math.random() * height * 0.6;
+            const warningSystem = spawnWithWarning("lasermine", x, y, {
+              duration: mineConfig.warningTime,
+            });
+            warningSystem.spawn(() => {
+              const mine = new LaserMine(x, y);
+              mine.maxTime = mineConfig.chargeTime;
+              laserMines.push(mine);
+            });
+          }
+        }, i * mineConfig.delay);
+      }
+      break;
+
+    case "wormholePortal":
+      eventActive.type = "wormholePortal";
+      showEventText("Wormhole Opened!");
+      const wormholeX = Math.random() * (width - 200) + 100;
+      const wormholeY = Math.random() * (height / 2) + 100;
+      if (typeof wormholes !== "undefined") {
+        wormholes.push(new Wormhole(wormholeX, wormholeY));
+        playSound("wormhole");
+      }
+      break;
+
     case "freezeZone":
       eventActive.type = "freezeZone";
       showEventText("❄️ FREEZE ZONES IMMINENT ❄️");
-      for (let i = 0; i < GAME_CONFIG.events.freezeZone.count; i++) {
+      for (let i = 0; i < (GAME_CONFIG.events.freezeZone.count || 3); i++) {
         setTimeout(() => {
           if (isGameRunning) {
             const x = Math.random() * canvas.width;
             const y = Math.random() * canvas.height;
             const warningSystem = spawnWithWarning("freeze", x, y, {
-              radius: GAME_CONFIG.events.freezeZone.radius,
+              radius: GAME_CONFIG.newObjects.freezeZone.radius,
               duration: 120,
             });
             warningSystem.spawn(() => {
@@ -571,7 +616,12 @@ function triggerRandomEvent() {
         });
         warningSystem.spawn(() => {
           blackHoles.push(
-            new BlackHole(x, y, GAME_CONFIG.events.gravityWells.radius / 2)
+            new BlackHole(
+              x,
+              y,
+              true,
+              GAME_CONFIG.events.gravityWells.radius / 2
+            )
           );
         });
       }

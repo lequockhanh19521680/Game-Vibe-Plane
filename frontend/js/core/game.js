@@ -1,4 +1,50 @@
 // --- Game Logic ---
+
+/**
+ * THÊM MỚI: Hàm tính toán cấp độ và tiến trình dựa trên điểm số hiện tại.
+ * Sử dụng cấu hình `levelUpScores` mới để có độ khó tăng dần.
+ * @param {number} currentScore - The player's current score.
+ * @returns {{level: number, progressPercentage: number}} - The current level and progress percentage to the next level.
+ */
+function getLevelInfo(currentScore) {
+  const levelUpScores = GAME_CONFIG.difficulty.levelUpScores;
+  const scorePerLevelAfterMax = GAME_CONFIG.difficulty.scorePerLevelAfterMax;
+
+  // Find current level based on the predefined array
+  for (let i = 0; i < levelUpScores.length; i++) {
+    if (currentScore < levelUpScores[i]) {
+      const level = i + 1;
+      const scoreAtStartOfLevel = i > 0 ? levelUpScores[i - 1] : 0;
+      const scoreForNextLevel = levelUpScores[i];
+      const scoreNeededForLevel = scoreForNextLevel - scoreAtStartOfLevel;
+      const scoreProgressInLevel = currentScore - scoreAtStartOfLevel;
+      const progressPercentage =
+        scoreNeededForLevel > 0
+          ? (scoreProgressInLevel / scoreNeededForLevel) * 100
+          : 0;
+      return { level, progressPercentage };
+    }
+  }
+
+  // Calculate for levels beyond the predefined array
+  const lastDefinedScore = levelUpScores[levelUpScores.length - 1];
+  const scoreAfter = currentScore - lastDefinedScore;
+  const levelsAfter = Math.floor(scoreAfter / scorePerLevelAfterMax);
+  const level = levelUpScores.length + 1 + levelsAfter;
+  const scoreAtStartOfLevel =
+    lastDefinedScore + levelsAfter * scorePerLevelAfterMax;
+  const scoreForNextLevel = scoreAtStartOfLevel + scorePerLevelAfterMax;
+
+  const scoreNeededForLevel = scoreForNextLevel - scoreAtStartOfLevel;
+  const scoreProgressInLevel = currentScore - scoreAtStartOfLevel;
+  const progressPercentage =
+    scoreNeededForLevel > 0
+      ? (scoreProgressInLevel / scoreNeededForLevel) * 100
+      : 0;
+
+  return { level, progressPercentage };
+}
+
 function createNebula() {
   const x = Math.random() * width;
   const y = Math.random() * height;
@@ -75,7 +121,8 @@ function init() {
   freezeZones = [];
   magneticStorms = [];
   lightningStorms = [];
-  // REMOVED: quantumPortals = []; and wormholes = []; as they are unused.
+  quantumPortals = [];
+  wormholes = [];
   for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
     const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
     for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
@@ -161,7 +208,8 @@ function animate() {
     freezeZones,
     magneticStorms,
     lightningStorms,
-    // REMOVED: quantumPortals, wormholes
+    quantumPortals,
+    wormholes,
   ].forEach((arr) =>
     arr.forEach((item) => (item.update ? item.update() : undefined))
   );
@@ -191,7 +239,8 @@ function animate() {
   freezeZones = freezeZones.filter((f) => f.update() !== false);
   magneticStorms = magneticStorms.filter((m) => m.update() !== false);
   lightningStorms = lightningStorms.filter((l) => l.update() !== false);
-  // REMOVED: quantumPortals and wormholes filtering, as they are unused.
+  quantumPortals = quantumPortals.filter((p) => p.update() !== false);
+  wormholes = wormholes.filter((w) => w.update() !== false);
 
   if (score >= nextEventScore) {
     if (typeof window.triggerRandomEvent === "function") {
@@ -647,8 +696,6 @@ function animate() {
       crystalShards.splice(i, 1);
     }
   }
-
-  // REMOVED: Unused collision check for quantumPortals
 
   const difficultyLevel = Math.floor(score / scorePerLevel);
 
