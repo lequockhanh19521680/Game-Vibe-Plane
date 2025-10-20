@@ -50,10 +50,11 @@ const GAME_CONFIG = {
     microProgressInterval: 900,
     // NEW: Non-linear level progression. Score needed to reach level X.
     levelUpScores: [
-      500, 1500, 3000, 5000, 7500, 10000, 15000, 20000, 30000, 40000,
+      500, 1500, 3000, 5000, 7500, 10000, 15000, 20000, 30000, 40000, 50000,
+      65000, 80000, 100000,
     ],
     // Score needed for each level after the ones defined above.
-    scorePerLevelAfterMax: 10000,
+    scorePerLevelAfterMax: 20000,
   },
 
   // =============================================================================

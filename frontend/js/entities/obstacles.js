@@ -167,10 +167,10 @@ class BlackHole {
     this.x = x;
     this.y = y;
     const config = GAME_CONFIG.entities.blackHoles;
-    this.radius = config.baseRadius;
-    const difficultyLevel = Math.floor(
-      score / GAME_CONFIG.difficulty.scorePerLevel
-    );
+    // Note: getLevelInfo must be available in the global scope (defined in game.js)
+    const { level: currentLevel } = getLevelInfo(score);
+    const difficultyLevel = currentLevel - 1;
+
     this.gravityRadius =
       config.baseGravityRadius +
       difficultyLevel * config.gravityRadiusIncreasePerLevel;
@@ -181,6 +181,7 @@ class BlackHole {
     this.growthRate =
       config.baseGrowthRate +
       difficultyLevel * config.growthRateIncreasePerLevel;
+    this.radius = config.baseRadius;
     this.alpha = 0;
     this.isTemporary = isTemporary;
     this.life = config.temporaryLifetime;
@@ -208,34 +209,44 @@ class BlackHole {
   update() {
     if (this.isTemporary) {
       this.life--;
-      if (this.life <= 0) this.state = "fading";
+      if (this.life <= 0 && this.state === "growing") {
+        this.state = "fading";
+      }
     }
 
     if (this.state === "growing") {
-      if (this.alpha < 1) this.alpha += 0.01;
-      // FIX: Allow temporary black holes to grow as well before they start fading
+      if (this.alpha < 1) this.alpha += 0.02;
       if (this.radius < this.maxRadius) {
         this.radius += this.growthRate;
-        this.gravityRadius += this.growthRate * 4;
+        this.gravityRadius += this.growthRate * 2; // Gravity radius grows with the core
       }
-    } else {
-      // 'fading' state
-      this.alpha -= 0.01;
+    } else if (this.state === "fading") {
+      this.alpha -= 0.02;
+      this.radius -= this.growthRate * 0.5; // Shrink as it fades
+      this.gravityRadius -= this.growthRate * 3; // Gravity fades faster
+      if (this.radius < 0) this.radius = 0;
+      if (this.gravityRadius < 0) this.gravityRadius = 0;
     }
 
     [player, ...asteroids, ...missiles, ...fragments].forEach((obj) => {
       if (!obj || !obj.velocity) return;
       const dist = Math.hypot(obj.x - this.x, obj.y - this.y);
-      if (dist < this.gravityRadius && dist > 0) {
+
+      // Only apply force if outside the core and inside the gravity well
+      if (dist < this.gravityRadius && dist > this.radius) {
         const angle = Math.atan2(this.y - obj.y, this.x - obj.x);
         const falloff = 1 - dist / this.gravityRadius;
         const forceMultiplier =
           obj === player
             ? GAME_CONFIG.entities.blackHoles.playerForceMultiplier
             : 1;
-        const force = falloff * this.strength * forceMultiplier;
+
+        // Increased force calculation for a more noticeable pull
+        const force = falloff * this.strength * forceMultiplier * 5;
+
         obj.velocity.x += Math.cos(angle) * force;
         obj.velocity.y += Math.sin(angle) * force;
+
         if (
           obj === player &&
           dist <
@@ -255,9 +266,10 @@ class Missile {
     this.y = y;
     this.angle = angle;
     this.radius = GAME_CONFIG.entities.missiles.radius;
-    const difficultyLevel = Math.floor(
-      score / GAME_CONFIG.difficulty.scorePerLevel
-    );
+    // Note: getLevelInfo must be available in the global scope (defined in game.js)
+    const { level: currentLevel } = getLevelInfo(score);
+    const difficultyLevel = currentLevel - 1;
+
     this.speed =
       (GAME_CONFIG.entities.missiles.baseSpeed +
         difficultyLevel * GAME_CONFIG.entities.missiles.speedIncreasePerLevel) *
