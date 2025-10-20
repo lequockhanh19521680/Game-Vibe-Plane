@@ -1,6 +1,42 @@
 const { getTopScores, getCountryLeaderboard } = require("../utils/dynamodb");
 
 /**
+ * Filter a list of leaderboard entries to keep only the highest-scoring entry
+ * for each unique clientIP. Assumes the input list is already sorted by score (desc).
+ * @param {Array<object>} leaderboard - The raw leaderboard list.
+ * @param {number} limit - The maximum number of entries to return.
+ * @returns {Array<object>} Filtered leaderboard.
+ */
+function filterUniqueClients(leaderboard, limit) {
+  const uniqueIPs = new Set();
+  const filteredLeaderboard = [];
+
+  for (const entry of leaderboard) {
+    // Chỉ lọc bằng IP nếu IP tồn tại và không phải IP local/test
+    if (
+      entry.clientIP &&
+      entry.clientIP !== "127.0.0.1" &&
+      entry.clientIP !== "localhost"
+    ) {
+      if (!uniqueIPs.has(entry.clientIP)) {
+        uniqueIPs.add(entry.clientIP);
+        filteredLeaderboard.push(entry);
+      }
+    } else {
+      // Nếu IP bị thiếu hoặc là local, ta vẫn coi userId là duy nhất (hành vi mặc định)
+      filteredLeaderboard.push(entry);
+    }
+
+    if (filteredLeaderboard.length >= limit) {
+      break;
+    }
+  }
+
+  // Đảm bảo không vượt quá giới hạn
+  return filteredLeaderboard.slice(0, limit);
+}
+
+/**
  * Get the global or country-specific leaderboard
  */
 exports.handler = async (event) => {
@@ -27,20 +63,26 @@ exports.handler = async (event) => {
     console.log("Get leaderboard event:", JSON.stringify(event, null, 2));
 
     const queryParams = event.queryStringParameters || {};
-    const limit = Math.min(parseInt(queryParams.limit) || 10, 100);
+    // Lấy một danh sách lớn hơn gấp đôi để có đủ dữ liệu sau khi lọc trùng IP
+    const fetchLimit = Math.min(parseInt(queryParams.limit) || 10, 100);
     const country = queryParams.country;
 
     let leaderboard;
 
     if (country) {
-      leaderboard = await getCountryLeaderboard(country, limit);
+      // Lấy danh sách cho quốc gia
+      leaderboard = await getCountryLeaderboard(country, fetchLimit * 2);
     } else {
-      leaderboard = await getTopScores(limit);
+      // Lấy danh sách Global
+      leaderboard = await getTopScores(fetchLimit * 2);
     }
 
-    const formattedLeaderboard = leaderboard.map((entry, index) => ({
+    // Áp dụng bộ lọc IP duy nhất (Yêu cầu 2)
+    const filteredLeaderboard = filterUniqueClients(leaderboard, fetchLimit);
+
+    const formattedLeaderboard = filteredLeaderboard.map((entry, index) => ({
       rank: index + 1,
-      userId: entry.userId, // CHANGED: from id to userId
+      userId: entry.userId,
       username: entry.username,
       score: entry.score,
       survivalTime: entry.survivalTime,
@@ -60,6 +102,7 @@ exports.handler = async (event) => {
         total: formattedLeaderboard.length,
         country: country || "global",
         timestamp: Date.now(),
+        note: "Leaderboard filtered to show one highest score per unique client IP.",
       }),
     };
   } catch (error) {

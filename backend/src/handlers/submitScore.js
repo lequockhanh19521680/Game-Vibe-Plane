@@ -2,64 +2,51 @@ const { putItem, getItem, updateItem } = require("../utils/dynamodb");
 const { getCountryFromIP, extractIPFromEvent } = require("../utils/geoip");
 
 /**
- * Update country statistics
+ * Update country statistics. This should ONLY be called when a new high score
+ * is submitted for a given userId, as the ScoresTable only holds the highest score.
  * @param {string} country - The country of the player.
- * @param {number} score - The new score.
- * @param {object|null} oldScoreItem - The previous score item for the user, if any.
+ * @param {number} newScore - The new high score.
+ * @param {object|null} oldScoreItem - The previous highest score item for the user, if any.
  */
-async function updateCountryStats(country, score, oldScoreItem) {
+async function updateCountryStats(country, newScore, oldScoreItem) {
   if (!country || country === "Unknown") return;
 
   try {
-    const scoreDifference = oldScoreItem ? score - oldScoreItem.score : score;
-    const playerCountIncrement = oldScoreItem ? 0 : 1;
+    // Tính toán sự khác biệt về điểm số. Nếu là người chơi mới, scoreDifference = newScore.
+    const oldScore = oldScoreItem ? oldScoreItem.score : 0;
+    const scoreDifference = newScore - oldScore;
+    const playerCountIncrement = oldScoreItem ? 0 : 1; // Chỉ tăng số lượng người chơi nếu đây là lần gửi đầu tiên
 
-    // Get the current country data first to calculate the new average
-    const countryData = await getItem(process.env.COUNTRIES_TABLE, { country });
-
-    if (countryData) {
-      const newTotalScore = (countryData.totalScore || 0) + scoreDifference;
-      const newPlayerCount =
-        (countryData.playerCount || 0) + playerCountIncrement;
-      const newAverageScore =
-        newPlayerCount > 0 ? Math.floor(newTotalScore / newPlayerCount) : 0;
-
-      await updateItem(
-        process.env.COUNTRIES_TABLE,
-        { country },
-        "SET totalScore = :totalScore, playerCount = :playerCount, averageScore = :averageScore, lastUpdated = :lastUpdated",
-        {
-          ":totalScore": newTotalScore,
-          ":playerCount": newPlayerCount,
-          ":averageScore": newAverageScore,
-          ":lastUpdated": new Date().toISOString(),
-        }
-      );
-    } else {
-      // First time player from this country
-      await putItem(process.env.COUNTRIES_TABLE, {
-        country,
-        totalScore: score,
-        playerCount: 1,
-        averageScore: score,
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
-      });
-    }
+    // Sử dụng UpdateExpression với increment để cập nhật an toàn
+    await updateItem(
+      process.env.COUNTRIES_TABLE,
+      { country },
+      "SET totalScore = if_not_exists(totalScore, :startTotal) + :scoreDiff, \
+            playerCount = if_not_exists(playerCount, :startCount) + :playerInc, \
+            lastUpdated = :lastUpdated \
+            REMOVE averageScore", // Loại bỏ averageScore khỏi SET vì nó được tính toán lại trong Get handler.
+      {
+        ":scoreDiff": scoreDifference,
+        ":playerInc": playerCountIncrement,
+        ":lastUpdated": new Date().toISOString(),
+        ":startTotal": 0,
+        ":startCount": 0,
+      }
+    );
+    console.log(`Country stats for ${country} updated successfully.`);
   } catch (error) {
     console.error("Error updating country stats:", error);
-    // Non-critical error, so we don't re-throw
+    // Lỗi không quan trọng, không cần re-throw
   }
 }
 
 /**
- * Calculate player's global rank.
- * Note: This is an approximation and can be inefficient at scale.
- * @param {number} score - The player's score.
+ * Calculate player's global rank (approximate)
  */
 async function calculatePlayerRank(score) {
   try {
     const { scanItems } = require("../utils/dynamodb");
+    // Scan là cách đơn giản để tính rank trong DynamoDB nếu không dùng GSI phức tạp.
     const allScores = await scanItems(process.env.SCORES_TABLE, {
       ProjectionExpression: "score",
     });
@@ -72,7 +59,8 @@ async function calculatePlayerRank(score) {
 }
 
 /**
- * Submit a new score to the leaderboard
+ * Submit a game result. Only updates the score if it is a new high score,
+ * nhưng LUÔN cập nhật metadata của người chơi (username, country) và kích hoạt stream.
  */
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
@@ -99,7 +87,7 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body || "{}");
     const { username, score, survivalTime, deathCause, userId, fingerprint } =
       body;
-    const validatedScore = Math.floor(score);
+    let validatedScore = Math.floor(score); // Sử dụng `let` để có thể thay đổi giá trị này
 
     if (
       !userId ||
@@ -121,66 +109,110 @@ exports.handler = async (event) => {
       userId,
     });
 
-    if (existingScoreItem && validatedScore <= existingScoreItem.score) {
-      return {
-        statusCode: 200,
-        headers: corsHeaders,
-        body: JSON.stringify({
-          success: true,
-          message: "Score not higher than previous best.",
-          rank: await calculatePlayerRank(existingScoreItem.score),
-        }),
-      };
-    }
-
+    let isNewHighScore = false;
+    let dbOperationPromise;
     const clientIP = body.clientIP || extractIPFromEvent(event);
     const countryInfo = clientIP
       ? await getCountryFromIP(clientIP)
       : { country: "Unknown", countryCode: "XX" };
-
     const timestamp = Date.now();
-    const scoreRecord = {
-      userId,
-      username: username.substring(0, 50),
-      score: validatedScore,
-      survivalTime: Math.floor(survivalTime),
-      deathCause: deathCause || "unknown",
-      country: countryInfo.country,
-      countryCode: countryInfo.countryCode,
-      city: countryInfo.city || null,
-      region: countryInfo.region || null,
-      clientIP,
-      fingerprint: fingerprint || null,
-      userAgent: body.userAgent || event.headers?.["user-agent"],
-      timestamp,
-      createdAt: existingScoreItem
-        ? existingScoreItem.createdAt
-        : new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      leaderboard: "global",
-    };
 
-    await putItem(process.env.SCORES_TABLE, scoreRecord);
-    console.log("Score stored/updated:", scoreRecord);
+    // --- Xác định đây có phải là high score mới hay không ---
+    if (!existingScoreItem || validatedScore > existingScoreItem.score) {
+      // Trường hợp 1: Kỷ lục mới HOẶC gửi lần đầu (userId chưa tồn tại)
+      isNewHighScore = true;
+      console.log(
+        `New high score detected: ${validatedScore}. Overwriting old score: ${existingScoreItem?.score || 0}`
+      );
 
-    await updateCountryStats(
-      countryInfo.country,
-      validatedScore,
-      existingScoreItem
-    );
-    // The DynamoDB stream on ScoresTable will now trigger processScoreUpdate
-    // to handle broadcasting, so we remove the direct call from here.
+      const newScoreRecord = {
+        userId,
+        username: username.substring(0, 50),
+        score: validatedScore,
+        survivalTime: Math.floor(survivalTime),
+        deathCause: deathCause || "unknown",
+        country: countryInfo.country,
+        countryCode: countryInfo.countryCode,
+        city: countryInfo.city || null,
+        region: countryInfo.region || null,
+        clientIP,
+        fingerprint: fingerprint || null,
+        userAgent: body.userAgent || event.headers?.["user-agent"],
+        timestamp,
+        createdAt: existingScoreItem
+          ? existingScoreItem.createdAt
+          : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        leaderboard: "global",
+      };
+
+      // Sử dụng putItem để ghi đè với high score mới + metadata
+      dbOperationPromise = putItem(process.env.SCORES_TABLE, newScoreRecord);
+
+      // Cập nhật thống kê quốc gia vì tổng điểm đã thay đổi
+      await updateCountryStats(
+        countryInfo.country,
+        validatedScore,
+        existingScoreItem
+      );
+    } else {
+      // Trường hợp 2: Điểm KHÔNG phải là high score mới (hoặc bằng điểm cũ)
+      // Chỉ cập nhật metadata (username, thông tin game cuối) để kích hoạt stream và sửa lỗi đổi tên.
+      // DO NOT cập nhật điểm high score hoặc thống kê quốc gia.
+
+      console.log(
+        "Not a new high score, updating metadata (username/last game data) only."
+      );
+
+      const currentScore = existingScoreItem.score;
+
+      // Sử dụng UpdateItem để CHỈ cập nhật metadata không liên quan đến điểm (bao gồm username mới nhất)
+      dbOperationPromise = updateItem(
+        process.env.SCORES_TABLE,
+        { userId },
+        "SET #u = :username, #ca = :country, #cc = :countryCode, lastSurvivalTime = :lastSurvivalTime, lastDeathCause = :lastDeathCause, updatedAt = :updatedAt, #fp = :fingerprint, #ua = :userAgent, lastScore = :lastScore",
+        {
+          ":username": username.substring(0, 50),
+          ":country": countryInfo.country,
+          ":countryCode": countryInfo.countryCode,
+          ":lastSurvivalTime": Math.floor(survivalTime),
+          ":lastDeathCause": deathCause || "unknown",
+          ":updatedAt": new Date().toISOString(),
+          ":fingerprint": fingerprint || null,
+          ":userAgent": body.userAgent || event.headers?.["user-agent"],
+          ":lastScore": validatedScore, // Lưu điểm game cuối (lastScore)
+        },
+        {
+          ExpressionAttributeNames: {
+            "#u": "username",
+            "#ca": "country",
+            "#cc": "countryCode",
+            "#fp": "fingerprint",
+            "#ua": "userAgent",
+          },
+        }
+      );
+
+      // Sử dụng điểm high score cũ để tính rank trong phản hồi
+      validatedScore = currentScore;
+    }
+
+    await dbOperationPromise;
+    console.log("Game result processed. Stream triggered for userId:", userId);
 
     return {
       statusCode: 200,
       headers: corsHeaders,
       body: JSON.stringify({
         success: true,
+        isNewHighScore: isNewHighScore,
         userId,
         country: countryInfo.country,
         countryCode: countryInfo.countryCode,
         rank: await calculatePlayerRank(validatedScore),
-        message: "Score submitted successfully",
+        message: isNewHighScore
+          ? "New high score submitted successfully"
+          : "Game result submitted, metadata updated.",
       }),
     };
   } catch (error) {
