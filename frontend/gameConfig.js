@@ -416,9 +416,9 @@ const GAME_CONFIG = {
   // SCORING SYSTEM
   // =============================================================================
   scoring: {
-    movementMultiplier: 0.2, // Significantly harder to earn points
-    baseMovementThreshold: 1,
-    minMovementThreshold: 4,
+    movementMultiplier: 0.3, // Significantly harder to earn points
+    baseMovementThreshold: 1.25,
+    minMovementThreshold: 3,
     thresholdDecreaseRate: 0.95,
   },
 };
