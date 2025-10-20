@@ -376,7 +376,17 @@ function animate() {
 
   if (score > GAME_CONFIG.entities.missiles.spawnScore) {
     timers.missile++;
-    if (timers.missile % GAME_CONFIG.entities.missiles.spawnInterval === 0) {
+
+    // TÍNH TOÁN KHOẢNG THỜI GIAN XUẤT HIỆN TÊN LỬA DỰA TRÊN CẤP ĐỘ
+    const missileConfig = GAME_CONFIG.entities.missiles;
+    const difficultyLevel = currentLevel - 1;
+    const missileInterval = Math.max(
+      missileConfig.minSpawnInterval,
+      missileConfig.spawnInterval -
+        difficultyLevel * missileConfig.intervalDecreasePerLevel
+    );
+
+    if (timers.missile % Math.floor(missileInterval) === 0) {
       const sides = ["left", "right", "top", "bottom"];
       const side = sides[Math.floor(Math.random() * sides.length)];
       let warningX, warningY, missileAngle, spawnX, spawnY;
@@ -597,7 +607,7 @@ function animate() {
 
     const dist = Math.hypot(player.x - cluster.x, player.y - cluster.y);
     const waveRadius = cluster.dischargeRadius;
-    const waveWidth = 10; // The visual width of the wave
+    const waveWidth = 20; // Tăng độ rộng của sóng để dễ va chạm hơn
     if (Math.abs(dist - waveRadius) < player.radius + waveWidth / 2) {
       if (!player.shieldActive) {
         endGame("crystal cluster collision");

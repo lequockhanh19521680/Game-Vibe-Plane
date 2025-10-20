@@ -41,7 +41,7 @@ const GAME_CONFIG = {
   difficulty: {
     baseSpawnInterval: 80,
     minSpawnInterval: 20,
-    spawnDecreaseStep: 1.0,
+    spawnDecreaseStep: 2.0, // Tăng mật độ thiên thạch nhanh hơn
     baseSpeed: 0.5,
     speedIncreaseStep: 0.05,
     microSpeedIncrease: 0.01,
@@ -95,6 +95,8 @@ const GAME_CONFIG = {
     missiles: {
       spawnScore: 1500,
       spawnInterval: 700,
+      minSpawnInterval: 120, // Tên lửa xuất hiện tối thiểu mỗi 2 giây
+      intervalDecreasePerLevel: 30, // Thời gian hồi chiêu giảm 0.5 giây mỗi cấp
       warningDuration: 120, // 2 seconds at 60fps
       radius: 5,
       baseSpeed: 0.15,
@@ -365,6 +367,7 @@ const GAME_CONFIG = {
       shield: 0.15,
       freeze: 0.15,
       trap: 0.3,
+      crystalDischarge: 0.25,
     },
   },
 

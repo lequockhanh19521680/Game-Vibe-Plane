@@ -507,12 +507,22 @@ class CrystalCluster {
       const fadeAlpha = 1 - this.dischargeRadius / this.maxDischargeRadius;
       if (fadeAlpha > 0) {
         ctx.globalAlpha = Math.max(0, fadeAlpha);
+
+        // Hào quang bên ngoài
         ctx.beginPath();
         ctx.arc(0, 0, this.dischargeRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(64, 196, 255, ${Math.max(0, fadeAlpha)})`;
-        ctx.lineWidth = 10;
+        ctx.strokeStyle = `rgba(64, 196, 255, ${Math.max(0, fadeAlpha) * 0.5})`;
+        ctx.lineWidth = 20;
         ctx.shadowColor = "var(--crystal-color)";
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 20;
+        ctx.stroke();
+
+        // Đường sắc nét bên trong
+        ctx.beginPath();
+        ctx.arc(0, 0, this.dischargeRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, fadeAlpha)})`;
+        ctx.lineWidth = 5;
+        ctx.shadowBlur = 0;
         ctx.stroke();
       }
     }
@@ -533,11 +543,7 @@ class CrystalCluster {
       this.state = "discharging";
       this.timer = 0; // Đặt lại timer cho giai đoạn xả
       triggerScreenShake(0.3);
-      playSound("powerup"); // Chơi âm thanh khi xả
-
-      if (typeof showEventText === "function") {
-        showEventText("Crystal Discharge!");
-      }
+      playSound("crystalDischarge"); // Chơi âm thanh khi xả
     }
 
     if (this.state === "discharging") {

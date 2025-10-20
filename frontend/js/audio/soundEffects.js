@@ -255,3 +255,36 @@ function createTrapSound() {
     modDepth: 80,
   });
 }
+
+// NEW: Sound for crystal discharge
+function createCrystalDischargeSound() {
+  const duration = 0.8;
+  // Start with a low frequency rumble
+  createSound(
+    100,
+    duration,
+    "sawtooth",
+    GAME_CONFIG.audio.volumes.crystalDischarge,
+    true,
+    {
+      attack: 0.1,
+      modulate: true,
+      modFreq: 2,
+      modDepth: 50,
+    }
+  );
+  // Add a higher frequency zap
+  setTimeout(() => {
+    createSound(
+      800,
+      duration * 0.5,
+      "square",
+      GAME_CONFIG.audio.volumes.crystalDischarge * 0.8,
+      true,
+      {
+        attack: 0.01,
+        decay: 0.2,
+      }
+    );
+  }, 50);
+}

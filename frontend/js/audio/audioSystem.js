@@ -67,6 +67,8 @@ function playSound(soundType, volume) {
     wormhole: createWormholeSound,
     shield: createShieldSound,
     freeze: createFreezeSound,
+    trap: createTrapSound,
+    crystalDischarge: createCrystalDischargeSound,
   };
 
   const createSoundFunction = soundCreators[soundType];
