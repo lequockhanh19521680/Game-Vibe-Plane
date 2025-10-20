@@ -152,7 +152,7 @@ function animate() {
   }
 
   animationFrameId = requestAnimationFrame(animate);
-  ctx.fillStyle = "#050510";
+  ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor; // FIXED: Use config variable
   ctx.fillRect(0, 0, width, height);
   nebulae.forEach((n) => {
     ctx.fillStyle = n;
@@ -229,6 +229,7 @@ function animate() {
   asteroids = asteroids.filter(
     (a) => a.x > -50 && a.x < width + 50 && a.y > -50 && a.y < height + 50
   );
+  // FIX: BlackHoles now correctly use bh.alpha > 0 to filter out fading ones.
   blackHoles = blackHoles.filter((bh) => bh.alpha > 0);
   crystalClusters = crystalClusters.filter((cc) =>
     cc.update ? cc.update() : false
@@ -347,7 +348,8 @@ function animate() {
       });
 
       warningSystem.spawn(() => {
-        blackHoles.push(new BlackHole(bhX, bhY));
+        // FIX: Đảm bảo hố đen sinh ra ngẫu nhiên cũng là tạm thời (isTemporary = true)
+        blackHoles.push(new BlackHole(bhX, bhY, true));
         playSound("blackhole");
       });
     }
@@ -398,6 +400,7 @@ function animate() {
           missileAngle = Math.PI / 2;
           spawnX = warningX;
           spawnY = -spawnOffset;
+          missileAngle = Math.PI / 2;
           break;
         case "bottom":
           warningX =
@@ -406,6 +409,7 @@ function animate() {
           missileAngle = -Math.PI / 2;
           spawnX = warningX;
           spawnY = height + spawnOffset;
+          missileAngle = -Math.PI / 2;
           break;
       }
 

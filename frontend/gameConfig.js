@@ -6,6 +6,11 @@
 // =============================================================================
 
 const GAME_CONFIG = {
+  // FIX: ADDED CANVAS CONFIGURATION TO PREVENT 'backgroundColor' ERROR
+  canvas: {
+    backgroundColor: "#050510", // Matching the core background color used in styles.css and game.js
+  },
+
   // =============================================================================
   // CORE GAME SETTINGS
   // =============================================================================

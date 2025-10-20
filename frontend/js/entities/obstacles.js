@@ -163,7 +163,8 @@ class Laser {
 }
 
 class BlackHole {
-  constructor(x, y, isTemporary = false) {
+  // THAY ĐỔI: Thêm tham số isTemporary để kiểm soát vòng đời.
+  constructor(x, y, isTemporary = true) {
     this.x = x;
     this.y = y;
     const config = GAME_CONFIG.entities.blackHoles;
@@ -207,8 +208,10 @@ class BlackHole {
   }
 
   update() {
+    // Tăng tuổi thọ (life) cho hố đen tạm thời.
     if (this.isTemporary) {
       this.life--;
+      // Kích hoạt trạng thái fading khi hết thời gian sống hoặc đạt kích thước tối đa.
       if (this.life <= 0 && this.state === "growing") {
         this.state = "fading";
       }
@@ -216,9 +219,14 @@ class BlackHole {
 
     if (this.state === "growing") {
       if (this.alpha < 1) this.alpha += 0.02;
+
+      // Bắt đầu fading khi đạt maxRadius, ngay cả khi không phải là hố đen tạm thời.
       if (this.radius < this.maxRadius) {
         this.radius += this.growthRate;
         this.gravityRadius += this.growthRate * 2; // Gravity radius grows with the core
+      } else if (!this.isTemporary) {
+        // Kích hoạt fading cho hố đen ngẫu nhiên sau khi đạt kích thước tối đa
+        this.state = "fading";
       }
     } else if (this.state === "fading") {
       this.alpha -= 0.02;
