@@ -93,7 +93,7 @@ const GAME_CONFIG = {
       temporaryLifetime: 200,
     },
     missiles: {
-      spawnScore: 1500,
+      spawnScore: 500,
       spawnInterval: 700,
       minSpawnInterval: 120, // Tên lửa xuất hiện tối thiểu mỗi 2 giây
       intervalDecreasePerLevel: 60, // SỬA ĐỔI: Tăng độ khó
@@ -114,7 +114,7 @@ const GAME_CONFIG = {
       },
     },
     lasers: {
-      spawnScore: 4500,
+      spawnScore: 1000,
       baseInterval: 450,
       intervalDecreasePerLevel: 45, // SỬA ĐỔI: Tăng độ khó
       minInterval: 60,
@@ -129,7 +129,7 @@ const GAME_CONFIG = {
       playerHitRadius: 7.5,
     },
     laserMines: {
-      spawnScore: 8000,
+      spawnScore: 2000,
       spawnInterval: 500,
       radius: 10,
       chargeTime: 180,
@@ -138,7 +138,7 @@ const GAME_CONFIG = {
       beamWidth: 10,
     },
     crystalClusters: {
-      spawnScore: 2000,
+      spawnScore: 2500,
       spawnInterval: 800,
       radius: 10,
       lifetime: 300,
