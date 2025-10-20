@@ -76,20 +76,37 @@ class EnergyOrb {
     this.x += this.velocity.x;
     this.y += this.velocity.y;
 
-    // Attract nearby fragments - Sử dụng config.fragmentAttractRadiusFactor
-    const attractRadius = this.radius * config.fragmentAttractRadiusFactor;
-    fragments.forEach((fragment) => {
-      const dist = Math.hypot(fragment.x - this.x, fragment.y - this.y);
-      if (dist < attractRadius && dist > 0) {
-        // Sử dụng config.fragmentAttractForce
+    // --- REPULSION LOGIC ---
+    // EnergyOrb pushes away other objects like asteroids, missiles, and fragments.
+    const repulsionRadius = this.radius * (config.repulsionRadiusFactor || 5);
+    const repulsionForce = config.repulsionForce || 0.25;
+
+    // Create a list of all objects that can be repelled
+    const objectsToRepel = [player, ...asteroids, ...missiles, ...fragments];
+
+    objectsToRepel.forEach((obj) => {
+      // Ensure the object is valid, has velocity, and is not the orb itself
+      if (!obj || !obj.velocity || obj === this) return;
+
+      const dist = Math.hypot(obj.x - this.x, obj.y - this.y);
+
+      // Check if the object is within the repulsion radius
+      if (dist < repulsionRadius && dist > 0) {
+        // Calculate force based on distance (stronger when closer)
         const force =
-          (config.fragmentAttractForce * (attractRadius - dist)) /
-          attractRadius;
-        const angle = Math.atan2(this.y - fragment.y, this.x - fragment.x);
-        fragment.velocity.x += Math.cos(angle) * force;
-        fragment.velocity.y += Math.sin(angle) * force;
+          (repulsionForce * (repulsionRadius - dist)) / repulsionRadius;
+        const angle = Math.atan2(obj.y - this.y, obj.x - this.x); // Angle from orb to object
+
+        // Apply force to push the object away
+        obj.velocity.x += Math.cos(angle) * force;
+        obj.velocity.y += Math.sin(angle) * force;
+
+        // Apply a smaller counter-force to the orb to make it react to the push
+        this.velocity.x -= Math.cos(angle) * force * 0.1;
+        this.velocity.y -= Math.sin(angle) * force * 0.1;
       }
     });
+    // --- END REPULSION LOGIC ---
 
     // Bounce off walls
     if (this.x < this.radius || this.x > canvas.width - this.radius) {
@@ -551,15 +568,13 @@ class CrystalCluster {
       // Làm mờ lõi trung tâm
       this.alpha -= 0.02;
 
-      // Nếu sóng xả đã vượt quá bán kính tối đa, vòng đời của đối tượng kết thúc.
       if (this.dischargeRadius > this.maxDischargeRadius) {
-        return false; // Điều này sẽ khiến đối tượng bị lọc ra trong game.js
+        return false;
       }
     }
 
     this.draw();
 
-    // Đối tượng vẫn tồn tại miễn là nó đang sạc, hoặc đang xả và sóng vẫn còn nhìn thấy.
     return true;
   }
 }

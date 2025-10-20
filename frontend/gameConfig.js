@@ -251,8 +251,8 @@ const GAME_CONFIG = {
       minLifetime: 500,
       maxLifetime: 800,
       rotationSpeed: 0.01,
-      fragmentAttractRadiusFactor: 3,
-      fragmentAttractForce: 0.1,
+      repulsionRadiusFactor: 20, // Pushes objects in a radius 20 times its size
+      repulsionForce: 0.8, // Increased strength of the push
       spawnInterval: 1500,
       spawnThreshold: 1000,
     },
