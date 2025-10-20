@@ -210,13 +210,16 @@ class BlackHole {
       this.life--;
       if (this.life <= 0) this.state = "fading";
     }
+
     if (this.state === "growing") {
       if (this.alpha < 1) this.alpha += 0.01;
-      if (this.radius < this.maxRadius && !this.isTemporary) {
+      // FIX: Allow temporary black holes to grow as well before they start fading
+      if (this.radius < this.maxRadius) {
         this.radius += this.growthRate;
         this.gravityRadius += this.growthRate * 4;
       }
     } else {
+      // 'fading' state
       this.alpha -= 0.01;
     }
 
