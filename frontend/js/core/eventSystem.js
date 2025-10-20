@@ -17,19 +17,10 @@ const safeT = (key, fallback) => {
  * This function should be the ONLY way to show event text.
  */
 function showEventText(text) {
-  console.log(
-    "showEventText called with:",
-    text,
-    "isGameRunning:",
-    window.isGameRunning
-  );
-
-  // FIX: Ensure events are not displayed or queued if the game has ended.
-  if (!window.isGameRunning) {
-    eventTextQueue.length = 0; // Clear pending events
-    console.log("Game not running, skipping event text");
-    return;
-  }
+  // The functions calling this (animate, triggerRandomEvent) already check if the game is running.
+  // Removing the check here allows for messages to be queued and displayed even if the game ends on the same frame,
+  // such as a level-up message on death. The queue is cleared on game restart by resetEventSystem().
+  console.log("showEventText called with:", text);
 
   // Add to queue if currently showing text
   if (isShowingEventText) {
@@ -59,6 +50,7 @@ function displayEventText(text) {
   const eventTextElement = document.getElementById("event-text");
   if (!eventTextElement) {
     console.warn("Event text element not found!");
+    isShowingEventText = false; // Reset state if element is missing
     return;
   }
 
