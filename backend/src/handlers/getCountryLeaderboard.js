@@ -2,28 +2,27 @@ const { getTopCountries } = require("../utils/dynamodb");
 
 /**
  * Filter a list of leaderboard entries to keep only the highest-scoring entry
- * for each unique clientIP. Assumes the input list is already sorted by score (desc).
+ * for each unique fingerprint (or userId as a fallback).
+ * Assumes the input list is already sorted by score (desc).
  * @param {Array<object>} leaderboard - The raw leaderboard list.
  * @param {number} limit - The maximum number of entries to return.
  * @returns {Array<object>} Filtered leaderboard.
  */
 function filterUniqueClients(leaderboard, limit) {
-  const uniqueIPs = new Set();
+  const uniqueIdentifiers = new Set();
   const filteredLeaderboard = [];
 
   for (const entry of leaderboard) {
-    // Chỉ lọc bằng IP nếu IP tồn tại và không phải IP local/test
-    if (
-      entry.clientIP &&
-      entry.clientIP !== "127.0.0.1" &&
-      entry.clientIP !== "localhost"
-    ) {
-      if (!uniqueIPs.has(entry.clientIP)) {
-        uniqueIPs.add(entry.clientIP);
-        filteredLeaderboard.push(entry);
-      }
-    } else {
-      // Nếu IP bị thiếu hoặc là local, ta vẫn coi userId là duy nhất (hành vi mặc định)
+    // Prioritize fingerprint, fallback to userId if fingerprint is not available.
+    const identifier = entry.fingerprint || entry.userId;
+
+    // Skip if no identifier is present (rare case)
+    if (!identifier) {
+      continue;
+    }
+
+    if (!uniqueIdentifiers.has(identifier)) {
+      uniqueIdentifiers.add(identifier);
       filteredLeaderboard.push(entry);
     }
 
@@ -32,7 +31,7 @@ function filterUniqueClients(leaderboard, limit) {
     }
   }
 
-  // Đảm bảo không vượt quá giới hạn
+  // Ensure limit is respected
   return filteredLeaderboard.slice(0, limit);
 }
 
@@ -49,24 +48,24 @@ exports.handler = async (event) => {
     // Parse query parameters
     const queryParams = event.queryStringParameters || {};
     const limit = Math.min(parseInt(queryParams.limit) || 10, 50); // Max 50 countries
-    // Lấy một danh sách lớn hơn gấp đôi để đảm bảo tính toán xếp hạng chính xác
+    // Fetch a larger list to ensure accurate ranking calculations
     const fetchLimit = limit * 2;
 
-    // Lấy top countries (sắp xếp theo totalScore GSI)
+    // Get top countries (sorted by totalScore GSI)
     const countries = await getTopCountries(fetchLimit);
 
-    // Tính toán điểm quốc gia dựa trên 10% người chơi hàng đầu
+    // Calculate country score based on top 10% of players
     const formattedCountries = await Promise.all(
       countries.map(async (country, index) => {
-        // Lấy tất cả người chơi trong quốc gia này để tính 10%
+        // Get all players for this country to calculate top 10%
         const { getCountryLeaderboard } = require("../utils/dynamodb");
-        // Lấy một danh sách lớn để đảm bảo ta có đủ dữ liệu người chơi
+        // Fetch a large list to ensure we have enough player data
         const topPlayersRaw = await getCountryLeaderboard(
           country.country,
           country.playerCount || 100
         );
 
-        // Tính toán 10% điểm cao nhất (giữ nguyên logic xếp hạng quốc gia)
+        // Calculate top 10% score (main country ranking criteria)
         const top10PercentCount = Math.max(
           1,
           Math.ceil(country.playerCount * 0.1)
@@ -77,31 +76,31 @@ exports.handler = async (event) => {
           0
         );
 
-        // Áp dụng bộ lọc IP duy nhất cho danh sách top players được hiển thị
-        const topPlayersUniqueIP = filterUniqueClients(topPlayersRaw, 10);
+        // Apply unique fingerprint filter for the displayed top players list
+        const topPlayersUnique = filterUniqueClients(topPlayersRaw, 10);
 
         return {
           rank: index + 1,
           country: country.country,
           totalScore: country.totalScore,
-          top10PercentScore, // Tiêu chí xếp hạng chính
+          top10PercentScore, // Main ranking criteria
           playerCount: country.playerCount,
           averageScore: country.averageScore,
-          topPlayers: topPlayersUniqueIP.slice(0, 3), // CHỈ HIỂN THỊ top 3 người chơi có IP duy nhất
+          topPlayers: topPlayersUnique.slice(0, 3), // ONLY SHOW top 3 unique players
           lastUpdated: country.lastUpdated,
         };
       })
     );
 
-    // Sắp xếp theo top 10% điểm (tiêu chí xếp hạng chính)
+    // Sort by top 10% score (the main ranking criteria)
     formattedCountries.sort(
       (a, b) => b.top10PercentScore - a.top10PercentScore
     );
 
-    // Áp dụng giới hạn cuối cùng
+    // Apply the final limit
     const finalCountries = formattedCountries.slice(0, limit);
 
-    // Cập nhật lại thứ hạng sau khi sắp xếp và giới hạn
+    // Re-assign ranks after sorting and limiting
     finalCountries.forEach((country, index) => {
       country.rank = index + 1;
     });
@@ -118,7 +117,7 @@ exports.handler = async (event) => {
         countries: finalCountries,
         total: finalCountries.length,
         timestamp: Date.now(),
-        note: "Countries ranked by top 10% of players score. Top players listed by unique IP.",
+        note: "Countries ranked by top 10% of players score. Top players listed by unique fingerprint (or user ID).",
       }),
     };
   } catch (error) {

@@ -74,14 +74,16 @@ const BackendAPI = {
     }
 
     try {
-      // Get user identification
+      // Get user identification data
       let userId = null;
+      let fingerprint = null;
 
       if (
         window.userIdentification &&
         window.userIdentification.isInitialized()
       ) {
         userId = window.userIdentification.getUserId();
+        fingerprint = window.userIdentification.getFingerprint();
       }
 
       const response = await fetch(`${apiBaseUrl}/submit-score`, {
@@ -94,7 +96,8 @@ const BackendAPI = {
           score: Math.floor(score),
           survivalTime: Math.floor(survivalTime),
           deathCause: deathCause || "unknown",
-          userId: userId, // Unique user identifier
+          userId: userId, // Persistent user identifier
+          fingerprint: fingerprint, // Device fingerprint
           userAgent: navigator.userAgent,
           timestamp: new Date().toISOString(),
         }),

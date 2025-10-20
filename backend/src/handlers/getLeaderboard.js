@@ -2,28 +2,27 @@ const { getTopScores, getCountryLeaderboard } = require("../utils/dynamodb");
 
 /**
  * Filter a list of leaderboard entries to keep only the highest-scoring entry
- * for each unique clientIP. Assumes the input list is already sorted by score (desc).
+ * for each unique fingerprint (or userId as a fallback).
+ * Assumes the input list is already sorted by score (desc).
  * @param {Array<object>} leaderboard - The raw leaderboard list.
  * @param {number} limit - The maximum number of entries to return.
  * @returns {Array<object>} Filtered leaderboard.
  */
 function filterUniqueClients(leaderboard, limit) {
-  const uniqueIPs = new Set();
+  const uniqueIdentifiers = new Set();
   const filteredLeaderboard = [];
 
   for (const entry of leaderboard) {
-    // Chỉ lọc bằng IP nếu IP tồn tại và không phải IP local/test
-    if (
-      entry.clientIP &&
-      entry.clientIP !== "127.0.0.1" &&
-      entry.clientIP !== "localhost"
-    ) {
-      if (!uniqueIPs.has(entry.clientIP)) {
-        uniqueIPs.add(entry.clientIP);
-        filteredLeaderboard.push(entry);
-      }
-    } else {
-      // Nếu IP bị thiếu hoặc là local, ta vẫn coi userId là duy nhất (hành vi mặc định)
+    // Prioritize fingerprint, fallback to userId if fingerprint is not available.
+    const identifier = entry.fingerprint || entry.userId;
+
+    // Skip if no identifier is present (rare case)
+    if (!identifier) {
+      continue;
+    }
+
+    if (!uniqueIdentifiers.has(identifier)) {
+      uniqueIdentifiers.add(identifier);
       filteredLeaderboard.push(entry);
     }
 
@@ -32,7 +31,7 @@ function filterUniqueClients(leaderboard, limit) {
     }
   }
 
-  // Đảm bảo không vượt quá giới hạn
+  // Ensure limit is respected
   return filteredLeaderboard.slice(0, limit);
 }
 
@@ -63,21 +62,21 @@ exports.handler = async (event) => {
     console.log("Get leaderboard event:", JSON.stringify(event, null, 2));
 
     const queryParams = event.queryStringParameters || {};
-    // Lấy một danh sách lớn hơn gấp đôi để có đủ dữ liệu sau khi lọc trùng IP
+    // Fetch a larger list to have enough data after filtering for uniqueness
     const fetchLimit = Math.min(parseInt(queryParams.limit) || 10, 100);
     const country = queryParams.country;
 
     let leaderboard;
 
     if (country) {
-      // Lấy danh sách cho quốc gia
+      // Get leaderboard for a specific country
       leaderboard = await getCountryLeaderboard(country, fetchLimit * 2);
     } else {
-      // Lấy danh sách Global
+      // Get global leaderboard
       leaderboard = await getTopScores(fetchLimit * 2);
     }
 
-    // Áp dụng bộ lọc IP duy nhất (Yêu cầu 2)
+    // Apply the unique fingerprint (or userId) filter
     const filteredLeaderboard = filterUniqueClients(leaderboard, fetchLimit);
 
     const formattedLeaderboard = filteredLeaderboard.map((entry, index) => ({
@@ -102,7 +101,7 @@ exports.handler = async (event) => {
         total: formattedLeaderboard.length,
         country: country || "global",
         timestamp: Date.now(),
-        note: "Leaderboard filtered to show one highest score per unique client IP.",
+        note: "Leaderboard filtered to show one highest score per unique fingerprint (or user ID).",
       }),
     };
   } catch (error) {
