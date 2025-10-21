@@ -22,7 +22,7 @@ const sanitizeInput = (str) => {
  */
 const validateScore = (score, survivalTime) => {
   const MAX_SCORE = 1000000; // Giới hạn điểm số tối đa hợp lý
-  const MAX_POINTS_PER_SECOND = 2000; // Giới hạn số điểm tối đa có thể kiếm được mỗi giây
+  const MAX_POINTS_PER_SECOND = 5000; // Giới hạn số điểm tối đa có thể kiếm được mỗi giây
 
   if (score < 0 || survivalTime < 0) {
     return { isValid: false, reason: "Negative score or time is not allowed." };
@@ -36,7 +36,7 @@ const validateScore = (score, survivalTime) => {
   }
 
   // Nếu thời gian chơi rất ngắn, điểm không thể quá cao
-  if (survivalTime < 5 && score > 10000) {
+  if (survivalTime < 5 && score > 25000) {
     return {
       isValid: false,
       reason: "Score is too high for the short survival time.",

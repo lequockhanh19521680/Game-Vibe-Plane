@@ -1,71 +1,38 @@
 const { getTopCountries } = require("../utils/dynamodb");
+const { getCorsHeaders } = require("../utils/cors");
 
-/**
- * Filter a list of leaderboard entries to keep only the highest-scoring entry
- * for each unique fingerprint (or userId as a fallback).
- * Assumes the input list is already sorted by score (desc).
- * @param {Array<object>} leaderboard - The raw leaderboard list.
- * @param {number} limit - The maximum number of entries to return.
- * @returns {Array<object>} Filtered leaderboard.
- */
 function filterUniqueClients(leaderboard, limit) {
   const uniqueIdentifiers = new Set();
   const filteredLeaderboard = [];
-
   for (const entry of leaderboard) {
-    // Prioritize fingerprint, fallback to userId if fingerprint is not available.
     const identifier = entry.fingerprint || entry.userId;
-
-    // Skip if no identifier is present (rare case)
-    if (!identifier) {
-      continue;
-    }
-
+    if (!identifier) continue;
     if (!uniqueIdentifiers.has(identifier)) {
       uniqueIdentifiers.add(identifier);
       filteredLeaderboard.push(entry);
     }
-
-    if (filteredLeaderboard.length >= limit) {
-      break;
-    }
+    if (filteredLeaderboard.length >= limit) break;
   }
-
-  // Ensure limit is respected
   return filteredLeaderboard.slice(0, limit);
 }
 
-/**
- * Get the country leaderboard (top countries by total score)
- */
 exports.handler = async (event) => {
+  const origin = event.headers.origin || event.headers.Origin;
+  const headers = getCorsHeaders(origin, "GET, OPTIONS");
+
   try {
-    console.log(
-      "Get country leaderboard event:",
-      JSON.stringify(event, null, 2)
-    );
-
-    // Parse query parameters
     const queryParams = event.queryStringParameters || {};
-    const limit = Math.min(parseInt(queryParams.limit) || 10, 50); // Max 50 countries
-    // Fetch a larger list to ensure accurate ranking calculations
+    const limit = Math.min(parseInt(queryParams.limit) || 10, 50);
     const fetchLimit = limit * 2;
-
-    // Get top countries (sorted by totalScore GSI)
     const countries = await getTopCountries(fetchLimit);
 
-    // Calculate country score based on top 10% of players
     const formattedCountries = await Promise.all(
       countries.map(async (country, index) => {
-        // Get all players for this country to calculate top 10%
         const { getCountryLeaderboard } = require("../utils/dynamodb");
-        // Fetch a large list to ensure we have enough player data
         const topPlayersRaw = await getCountryLeaderboard(
           country.country,
           country.playerCount || 100
         );
-
-        // Calculate top 10% score (main country ranking criteria)
         const top10PercentCount = Math.max(
           1,
           Math.ceil(country.playerCount * 0.1)
@@ -75,43 +42,32 @@ exports.handler = async (event) => {
           (sum, player) => sum + player.score,
           0
         );
-
-        // Apply unique fingerprint filter for the displayed top players list
         const topPlayersUnique = filterUniqueClients(topPlayersRaw, 10);
 
         return {
           rank: index + 1,
           country: country.country,
           totalScore: country.totalScore,
-          top10PercentScore, // Main ranking criteria
+          top10PercentScore,
           playerCount: country.playerCount,
           averageScore: country.averageScore,
-          topPlayers: topPlayersUnique.slice(0, 3), // ONLY SHOW top 3 unique players
+          topPlayers: topPlayersUnique.slice(0, 3),
           lastUpdated: country.lastUpdated,
         };
       })
     );
 
-    // Sort by top 10% score (the main ranking criteria)
     formattedCountries.sort(
       (a, b) => b.top10PercentScore - a.top10PercentScore
     );
-
-    // Apply the final limit
     const finalCountries = formattedCountries.slice(0, limit);
-
-    // Re-assign ranks after sorting and limiting
     finalCountries.forEach((country, index) => {
       country.rank = index + 1;
     });
 
     return {
       statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-      },
+      headers,
       body: JSON.stringify({
         success: true,
         countries: finalCountries,
@@ -122,14 +78,9 @@ exports.handler = async (event) => {
     };
   } catch (error) {
     console.error("Error getting country leaderboard:", error);
-
     return {
       statusCode: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-      },
+      headers,
       body: JSON.stringify({
         error: "Internal server error",
         message: error.message,

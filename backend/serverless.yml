@@ -9,14 +9,12 @@ provider:
   stage: ${opt:stage, 'dev'}
 
   apiGateway:
-    # Defines an API key that will be automatically generated
     apiKeys:
       - ${self:service}-${self:provider.stage}-apiKey
-    # Defines the usage plan for rate limiting
     usagePlan:
       throttle:
-        burstLimit: 20 # Max 20 requests in a burst
-        rateLimit: 10 # Max 10 requests per second
+        burstLimit: 20
+        rateLimit: 10
 
   environment:
     SCORES_TABLE: ${self:service}-scores-${self:provider.stage}
@@ -48,7 +46,6 @@ provider:
             - execute-api:ManageConnections
           Resource:
             - "arn:aws:execute-api:${aws:region}:${aws:accountId}:*"
-        # Permissions for the processScoreUpdate Lambda to read from the Stream
         - Effect: Allow
           Action:
             - dynamodb:GetRecords
@@ -65,21 +62,7 @@ functions:
       - http:
           path: /submit-score
           method: post
-          private: true # This links the endpoint to the API Key defined above
-          cors:
-            origins:
-              - "http://game-vibe-plane-pipeline-stagingbucket-hplrema47c4v.s3-website-ap-southeast-1.amazonaws.com"
-              - "https://d35gbzghcxrk3x.cloudfront.net"
-              - "http://113.185.74.105"
-              - "http://localhost:8080"
-              - "http://127.0.0.1:8080"
-              - "null"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
+          cors: true
 
   getLeaderboard:
     handler: src/handlers/getLeaderboard.handler
@@ -87,14 +70,7 @@ functions:
       - http:
           path: /leaderboard
           method: get
-          cors:
-            origins:
-              - "http://game-vibe-plane-pipeline-stagingbucket-hplrema47c4v.s3-website-ap-southeast-1.amazonaws.com"
-              - "https://d35gbzghcxrk3x.cloudfront.net"
-              - "http://113.185.74.105"
-              - "http://localhost:8080"
-              - "http://127.0.0.1:8080"
-              - "null"
+          cors: true
 
   getCountryLeaderboard:
     handler: src/handlers/getCountryLeaderboard.handler
@@ -102,14 +78,7 @@ functions:
       - http:
           path: /leaderboard/country
           method: get
-          cors:
-            origins:
-              - "http://game-vibe-plane-pipeline-stagingbucket-hplrema47c4v.s3-website-ap-southeast-1.amazonaws.com"
-              - "https://d35gbzghcxrk3x.cloudfront.net"
-              - "http://113.185.74.105"
-              - "http://localhost:8080"
-              - "http://127.0.0.1:8080"
-              - "null"
+          cors: true
 
   healthCheck:
     handler: src/handlers/healthCheck.handler
@@ -117,14 +86,7 @@ functions:
       - http:
           path: /health
           method: get
-          cors:
-            origins:
-              - "http://game-vibe-plane-pipeline-stagingbucket-hplrema47c4v.s3-website-ap-southeast-1.amazonaws.com"
-              - "https://d35gbzghcxrk3x.cloudfront.net"
-              - "http://113.185.74.105"
-              - "http://localhost:8080"
-              - "http://127.0.0.1:8080"
-              - "null"
+          cors: true
 
   # WebSocket Functions
   websocketConnect:
@@ -205,7 +167,7 @@ resources:
         AttributeDefinitions:
           - AttributeName: country
             AttributeType: S
-          - AttributeName: ranking # New attribute for GSI partition key
+          - AttributeName: ranking
             AttributeType: S
           - AttributeName: totalScore
             AttributeType: N
@@ -215,7 +177,7 @@ resources:
         GlobalSecondaryIndexes:
           - IndexName: TotalScoreIndex
             KeySchema:
-              - AttributeName: ranking # This will be a constant value
+              - AttributeName: ranking
                 KeyType: HASH
               - AttributeName: totalScore
                 KeyType: RANGE
