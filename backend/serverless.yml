@@ -70,6 +70,7 @@ functions:
             origins:
               - "https://d35gbzghcxrk3x.cloudfront.net"
               - "http://localhost:8080" # For local frontend development served over http
+              - "http://113.185.74.105"
               - "null" # Allows testing from local file:///
             headers:
               - Content-Type
@@ -88,6 +89,7 @@ functions:
             origins:
               - "https://d35gbzghcxrk3x.cloudfront.net"
               - "http://localhost:8080"
+              - "http://113.185.74.105"
               - "null"
 
   getCountryLeaderboard:
@@ -100,6 +102,7 @@ functions:
             origins:
               - "https://d35gbzghcxrk3x.cloudfront.net"
               - "http://localhost:8080"
+              - "http://113.185.74.105"
               - "null"
 
   healthCheck:
@@ -112,6 +115,7 @@ functions:
             origins:
               - "https://d35gbzghcxrk3x.cloudfront.net"
               - "http://localhost:8080"
+              - "http://113.185.74.105"
               - "null"
 
   # WebSocket Functions
