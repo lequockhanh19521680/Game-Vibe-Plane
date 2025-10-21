@@ -8,12 +8,21 @@ provider:
   region: ap-southeast-1
   stage: ${opt:stage, 'dev'}
 
+  apiGateway:
+    # Defines an API key that will be automatically generated
+    apiKeys:
+      - ${self:service}-${self:provider.stage}-apiKey
+    # Defines the usage plan for rate limiting
+    usagePlan:
+      throttle:
+        burstLimit: 20 # Max 20 requests in a burst
+        rateLimit: 10 # Max 10 requests per second
+
   environment:
     SCORES_TABLE: ${self:service}-scores-${self:provider.stage}
     COUNTRIES_TABLE: ${self:service}-countries-${self:provider.stage}
     WEBSOCKET_TABLE: ${self:service}-websocket-${self:provider.stage}
     STAGE: ${self:provider.stage}
-    # ADDED: Pass the WebSocket API ID to the Lambda functions
     WEBSOCKET_API_ID:
       Ref: WebsocketsApi
 
@@ -49,6 +58,7 @@ functions:
           path: /submit-score
           method: post
           cors: true
+          private: true # This links the endpoint to the API Key defined above
 
   getLeaderboard:
     handler: src/handlers/getLeaderboard.handler
@@ -113,19 +123,19 @@ resources:
         StreamSpecification:
           StreamViewType: NEW_AND_OLD_IMAGES
         AttributeDefinitions:
-          - AttributeName: userId # CHANGED: Use userId as the primary key
+          - AttributeName: userId
             AttributeType: S
           - AttributeName: score
             AttributeType: N
           - AttributeName: country
             AttributeType: S
-          - AttributeName: leaderboard # ADDED: For efficient global leaderboard GSI
+          - AttributeName: leaderboard
             AttributeType: S
         KeySchema:
-          - AttributeName: userId # CHANGED: Use userId as the primary key
+          - AttributeName: userId
             KeyType: HASH
         GlobalSecondaryIndexes:
-          - IndexName: ScoreIndex # CHANGED: To query for global leaderboard
+          - IndexName: ScoreIndex
             KeySchema:
               - AttributeName: leaderboard
                 KeyType: HASH
