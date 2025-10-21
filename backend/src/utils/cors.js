@@ -4,6 +4,7 @@ const allowedOrigins = [
   "http://113.185.74.105",
   "http://localhost:8080",
   "http://127.0.0.1:8080",
+  "https://vibeplane.io",
 ];
 
 /**
