@@ -27,24 +27,8 @@ async function calculatePlayerRank(score) {
  * The country stats update is now handled by the processScoreUpdate Lambda via DynamoDB Streams.
  */
 exports.handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers":
-          "Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-      },
-      body: "",
-    };
-  }
-
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
+  // NOTE: The OPTIONS preflight request and CORS headers are now handled by API Gateway
+  // based on the configuration in `serverless.yml`. No manual code is needed here.
 
   try {
     console.log("Submit score event:", JSON.stringify(event, null, 2));
@@ -60,7 +44,6 @@ exports.handler = async (event) => {
       );
       return {
         statusCode: 400,
-        headers: corsHeaders,
         body: JSON.stringify({
           error: "Invalid score submission",
           reason: scoreValidation.reason,
@@ -78,7 +61,6 @@ exports.handler = async (event) => {
     ) {
       return {
         statusCode: 400,
-        headers: corsHeaders,
         body: JSON.stringify({
           error: "Missing required fields",
           required: ["userId", "username", "score", "survivalTime"],
@@ -102,7 +84,9 @@ exports.handler = async (event) => {
       // Case 1: New high score OR first submission (userId does not exist)
       isNewHighScore = true;
       console.log(
-        `New high score detected: ${validatedScore}. Overwriting old score: ${existingScoreItem?.score || 0}`
+        `New high score detected: ${validatedScore}. Overwriting old score: ${
+          existingScoreItem?.score || 0
+        }`
       );
 
       const newScoreRecord = {
@@ -128,12 +112,9 @@ exports.handler = async (event) => {
 
       // Use putItem to overwrite with the new high score + metadata
       dbOperationPromise = putItem(process.env.SCORES_TABLE, newScoreRecord);
-
-      // NOTE: Country stats update is now removed from here and handled by the stream processor.
     } else {
       // Case 2: Score is NOT a new high score (or is equal)
       // Only update metadata (username, last game info) to trigger stream and fix name changes.
-      // DO NOT update the high score or country stats here.
       console.log(
         "Not a new high score, updating metadata (username/last game data) only."
       );
@@ -175,7 +156,6 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
-      headers: corsHeaders,
       body: JSON.stringify({
         success: true,
         isNewHighScore: isNewHighScore,
@@ -192,7 +172,6 @@ exports.handler = async (event) => {
     console.error("Error submitting score:", error);
     return {
       statusCode: 500,
-      headers: corsHeaders,
       body: JSON.stringify({
         error: "Internal server error",
         message: error.message,

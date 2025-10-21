@@ -1,94 +1,172 @@
-const { getTopScores, getTopCountries } = require("../utils/dynamodb");
+const AWS = require("aws-sdk");
+const {
+  getTopScores,
+  getTopCountries,
+  updateCountryStats,
+} = require("../utils/dynamodb");
 const {
   broadcastLeaderboardUpdate,
   broadcastCountryUpdate,
 } = require("../utils/websocket");
 
 /**
- * Process DynamoDB stream events for real-time leaderboard updates
+ * Process DynamoDB stream events from the Scores table for real-time updates.
+ * This function is the core of the real-time leaderboard system.
  */
 exports.handler = async (event) => {
-  try {
-    console.log(
-      "Processing DynamoDB stream event:",
-      JSON.stringify(event, null, 2)
-    );
+  console.log(
+    `Processing ${event.Records.length} records from DynamoDB stream.`
+  );
 
-    for (const record of event.Records) {
-      if (record.eventName === "INSERT" || record.eventName === "MODIFY") {
-        // New score added or updated
-        await processScoreChange(record);
+  // A map to aggregate changes per country to avoid redundant updates
+  const countryChanges = new Map();
+
+  for (const record of event.Records) {
+    const oldImage = record.dynamodb.OldImage
+      ? AWS.DynamoDB.Converter.unmarshall(record.dynamodb.OldImage)
+      : null;
+    const newImage = record.dynamodb.NewImage
+      ? AWS.DynamoDB.Converter.unmarshall(record.dynamodb.NewImage)
+      : null;
+
+    let scoreChange = 0;
+    let playerCountChange = 0;
+    let country = null;
+
+    if (record.eventName === "INSERT") {
+      // A new player score has been added
+      scoreChange = newImage.score;
+      playerCountChange = 1; // A new player for this country
+      country = newImage.country;
+    } else if (record.eventName === "MODIFY") {
+      // An existing player's score or metadata has been updated
+      scoreChange = newImage.score - (oldImage ? oldImage.score : 0);
+      country = newImage.country;
+
+      // Check if the country has changed
+      if (oldImage && oldImage.country !== newImage.country) {
+        // Player moved from old country to new country
+        // Decrement old country
+        const oldCountry = oldImage.country;
+        if (oldCountry && oldCountry !== "Unknown") {
+          const change = countryChanges.get(oldCountry) || {
+            scoreChange: 0,
+            playerCountChange: 0,
+          };
+          change.scoreChange -= oldImage.score;
+          change.playerCountChange -= 1;
+          countryChanges.set(oldCountry, change);
+        }
+        // Increment new country
+        playerCountChange = 1;
+      } else {
+        // Player count doesn't change if country is the same
+        playerCountChange = 0;
       }
+    } else if (record.eventName === "REMOVE") {
+      // A player score has been deleted
+      scoreChange = -oldImage.score;
+      playerCountChange = -1;
+      country = oldImage.country;
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: "Stream processed successfully" }),
-    };
-  } catch (error) {
-    console.error("Error processing DynamoDB stream:", error);
-    throw error;
+    // Aggregate the changes for the affected country
+    if (country && country !== "Unknown") {
+      const existingChange = countryChanges.get(country) || {
+        scoreChange: 0,
+        playerCountChange: 0,
+      };
+      existingChange.scoreChange += scoreChange;
+      existingChange.playerCountChange += playerCountChange;
+      countryChanges.set(country, existingChange);
+    }
   }
+
+  // If there are changes, process them
+  if (countryChanges.size > 0) {
+    console.log("Aggregated country changes:", countryChanges);
+
+    // Atomically update all affected countries in parallel
+    const updatePromises = [];
+    for (const [country, changes] of countryChanges.entries()) {
+      updatePromises.push(
+        updateCountryStats(
+          country,
+          changes.scoreChange,
+          changes.playerCountChange
+        )
+      );
+    }
+    await Promise.all(updatePromises);
+    console.log("Successfully updated country statistics.");
+
+    // After all updates, fetch the latest leaderboards and broadcast
+    await fetchAndBroadcastUpdates();
+  } else {
+    // Even if no country stats changed (e.g., only username update),
+    // it's still good to broadcast the latest leaderboard to reflect the name change.
+    console.log(
+      "No country stats changed, but broadcasting leaderboards for consistency."
+    );
+    await fetchAndBroadcastUpdates();
+  }
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      message: `Stream processed successfully. ${event.Records.length} records handled.`,
+    }),
+  };
 };
 
 /**
- * Process a score change and broadcast updates
+ * Fetches the latest global and country leaderboards and broadcasts them.
  */
-async function processScoreChange(record) {
+async function fetchAndBroadcastUpdates() {
   try {
-    const newImage = record.dynamodb.NewImage;
-
-    if (!newImage) return;
-
-    // Extract score data
-    const scoreData = {
-      id: newImage.id?.S,
-      username: newImage.username?.S,
-      score: parseInt(newImage.score?.N || "0"),
-      country: newImage.country?.S,
-      timestamp: parseInt(newImage.timestamp?.N || "0"),
-    };
-
-    console.log("Processing score change:", scoreData);
-
-    // Get updated leaderboards
     const [globalLeaderboard, countryLeaderboard] = await Promise.all([
       getTopScores(10),
-      getTopCountries(10),
+      getTopCountries(10), // This will now use the corrected GSI
     ]);
+
+    // Format data for broadcasting
+    const globalData = {
+      type: "global",
+      leaderboard: globalLeaderboard.map((entry, index) => ({
+        rank: index + 1,
+        username: entry.username,
+        score: entry.score,
+        country: entry.country,
+        countryCode: entry.countryCode,
+        survivalTime: entry.survivalTime,
+        userId: entry.userId, // Important for frontend rank change animation
+      })),
+    };
+
+    const countryData = {
+      type: "countries",
+      countries: countryLeaderboard.map((country, index) => ({
+        rank: index + 1,
+        country: country.country,
+        totalScore: country.totalScore,
+        playerCount: country.playerCount,
+        averageScore:
+          country.playerCount > 0
+            ? Math.round(country.totalScore / country.playerCount)
+            : 0,
+        countryCode: country.countryCode,
+      })),
+    };
 
     // Broadcast updates to all connected clients
-    // The websocket utility now initializes itself using environment variables,
-    // so we no longer need to pass the event object.
     await Promise.all([
-      broadcastLeaderboardUpdate({
-        type: "global",
-        leaderboard: globalLeaderboard.map((entry, index) => ({
-          rank: index + 1,
-          username: entry.username,
-          score: entry.score,
-          country: entry.country,
-          countryCode: entry.countryCode, // Ensure countryCode is broadcasted
-          survivalTime: entry.survivalTime, // Ensure survivalTime is broadcasted
-          timestamp: entry.timestamp,
-        })),
-      }),
-      broadcastCountryUpdate({
-        type: "countries",
-        countries: countryLeaderboard.map((country, index) => ({
-          rank: index + 1,
-          country: country.country,
-          totalScore: country.totalScore,
-          playerCount: country.playerCount,
-          averageScore: country.averageScore,
-          countryCode: country.countryCode, // Ensure countryCode is broadcasted
-        })),
-      }),
+      broadcastLeaderboardUpdate(globalData),
+      broadcastCountryUpdate(countryData),
     ]);
 
-    console.log("Broadcasted leaderboard updates");
+    console.log("Broadcasted leaderboard updates to all clients.");
   } catch (error) {
-    console.error("Error processing score change:", error);
-    // Don't throw here to avoid retries
+    console.error("Error fetching and broadcasting updates:", error);
+    // We don't throw here to prevent the Lambda from retrying on broadcast failures
   }
 }

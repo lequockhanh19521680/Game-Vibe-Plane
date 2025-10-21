@@ -39,24 +39,8 @@ function filterUniqueClients(leaderboard, limit) {
  * Get the global or country-specific leaderboard
  */
 exports.handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers":
-          "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
-        "Access-Control-Allow-Methods": "GET,OPTIONS",
-      },
-      body: "",
-    };
-  }
-
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "GET,OPTIONS",
-  };
+  // NOTE: The OPTIONS preflight request and CORS headers are now handled by API Gateway
+  // based on the configuration in `serverless.yml`.
 
   try {
     console.log("Get leaderboard event:", JSON.stringify(event, null, 2));
@@ -94,7 +78,6 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
-      headers: corsHeaders,
       body: JSON.stringify({
         success: true,
         leaderboard: formattedLeaderboard,
@@ -108,7 +91,6 @@ exports.handler = async (event) => {
     console.error("Error getting leaderboard:", error);
     return {
       statusCode: 500,
-      headers: corsHeaders,
       body: JSON.stringify({
         error: "Internal server error",
         message: error.message,

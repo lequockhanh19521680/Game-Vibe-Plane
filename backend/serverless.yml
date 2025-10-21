@@ -48,6 +48,14 @@ provider:
             - execute-api:ManageConnections
           Resource:
             - "arn:aws:execute-api:${aws:region}:${aws:accountId}:*"
+        # Permissions for the processScoreUpdate Lambda to read from the Stream
+        - Effect: Allow
+          Action:
+            - dynamodb:GetRecords
+            - dynamodb:GetShardIterator
+            - dynamodb:DescribeStream
+            - dynamodb:ListStreams
+          Resource: !GetAtt ScoresTable.StreamArn
 
 functions:
   # REST API Functions
@@ -57,8 +65,18 @@ functions:
       - http:
           path: /submit-score
           method: post
-          cors: true
           private: true # This links the endpoint to the API Key defined above
+          cors:
+            origins:
+              - "https://d35gbzghcxrk3x.cloudfront.net"
+              - "http://localhost:8080" # For local frontend development served over http
+              - "null" # Allows testing from local file:///
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
 
   getLeaderboard:
     handler: src/handlers/getLeaderboard.handler
@@ -66,7 +84,11 @@ functions:
       - http:
           path: /leaderboard
           method: get
-          cors: true
+          cors:
+            origins:
+              - "https://d35gbzghcxrk3x.cloudfront.net"
+              - "http://localhost:8080"
+              - "null"
 
   getCountryLeaderboard:
     handler: src/handlers/getCountryLeaderboard.handler
@@ -74,7 +96,11 @@ functions:
       - http:
           path: /leaderboard/country
           method: get
-          cors: true
+          cors:
+            origins:
+              - "https://d35gbzghcxrk3x.cloudfront.net"
+              - "http://localhost:8080"
+              - "null"
 
   healthCheck:
     handler: src/handlers/healthCheck.handler
@@ -82,7 +108,11 @@ functions:
       - http:
           path: /health
           method: get
-          cors: true
+          cors:
+            origins:
+              - "https://d35gbzghcxrk3x.cloudfront.net"
+              - "http://localhost:8080"
+              - "null"
 
   # WebSocket Functions
   websocketConnect:
@@ -111,6 +141,8 @@ functions:
           type: dynamodb
           arn:
             Fn::GetAtt: [ScoresTable, StreamArn]
+          batchSize: 100
+          startingPosition: LATEST
 
 resources:
   Resources:
@@ -161,6 +193,8 @@ resources:
         AttributeDefinitions:
           - AttributeName: country
             AttributeType: S
+          - AttributeName: ranking # New attribute for GSI partition key
+            AttributeType: S
           - AttributeName: totalScore
             AttributeType: N
         KeySchema:
@@ -169,8 +203,10 @@ resources:
         GlobalSecondaryIndexes:
           - IndexName: TotalScoreIndex
             KeySchema:
-              - AttributeName: totalScore
+              - AttributeName: ranking # This will be a constant value
                 KeyType: HASH
+              - AttributeName: totalScore
+                KeyType: RANGE
             Projection:
               ProjectionType: ALL
 

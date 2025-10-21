@@ -2,7 +2,7 @@ const AWS = require("aws-sdk");
 
 // Configure DynamoDB
 const dynamodb = new AWS.DynamoDB.DocumentClient({
-  region: process.env.AWS_REGION || "us-east-1",
+  region: process.env.AWS_REGION || "ap-southeast-1",
   ...(process.env.IS_OFFLINE && {
     endpoint: "http://localhost:8000",
   }),
@@ -127,7 +127,7 @@ async function deleteItem(tableName, key) {
 }
 
 /**
- * Get top scores using an efficient GSI query.
+ * Get top scores using the ScoreIndex GSI.
  */
 async function getTopScores(limit = 10) {
   const params = {
@@ -140,44 +140,31 @@ async function getTopScores(limit = 10) {
     ScanIndexForward: false, // Sort by score in descending order
     Limit: limit,
   };
-
-  try {
-    const result = await dynamodb.query(params).promise();
-    return result.Items || [];
-  } catch (error) {
-    console.error("Error getting top scores:", error);
-    throw error;
-  }
+  return queryItems(process.env.SCORES_TABLE, params);
 }
 
 /**
- * Get top countries by total score
+ * Get top countries using the corrected TotalScoreIndex GSI.
  */
 async function getTopCountries(limit = 10) {
-  // This can be a scan since the number of countries is relatively small.
-  // For larger scale, a GSI on totalScore would be better.
   const params = {
     TableName: process.env.COUNTRIES_TABLE,
-    Limit: 100, // Scan more items and sort in memory for accuracy
+    IndexName: "TotalScoreIndex",
+    KeyConditionExpression: "#ranking = :ranking",
+    ExpressionAttributeNames: {
+      "#ranking": "ranking",
+    },
+    ExpressionAttributeValues: {
+      ":ranking": "all_countries", // Use the constant partition key
+    },
+    ScanIndexForward: false, // Sort by totalScore in descending order
+    Limit: limit,
   };
-
-  try {
-    const result = await dynamodb.scan(params).promise();
-
-    // Sort by totalScore descending
-    const sortedItems = (result.Items || []).sort(
-      (a, b) => b.totalScore - a.totalScore
-    );
-
-    return sortedItems.slice(0, limit);
-  } catch (error) {
-    console.error("Error getting top countries:", error);
-    throw error;
-  }
+  return queryItems(process.env.COUNTRIES_TABLE, params);
 }
 
 /**
- * Get country-specific leaderboard
+ * Get country-specific leaderboard using the CountryIndex GSI.
  */
 async function getCountryLeaderboard(country, limit = 10) {
   const params = {
@@ -187,15 +174,65 @@ async function getCountryLeaderboard(country, limit = 10) {
     ExpressionAttributeValues: {
       ":country": country,
     },
-    ScanIndexForward: false, // Sort by score descending
+    ScanIndexForward: false,
     Limit: limit,
+  };
+  return queryItems(process.env.SCORES_TABLE, params);
+}
+
+/**
+ * Atomically updates the statistics for a given country.
+ * This function is designed to be called by the stream processor.
+ * @param {string} country - The name of the country.
+ * @param {number} scoreChange - The delta to apply to totalScore.
+ * @param {number} playerCountChange - The delta to apply to playerCount.
+ */
+async function updateCountryStats(country, scoreChange, playerCountChange) {
+  if (!country || country === "Unknown") {
+    return; // Do not track stats for Unknown country
+  }
+
+  const params = {
+    TableName: process.env.COUNTRIES_TABLE,
+    Key: { country },
+    UpdateExpression:
+      "SET #ranking = :ranking, #lastUpdated = :timestamp ADD #totalScore :scoreChange, #playerCount :playerCountChange",
+    ExpressionAttributeNames: {
+      "#ranking": "ranking",
+      "#totalScore": "totalScore",
+      "#playerCount": "playerCount",
+      "#lastUpdated": "lastUpdated",
+    },
+    ExpressionAttributeValues: {
+      ":ranking": "all_countries", // Constant value for the GSI partition key
+      ":scoreChange": scoreChange,
+      ":playerCountChange": playerCountChange,
+      ":timestamp": new Date().toISOString(),
+    },
+    ReturnValues: "UPDATED_NEW",
   };
 
   try {
-    const result = await queryItems(process.env.SCORES_TABLE, params);
-    return result || [];
+    const result = await dynamodb.update(params).promise();
+    console.log(`Updated stats for ${country}:`, result.Attributes);
+
+    // After updating, recalculate the average score
+    const updatedAttrs = result.Attributes;
+    if (updatedAttrs && updatedAttrs.playerCount > 0) {
+      const averageScore = Math.round(
+        updatedAttrs.totalScore / updatedAttrs.playerCount
+      );
+      await updateItem(
+        process.env.COUNTRIES_TABLE,
+        { country },
+        "SET averageScore = :avg",
+        { ":avg": averageScore }
+      );
+    }
+
+    return result.Attributes;
   } catch (error) {
-    console.error("Error getting country leaderboard:", error);
+    console.error(`Error updating stats for country ${country}:`, error);
     throw error;
   }
 }
@@ -211,4 +248,5 @@ module.exports = {
   getTopScores,
   getTopCountries,
   getCountryLeaderboard,
+  updateCountryStats, // Export the new function
 };
