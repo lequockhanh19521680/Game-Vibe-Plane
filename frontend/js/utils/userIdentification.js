@@ -67,7 +67,8 @@ class UserIdentification {
         return resolve();
       }
       const script = document.createElement("script");
-      script.src = "https://openfpcdn.io/fingerprintjs/v3";
+      // FIX: Use the UMD bundle which works with classic <script> tags
+      script.src = "https://openfpcdn.io/fingerprintjs/v3/umd.min.js";
       script.async = true;
       script.onload = () => resolve();
       script.onerror = (err) =>
