@@ -7,6 +7,41 @@
       content="width=device-width, initial-scale=1.0, user-scalable=no"
     />
     <title>Stellar Drift: Singularity</title>
+    <script>
+      // Disable all console logs
+      (function () {
+        const noop = function () {};
+        if (typeof console !== "undefined") {
+          console.log = noop;
+          console.info = noop;
+          console.warn = noop;
+          console.error = noop;
+          console.debug = noop;
+          console.table = noop;
+          console.trace = noop;
+          console.assert = noop;
+          console.group = noop;
+          console.groupEnd = noop;
+          console.time = noop;
+          console.timeEnd = noop;
+        }
+      })();
+    </script>
+    <!-- Google Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-98CHE8FYSC"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+
+      gtag("config", "G-98CHE8FYSC");
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
