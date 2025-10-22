@@ -361,8 +361,93 @@ class GameOverState extends GameState {
         "game-over-leaderboard-container"
       );
       if (lbContainer) {
-        lbContainer.innerHTML = '<div class="loading">Loading...</div>';
+        lbContainer.innerHTML = '<div class="loading">Sending score...</div>'; // Update loading text
       }
+
+      // --- START: Player Name Retrieval and Validation ---
+      let finalPlayerName = "Anonymous"; // Default to Anonymous
+      let retrievedName = null;
+      let isNameValid = false;
+
+      console.log("[sendGameOverData] Starting name retrieval...");
+
+      // Check if playerNameUI and getPlayerName exist
+      if (
+        window.playerNameUI &&
+        typeof window.playerNameUI.getPlayerName === "function"
+      ) {
+        try {
+          retrievedName = window.playerNameUI.getPlayerName();
+          console.log(
+            `[sendGameOverData] Raw name from getPlayerName(): "${retrievedName}" (Type: ${typeof retrievedName})`
+          );
+
+          // Basic validation: must be a non-empty string
+          if (
+            typeof retrievedName === "string" &&
+            retrievedName.trim().length > 0
+          ) {
+            const trimmedName = retrievedName.trim();
+            console.log(`[sendGameOverData] Trimmed name: "${trimmedName}"`);
+
+            // Check if validateName method exists
+            if (typeof window.playerNameUI.validateName === "function") {
+              try {
+                isNameValid = window.playerNameUI.validateName(trimmedName);
+                console.log(
+                  `[sendGameOverData] Validation result for "${trimmedName}": ${isNameValid}`
+                );
+              } catch (validationError) {
+                console.error(
+                  `[sendGameOverData] Error during validation for "${trimmedName}":`,
+                  validationError
+                );
+                isNameValid = false; // Assume invalid on error
+              }
+            } else {
+              // Fallback validation if validateName is missing (simple length check)
+              console.warn(
+                "[sendGameOverData] playerNameUI.validateName not found. Using basic length check."
+              );
+              isNameValid = trimmedName.length >= 2 && trimmedName.length <= 20;
+              console.log(
+                `[sendGameOverData] Fallback validation result for "${trimmedName}": ${isNameValid}`
+              );
+            }
+
+            // Assign the name if it's valid
+            if (isNameValid) {
+              finalPlayerName = trimmedName;
+              console.log(
+                `[sendGameOverData] Using valid name: "${finalPlayerName}"`
+              );
+            } else {
+              console.warn(
+                `[sendGameOverData] Name "${trimmedName}" failed validation. Using default: "${finalPlayerName}".`
+              );
+            }
+          } else {
+            console.warn(
+              `[sendGameOverData] Retrieved name is empty or not a string. Using default: "${finalPlayerName}".`
+            );
+          }
+        } catch (getNameError) {
+          console.error(
+            "[sendGameOverData] Error calling playerNameUI.getPlayerName():",
+            getNameError
+          );
+          // Keep the default "Anonymous" name on error
+        }
+      } else {
+        console.warn(
+          "[sendGameOverData] window.playerNameUI or getPlayerName() not found. Using default: 'Anonymous'."
+        );
+      }
+
+      console.log(
+        `[sendGameOverData] Final name to be submitted: "${finalPlayerName}"`
+      );
+      // --- END: Player Name Retrieval and Validation ---
 
       if (
         window.BackendAPI &&
@@ -370,109 +455,18 @@ class GameOverState extends GameState {
         BACKEND_CONFIG.USE_BACKEND
       ) {
         try {
-          // --- FIX START: More robust player name retrieval with correct validation call ---
-          let playerName = "Anonymous"; // Default
-          let retrievedName = null;
-          let isValid = false;
-
-          console.log(
-            "[sendGameOverData] Attempting to retrieve player name..."
-          ); // Log: Bắt đầu lấy tên
-
-          if (
-            window.playerNameUI &&
-            typeof window.playerNameUI.getPlayerName === "function"
-          ) {
-            try {
-              retrievedName = window.playerNameUI.getPlayerName();
-              // Log the raw retrieved value immediately
-              console.log(
-                "[sendGameOverData] playerNameUI.getPlayerName() returned:",
-                retrievedName,
-                "(type:",
-                typeof retrievedName + ")"
-              ); // Log: Giá trị trả về từ getPlayerName
-            } catch (err) {
-              console.error(
-                "[sendGameOverData] Error calling playerNameUI.getPlayerName():",
-                err
-              ); // Log: Lỗi khi gọi getPlayerName
-            }
-          } else {
-            console.warn(
-              "[sendGameOverData] playerNameUI or getPlayerName function not available."
-            ); // Log: Không tìm thấy playerNameUI hoặc getPlayerName
-          }
-
-          // Validate the retrieved name
-          if (
-            typeof retrievedName === "string" &&
-            retrievedName.trim().length > 0
-          ) {
-            const trimmedName = retrievedName.trim();
-            console.log("[sendGameOverData] Trimmed name:", trimmedName); // Log: Tên sau khi cắt khoảng trắng
-
-            // Correctly call the validation method on the playerNameUI instance
-            if (
-              window.playerNameUI &&
-              typeof window.playerNameUI.validateName === "function"
-            ) {
-              try {
-                // Add try-catch around validation
-                isValid = window.playerNameUI.validateName(trimmedName);
-                console.log(
-                  `[sendGameOverData] Validation result for "${trimmedName}":`,
-                  isValid
-                ); // Log: Kết quả validateName
-              } catch (validationErr) {
-                console.error(
-                  `[sendGameOverData] Error during validation for "${trimmedName}":`,
-                  validationErr
-                ); // Log: Lỗi khi validateName
-                isValid = false; // Assume invalid on error
-              }
-            } else {
-              console.warn(
-                "[sendGameOverData] playerNameUI.validateName function not available. Using fallback length check."
-              ); // Log: Không tìm thấy validateName, dùng kiểm tra dự phòng
-              // Fallback check if validateName method is missing
-              isValid = trimmedName.length >= 2 && trimmedName.length <= 20;
-              console.log(
-                `[sendGameOverData] Fallback validation result for "${trimmedName}":`,
-                isValid
-              ); // Log: Kết quả kiểm tra dự phòng
-            }
-
-            if (isValid) {
-              playerName = trimmedName;
-              console.log(
-                "[sendGameOverData] Name is valid. Using:",
-                playerName
-              ); // Log: Tên hợp lệ, sử dụng tên này
-            } else {
-              console.warn(
-                `[sendGameOverData] Retrieved name "${trimmedName}" failed validation. Falling back to 'Anonymous'.`
-              ); // Log: Tên không hợp lệ, dùng 'Anonymous'
-            }
-          } else {
-            console.warn(
-              `[sendGameOverData] Retrieved name "${retrievedName}" is invalid or empty. Falling back to 'Anonymous'.`
-            ); // Log: Tên rỗng hoặc không hợp lệ, dùng 'Anonymous'
-          }
-          // Log the name right before submitting
-          console.log(
-            "[sendGameOverData] Submitting score with username:",
-            playerName
-          ); // Log: Tên cuối cùng sẽ gửi đi
-          // --- FIX END ---
-
           submitResult = await BackendAPI.submitScore(
-            playerName, // Use the potentially corrected playerName
+            finalPlayerName, // Use the final validated or default name
             gameOverData.score,
             gameOverData.time,
             gameOverData.deathBy
           );
           console.log("Score submission result:", submitResult);
+          if (lbContainer) {
+            // Clear sending message after successful submission attempt
+            lbContainer.innerHTML =
+              '<div class="loading">Loading leaderboard...</div>';
+          }
         } catch (error) {
           console.error("Failed to send data to backend:", error);
           if (lbContainer) {
@@ -494,20 +488,23 @@ class GameOverState extends GameState {
         }
       }
 
+      // Save to local history regardless of backend submission success/failure
       try {
         const localGameHistory = JSON.parse(
           localStorage.getItem("gameHistory") || "[]"
         );
         localGameHistory.push(gameOverData);
+        // Keep only the last 100 entries
         if (localGameHistory.length > 100) {
           localGameHistory.splice(0, localGameHistory.length - 100);
         }
         localStorage.setItem("gameHistory", JSON.stringify(localGameHistory));
+        console.log("Game result saved to local history.");
       } catch (e) {
         console.error("Error saving game history to localStorage:", e);
       }
 
-      return submitResult;
+      return submitResult; // Return the result from backend submission (or null)
     } catch (error) {
       console.error("Error in sendGameOverData:", error);
       const lbContainer = document.getElementById(
