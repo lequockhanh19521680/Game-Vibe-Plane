@@ -93,7 +93,8 @@ function init() {
     missile: 0,
     mine: 0,
     crystal: 0,
-    energyOrb: 0, // Ensure energyOrb timer is initialized
+    energyOrb: 0,
+    shieldCrystal: 0, // Added timer for shield crystal
   };
 
   if (typeof resetEventSystem === "function") {
@@ -118,7 +119,7 @@ function init() {
   warnings = [];
   energyOrbs = [];
   plasmaFields = [];
-  crystalShards = [];
+  shieldCrystals = []; // Renamed from crystalShards
   shieldGenerators = [];
   freezeZones = [];
   magneticStorms = [];
@@ -200,19 +201,24 @@ function animate() {
     warnings,
     energyOrbs,
     plasmaFields,
-    crystalShards,
+    shieldCrystals, // Renamed from crystalShards
     shieldGenerators,
     freezeZones,
     magneticStorms,
     lightningStorms,
     decoyPowerUps,
   ].forEach((arr) =>
-    arr.forEach((item) => (item.update ? item.update() : undefined))
+    // Filter out null/undefined before calling update
+    arr
+      .filter((item) => item && typeof item.update === "function")
+      .forEach((item) => item.update())
   );
   player.update(); // Update player last
 
   // Filter inactive entities
-  fragments = fragments.filter((f) => f.life > 0 && f.y < height + 50);
+  fragments = fragments.filter(
+    (f) => f.life > 0 && f.y < height + 50 && f.isActive
+  ); // Also check isActive
   if (fragments.length > GAME_CONFIG.core.maxFragments) {
     fragments.splice(0, fragments.length - GAME_CONFIG.core.maxFragments);
   }
@@ -224,7 +230,12 @@ function animate() {
 
   missiles = missiles.filter((m) => !m.isDead);
   asteroids = asteroids.filter(
-    (a) => a.x > -50 && a.x < width + 50 && a.y > -50 && a.y < height + 50
+    (a) =>
+      a.x > -50 &&
+      a.x < width + 50 &&
+      a.y > -50 &&
+      a.y < height + 50 &&
+      a.isActive // Also check isActive
   );
   blackHoles = blackHoles.filter((bh) => bh.alpha > 0);
   crystalClusters = crystalClusters.filter((cc) =>
@@ -233,7 +244,7 @@ function animate() {
   warnings = warnings.filter((w) => w.timer < w.duration);
   energyOrbs = energyOrbs.filter((e) => e.update() !== false);
   plasmaFields = plasmaFields.filter((p) => p.update() !== false);
-  crystalShards = crystalShards.filter((c) => c.update() !== false);
+  shieldCrystals = shieldCrystals.filter((c) => c.update() !== false); // Renamed
   shieldGenerators = shieldGenerators.filter((s) => s.update() !== false);
   freezeZones = freezeZones.filter((f) => f.update() !== false);
   magneticStorms = magneticStorms.filter((m) => m.update() !== false);
@@ -381,6 +392,25 @@ function animate() {
     }
   }
 
+  // Shield Crystal Spawning (New)
+  const shieldCrystalConfig = GAME_CONFIG.newObjects.shieldCrystal || {};
+  if (score > (shieldCrystalConfig.spawnThreshold || 2000)) {
+    // Default threshold
+    timers.shieldCrystal = (timers.shieldCrystal || 0) + 1;
+    if (
+      timers.shieldCrystal % (shieldCrystalConfig.spawnInterval || 1200) ===
+      0
+    ) {
+      // Default interval 20s
+      // Only spawn if there isn't one already active
+      if (shieldCrystals.length === 0) {
+        shieldCrystals.push(
+          new ShieldCrystal(Math.random() * width, Math.random() * height * 0.7)
+        );
+      }
+    }
+  }
+
   // Missile Spawning
   if (score > GAME_CONFIG.entities.missiles.spawnScore) {
     timers.missile++;
@@ -524,9 +554,64 @@ function animate() {
 
   // --- Collision Detection ---
 
+  // --- NEW: Missile Fragment Collision Logic ---
+  for (let i = fragments.length - 1; i >= 0; i--) {
+    const frag = fragments[i];
+    // Only check MissileFragment instances
+    if (!(frag instanceof MissileFragment) || !frag.isActive) continue;
+
+    let fragmentHit = false;
+
+    // Check collision with Asteroids
+    for (let j = asteroids.length - 1; j >= 0; j--) {
+      const ast = asteroids[j];
+      if (
+        Math.hypot(frag.x - ast.x, frag.y - ast.y) <
+        frag.radius + ast.radius
+      ) {
+        asteroids[j].isActive = false; // Mark asteroid for removal
+        asteroids.splice(j, 1); // Remove asteroid immediately
+        fragmentHit = true;
+        score += 5; // Optional score bonus
+        playSound("collision", 0.2); // Smaller collision sound
+        break; // Fragment can only hit one asteroid
+      }
+    }
+
+    if (fragmentHit) {
+      frag.isActive = false; // Mark fragment for removal
+      // fragments.splice(i, 1); // Remove fragment immediately
+      continue; // Move to the next fragment
+    }
+
+    // Check collision with other Missiles
+    for (let j = missiles.length - 1; j >= 0; j--) {
+      const missile = missiles[j];
+      if (missile.isDead) continue;
+      if (
+        Math.hypot(frag.x - missile.x, frag.y - missile.y) <
+        frag.radius + missile.radius
+      ) {
+        missile.explode(true); // Explode the missile
+        fragmentHit = true;
+        score += 10; // Optional score bonus
+        // Explosion sound is played by missile.explode()
+        break; // Fragment can only hit one missile
+      }
+    }
+
+    if (fragmentHit) {
+      frag.isActive = false; // Mark fragment for removal
+      // fragments.splice(i, 1); // Remove fragment immediately
+    }
+  }
+  // Filter inactive fragments (done later in the filtering section)
+  // --- END: Missile Fragment Collision Logic ---
+
   // Check Asteroid-Player Collision
   for (let i = asteroids.length - 1; i >= 0; i--) {
     const ast = asteroids[i];
+    if (!ast.isActive) continue; // Skip already marked for removal
     if (
       Math.hypot(player.x - ast.x, player.y - ast.y) -
         ast.radius -
@@ -544,7 +629,7 @@ function animate() {
         ast.velocity.x += (dx / distance) * 3;
         ast.velocity.y += (dy / distance) * 3;
         // Optionally remove asteroid on shield impact or create particles
-        // asteroids.splice(i, 1);
+        // asteroids.splice(i, 1); // Asteroid removal now handled by fragment collision or going off-screen
         // playSound('collision');
       }
     }
@@ -553,6 +638,7 @@ function animate() {
   // Check Missile-Player Collision
   for (let i = missiles.length - 1; i >= 0; i--) {
     const m = missiles[i];
+    if (m.isDead) continue;
     if (
       Math.hypot(player.x - m.x, player.y - m.y) - m.radius - player.radius <
       GAME_CONFIG.core.collisionPrecision
@@ -574,19 +660,21 @@ function animate() {
     }
   }
 
-  // YÊU CẦU 1: Check Missile-Asteroid Collision
+  // Check Missile-Asteroid Collision (Original logic)
   for (let i = missiles.length - 1; i >= 0; i--) {
     const missile = missiles[i];
-    if (missile.isDead) continue; // Skip already exploded missiles
+    if (missile.isDead) continue;
 
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const asteroid = asteroids[j];
+      if (!asteroid.isActive) continue; // Skip inactive asteroids
       if (
         Math.hypot(missile.x - asteroid.x, missile.y - asteroid.y) <
         missile.radius + asteroid.radius
       ) {
         missile.explode(true); // Missile explodes on impact
-        asteroids.splice(j, 1); // Remove the asteroid
+        asteroids[j].isActive = false; // Mark asteroid for removal
+        asteroids.splice(j, 1); // Remove asteroid immediately
         score += 10; // Optional score bonus
         playSound("explosion", 0.3); // Optional sound effect
         break; // Missile can only hit one asteroid
@@ -671,6 +759,7 @@ function animate() {
   // Check Fragment-Player Collision (Only for specific lethal fragments if needed)
   for (let i = fragments.length - 1; i >= 0; i--) {
     const fragment = fragments[i];
+    if (!fragment.isActive) continue; // Skip inactive fragments
     if (
       fragment.lethal &&
       !player.shieldActive &&
@@ -692,10 +781,15 @@ function animate() {
     }
     // Interactions with other objects (asteroids, missiles)
     for (let j = asteroids.length - 1; j >= 0; j--) {
-      if (Math.hypot(asteroids[j].x - bh.x, asteroids[j].y - bh.y) < bh.radius)
+      const ast = asteroids[j];
+      if (!ast.isActive) continue;
+      if (Math.hypot(ast.x - bh.x, ast.y - bh.y) < bh.radius) {
+        asteroids[j].isActive = false; // Mark for removal
         asteroids.splice(j, 1);
+      }
     }
     for (let j = missiles.length - 1; j >= 0; j--) {
+      if (missiles[j].isDead) continue;
       if (Math.hypot(missiles[j].x - bh.x, missiles[j].y - bh.y) < bh.radius)
         missiles[j].isDead = true; // Mark missile for removal
     }
@@ -724,6 +818,34 @@ function animate() {
     }
   }
 
+  // Check Shield Crystal-Player Collision (New)
+  for (let i = shieldCrystals.length - 1; i >= 0; i--) {
+    const crystal = shieldCrystals[i];
+    if (
+      Math.hypot(player.x - crystal.x, player.y - crystal.y) <
+      crystal.size + player.radius
+    ) {
+      player.activateShield(); // Activate normal shield
+      shieldCrystals.splice(i, 1); // Remove the collected crystal
+      // Particle effect on collection
+      for (let j = 0; j < 12; j++) {
+        const angle = (j / 12) * Math.PI * 2;
+        particles.push(
+          new Particle(
+            crystal.x,
+            crystal.y,
+            3,
+            GAME_CONFIG.visual.colors.crystal,
+            {
+              x: Math.cos(angle) * 5,
+              y: Math.sin(angle) * 5,
+            }
+          )
+        );
+      }
+    }
+  }
+
   // Check Plasma Field-Player Collision
   for (const plasma of plasmaFields) {
     if (
@@ -738,19 +860,6 @@ function animate() {
         endGame("plasma field burn");
         return;
       }
-    }
-  }
-
-  // Check Crystal Shard-Player Collision
-  for (let i = crystalShards.length - 1; i >= 0; i--) {
-    const crystal = crystalShards[i];
-    if (
-      Math.hypot(player.x - crystal.x, player.y - crystal.y) <
-      crystal.size + player.radius
-    ) {
-      score += 50; // Crystal score bonus
-      player.activateShield(); // Activate normal shield
-      crystalShards.splice(i, 1);
     }
   }
 

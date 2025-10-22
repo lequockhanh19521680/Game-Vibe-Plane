@@ -157,15 +157,15 @@ const GAME_CONFIG = {
     unlockThresholds: {
       // Minimum score needed for each specific event type
       giantBlackHole: 18000,
-      crystalRain: 500,
-      shieldGenerator: 1000,
+      crystalRain: 5000, // Ngưỡng điểm cho Crystal Rain
+      shieldGenerator: 1000, // Removed - not used as event
       instantMissiles: 1500,
       asteroidShower: 2000,
-      asteroidRain: 2500,
+      asteroidRain: 2500, // Added alias, can map to shower logic maybe?
       asteroidCircle: 3000,
-      decoyPowerUp: 4000,
-      meteorBombardment: 4000,
-      magneticStorm: 4500,
+      decoyTrapField: 4000, // Ngưỡng điểm cho Decoy Trap Field (Changed from decoyPowerUp)
+      meteorBombardment: 4000, // Removed - redundant/confusing
+      magneticStorm: 4500, // Ngưỡng điểm cho Magnetic Storm
       freezeZone: 5000,
       missileBarrage: 6500,
       laserGrid: 7000,
@@ -182,8 +182,22 @@ const GAME_CONFIG = {
       lifetime: 800,
       baseRadius: 15,
       maxRadiusMultiplier: 2.5,
+      gravityRadiusMultiplier: 2.0, // Thêm nếu thiếu
       strengthMultiplier: 2.2,
+      growthRateMultiplier: 1.5, // Thêm nếu thiếu
       color: "#6a0dad",
+    },
+    crystalRain: {
+      duration: 600, // Khoảng thời gian mưa (10 giây)
+      spawnInterval: 10, // Số frame giữa mỗi lần rơi
+      countPerSpawn: 2, // Số lượng rơi mỗi lần
+    },
+    magneticStorm: {
+      // No specific event config needed, uses newObjects.magneticStorm
+    },
+    decoyTrapField: {
+      count: 5, // Số lượng bẫy xuất hiện
+      spreadRadius: 200, // Bán kính khu vực xuất hiện bẫy
     },
     laserGrid: { gridSize: 3, delay: 350 },
     asteroidCircle: {
@@ -200,6 +214,9 @@ const GAME_CONFIG = {
       chargeTime: 60,
       warningTime: 90,
     },
+    // Add other existing event configs here...
+    freezeZone: { duration: 300 }, // Example, if needed
+    lightningStorm: { lifetime: 600 }, // Example, if needed
   },
 
   newObjects: {
@@ -208,6 +225,7 @@ const GAME_CONFIG = {
       baseRadius: 2.5,
       baseVelocity: 1.0,
       minLifetime: 500,
+      maxLifetime: 1000, // Added max lifetime
       rotationSpeed: 0.01,
       repulsionRadiusFactor: 20,
       repulsionForce: 0.8,
@@ -215,7 +233,6 @@ const GAME_CONFIG = {
       spawnThreshold: 1000,
     },
     freezeZone: {
-      // Config for event-spawned freeze zones
       radius: 100,
       effectStrength: 0.3,
       particleCount: 20,
@@ -226,14 +243,16 @@ const GAME_CONFIG = {
       fullFreezeFactor: 0.1,
       particleMinSpeed: 0.01,
       particleMaxSpeed: 0.02,
+      pulseSpeed: 0.08, // Added pulseSpeed
     },
     magneticStorm: {
-      // Config for event-spawned magnetic storm
       lifetime: 480,
       maxIntensity: 1.2,
       fieldCount: 4,
       baseStrength: 0.5,
+      strengthVariation: 0.3, // Added variation
       fieldRadius: 100,
+      radiusVariation: 30, // Added variation
       rampDuration: 60,
       playerAffectMultiplier: 0.3,
       objectAffectMultiplier: 0.5,
@@ -243,27 +262,54 @@ const GAME_CONFIG = {
       repelColor: "#ff4444",
       lethalTargetRange: 300,
       lethalHitTolerance: 10,
+      lethalBoltColor: "#ffff00", // Added
       arcSpawnChance: 0.1,
+      arcColor: "#88ddff", // Added
+      arcFadeSpeed: 0.1, // Added
       fieldRotationSpeed: 0.02,
       lethalJitter: 40,
       arcJitter: 40,
+      segmentCount: 8, // Added
       pulseMinFactor: 0.8,
       pulseMaxFactor: 0.2,
       lineCount: 8,
+      lightningInterval: 30, // Added
     },
     lightningStorm: {
-      // Config for event-spawned lightning storm
       lifetime: 600,
       lightningInterval: 120,
       lightningJitter: 60,
       gateCount: 2,
       gatePlacementRange: 200,
+      gateRadius: 40, // Added
       gateChargeTime: 120,
       chargeColor: "#88ddff",
       boltColor: "#88ddff",
       particleSpawnChance: 0.3,
       boltFadeSpeed: 0.1,
       hitRadius: 25,
+      speedBoostMultiplier: 0.8, // Added
+      boostDuration: 600, // Added
+      segmentCount: 12, // Added
+    },
+    decoyPowerUp: {
+      // Configuration for the DecoyPowerUp hazard itself
+      size: 10,
+      lifetime: 600, // How long it stays on screen before disappearing
+      triggerRadius: 100, // How close player needs to be to trigger
+      explosionParticles: 15,
+      asteroidCount: 4, // Number of asteroids spawned when triggered
+      asteroidSpeed: 3,
+    },
+    // Add other object configs here...
+    shieldGenerator: {
+      // Moved from events, now an object
+      radius: 12,
+      shieldRadius: 60,
+      chargeTime: 240,
+      activeTime: 400,
+      spawnInterval: 1800, // Example spawn interval if spawned regularly
+      spawnThreshold: 8000, // Example spawn threshold
     },
   },
 

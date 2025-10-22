@@ -44,6 +44,7 @@ class Fragment {
     this.rotation = Math.random() * Math.PI * 2;
     this.rotationSpeed = (Math.random() - 0.5) * 0.2; // Use a fixed value instead of config
     this.lethal = false;
+    this.isActive = true; // Ensure fragment starts active
   }
 
   draw() {
@@ -59,12 +60,19 @@ class Fragment {
   }
 
   update() {
+    if (!this.isActive) return false; // Exit early if not active
+
     this.x += this.velocity.x;
     this.y += this.velocity.y;
     this.rotation += this.rotationSpeed;
     this.life--;
-    this.alpha = Math.max(0, this.life / 120);
+    this.alpha = Math.max(0, this.life / 120); // Base alpha calculation on initial life? Maybe use maxLife?
+    if (this.life <= 0) {
+      this.isActive = false;
+      return false;
+    }
     this.draw();
+    return true; // Indicate it's still active
   }
 }
 
@@ -78,9 +86,11 @@ class MissileFragment extends Fragment {
     this.life =
       config.minLife + Math.random() * (config.maxLife - config.minLife);
     this.lethal = false; // SỬA LỖI 2: Mảnh tên lửa không gây kết thúc game
+    this.isActive = true; // Ensure fragment starts active
   }
 
   draw() {
+    if (!this.isActive) return;
     ctx.save();
     ctx.globalAlpha = this.alpha;
     ctx.translate(this.x, this.y);
@@ -91,16 +101,6 @@ class MissileFragment extends Fragment {
     ctx.shadowColor = this.color;
     ctx.shadowBlur = 8; // Giảm shadow blur cho mảnh vỡ
     ctx.fill();
-
-    // Loại bỏ viền sát thương nếu không còn lethal
-    /*
-    if (this.lethal) {
-      ctx.strokeStyle = "#ff0088";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-    */
-
     ctx.restore();
   }
 }

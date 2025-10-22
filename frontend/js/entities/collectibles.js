@@ -1,18 +1,18 @@
 // Collectible entities - power-ups and bonuses
 
-// Class EnergyOrb đã được cập nhật để sử dụng cấu hình từ GAME_CONFIG.newObjects.energyOrb
+// Class EnergyOrb has been updated to use config from GAME_CONFIG.newObjects.energyOrb
 class EnergyOrb {
   constructor(x, y) {
-    // Lấy cấu hình từ GAME_CONFIG để đảm bảo tùy chỉnh
+    // Get config from GAME_CONFIG
     const config = GAME_CONFIG.newObjects.energyOrb;
 
     this.x = x || Math.random() * canvas.width;
     this.y = y || Math.random() * canvas.height;
 
-    // Sử dụng config.baseRadius (đã giảm)
+    // Use config.baseRadius (reduced)
     this.radius = config.baseRadius + Math.random();
 
-    // Sử dụng config.baseVelocity (đã giảm)
+    // Use config.baseVelocity (reduced)
     this.velocity = {
       x: (Math.random() - 0.5) * config.baseVelocity * 2,
       y: (Math.random() - 0.5) * config.baseVelocity * 2,
@@ -23,7 +23,7 @@ class EnergyOrb {
 
     this.pulsePhase = Math.random() * Math.PI * 2;
 
-    // Sử dụng config.minLifetime và config.maxLifetime (đã tăng)
+    // Use config.minLifetime and config.maxLifetime (increased)
     this.lifetime =
       config.minLifetime +
       Math.random() * (config.maxLifetime - config.minLifetime);
@@ -36,14 +36,14 @@ class EnergyOrb {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rotation);
 
-    // NEW: Hiệu ứng tăng dần kích thước trong 30 khung hình đầu tiên (Ramp-up)
-    const initialRampDuration = 30; // Thời gian ramp-up: 30 frames (0.5 giây)
+    // NEW: Ramp-up effect for the first 30 frames
+    const initialRampDuration = 30; // Ramp-up time: 30 frames (0.5 seconds)
     const initialScale = Math.min(1, this.age / initialRampDuration);
 
-    // Đã giảm tốc độ mở rộng/nhịp đập từ 0.1 xuống 0.04 để chậm hơn.
+    // Reduced pulse/expansion speed from 0.1 to 0.04 for slower pulsing.
     const pulse = Math.sin(this.age * 0.04 + this.pulsePhase) * 0.3 + 1;
 
-    // Áp dụng initialScale để kích thước bắt đầu từ 0
+    // Apply initialScale so size starts from 0
     const currentRadius = this.radius * pulse * initialScale;
 
     // Outer glow
@@ -121,25 +121,23 @@ class EnergyOrb {
   }
 }
 
-class CrystalShard {
+// Renamed from CrystalShard to ShieldCrystal and modified appearance/behavior
+class ShieldCrystal {
   constructor(x, y) {
+    const config = GAME_CONFIG.newObjects.shieldCrystal || {}; // Use new config section
     this.x = x || Math.random() * canvas.width;
-    this.y = y || Math.random() * canvas.height;
-    this.size = 8 + Math.random() * 12;
-    this.mass = this.size * 0.8; // Mass affects physics
+    this.y = y || Math.random() * canvas.height * 0.7; // Spawn higher up
+    this.size = config.size || 15; // Larger base size
     this.velocity = {
-      x: (Math.random() - 0.5) * 2,
-      y: (Math.random() - 0.5) * 2,
+      x: (Math.random() - 0.5) * (config.driftSpeed || 0.5), // Slower drift
+      y: (Math.random() - 0.5) * (config.driftSpeed || 0.5),
     };
     this.rotation = Math.random() * Math.PI * 2;
-    this.rotationSpeed = (Math.random() - 0.5) * 0.08;
-    this.lifetime = 400 + Math.random() * 200;
+    this.rotationSpeed = (Math.random() - 0.5) * 0.03; // Slower rotation
+    this.lifetime = config.lifetime || 1200; // Stays longer (e.g., 20 seconds)
     this.age = 0;
-    this.isDrifting = true;
-    this.sparkleTimer = Math.random() * 60;
-    this.color = ["#40c4ff", "#81d4fa", "#b3e5fc", "#e1f5fe"][
-      Math.floor(Math.random() * 4)
-    ];
+    this.pulsePhase = Math.random() * Math.PI * 2;
+    this.color = config.color || GAME_CONFIG.visual.colors.crystal || "#40c4ff";
   }
 
   draw() {
@@ -147,159 +145,75 @@ class CrystalShard {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rotation);
 
-    const alpha = Math.max(0, (this.lifetime - this.age) / this.lifetime);
-    ctx.globalAlpha = alpha * 0.9;
+    const alpha = Math.max(0, 1 - this.age / this.lifetime); // Fade out over lifetime
+    ctx.globalAlpha = alpha;
+
+    // Pulsing effect
+    const pulse = Math.sin(this.age * 0.08 + this.pulsePhase) * 0.2 + 1; // Faster pulse
+    const currentSize = this.size * pulse;
 
     // Outer glow effect
-    if (this.isDrifting) {
-      const glowRadius = this.size * 2 + Math.sin(this.sparkleTimer * 0.1) * 3;
-      const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowRadius);
-      glowGradient.addColorStop(0, `rgba(64, 196, 255, ${alpha * 0.3})`);
-      glowGradient.addColorStop(1, "rgba(64, 196, 255, 0)");
+    const glowRadius = currentSize * 1.8;
+    const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowRadius);
+    glowGradient.addColorStop(0, `${this.color}80`); // Brighter inner glow
+    glowGradient.addColorStop(0.7, `${this.color}30`);
+    glowGradient.addColorStop(1, `${this.color}00`);
 
-      ctx.beginPath();
-      ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
-      ctx.fillStyle = glowGradient;
-      ctx.fill();
-    }
-
-    // Main crystal body
     ctx.beginPath();
-    ctx.moveTo(0, -this.size);
-    ctx.lineTo(this.size * 0.6, -this.size * 0.4);
-    ctx.lineTo(this.size * 0.9, this.size * 0.2);
-    ctx.lineTo(this.size * 0.3, this.size);
-    ctx.lineTo(-this.size * 0.3, this.size);
-    ctx.lineTo(-this.size * 0.9, this.size * 0.2);
-    ctx.lineTo(-this.size * 0.6, -this.size * 0.4);
+    ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
+    ctx.fillStyle = glowGradient;
+    ctx.fill();
+
+    // Shield Icon Shape (Simplified)
+    // Draw a simple shield shape or icon here
+    ctx.beginPath();
+    // Simple shield shape
+    ctx.moveTo(0, -currentSize * 0.8);
+    ctx.lineTo(currentSize * 0.7, -currentSize * 0.3);
+    ctx.lineTo(currentSize * 0.7, currentSize * 0.5);
+    ctx.arc(0, currentSize * 0.5, currentSize * 0.7, 0, Math.PI, false); // Bottom curve
+    ctx.lineTo(-currentSize * 0.7, -currentSize * 0.3);
     ctx.closePath();
 
-    // Create crystalline gradient
-    const gradient = ctx.createRadialGradient(
-      -this.size * 0.3,
-      -this.size * 0.3,
-      0,
-      0,
-      0,
-      this.size
-    );
-    gradient.addColorStop(0, "#ffffff");
-    gradient.addColorStop(0.3, this.color);
-    gradient.addColorStop(0.7, this.color);
-    gradient.addColorStop(1, "rgba(64, 196, 255, 0.4)");
-
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = this.color;
     ctx.shadowColor = this.color;
     ctx.shadowBlur = 15;
     ctx.fill();
-
-    // Inner reflections
-    ctx.globalAlpha = alpha * 0.6;
-    ctx.beginPath();
-    ctx.moveTo(0, -this.size * 0.7);
-    ctx.lineTo(this.size * 0.4, -this.size * 0.2);
-    ctx.lineTo(0, this.size * 0.3);
-    ctx.lineTo(-this.size * 0.2, -this.size * 0.1);
-    ctx.closePath();
-    ctx.fillStyle = "#ffffff";
-    ctx.fill();
-
-    // Edge highlights
-    ctx.globalAlpha = alpha;
     ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 2;
     ctx.stroke();
-
-    // Sparkle effects when drifting
-    if (this.isDrifting && Math.sin(this.sparkleTimer * 0.2) > 0.7) {
-      for (let i = 0; i < 3; i++) {
-        const sparkleX = (Math.random() - 0.5) * this.size;
-        const sparkleY = (Math.random() - 0.5) * this.size;
-        ctx.beginPath();
-        ctx.arc(sparkleX, sparkleY, 1, 0, Math.PI * 2);
-        ctx.fillStyle = "#ffffff";
-        ctx.fill();
-      }
-    }
 
     ctx.restore();
   }
 
   update() {
     this.age++;
-    this.sparkleTimer++;
     this.rotation += this.rotationSpeed;
 
-    // Drifting movement with space physics
-    if (this.isDrifting) {
-      // Add slight gravitational drift and cosmic wind
-      this.velocity.x += (Math.random() - 0.5) * 0.01;
-      this.velocity.y += (Math.random() - 0.5) * 0.01;
-
-      // Damping in space (stronger)
-      this.velocity.x *= 0.995;
-      this.velocity.y *= 0.995;
-
-      // Limit max velocity
-      const maxSpeed = 2;
-      const currentSpeed = Math.hypot(this.velocity.x, this.velocity.y);
-      if (currentSpeed > maxSpeed) {
-        this.velocity.x = (this.velocity.x / currentSpeed) * maxSpeed;
-        this.velocity.y = (this.velocity.y / currentSpeed) * maxSpeed;
-      }
-    } // Physics collision with asteroids
-
-    // Crystal shield effect - deflect missiles with physics
-    missiles.forEach((missile) => {
-      const dist = Math.hypot(missile.x - this.x, missile.y - this.y);
-      const shieldRadius = this.size * 2.2;
-
-      if (dist < shieldRadius) {
-        const dx = missile.x - this.x;
-        const dy = missile.y - this.y;
-        const distance = Math.max(dist, 1);
-
-        // Deflection force based on crystal shield
-        const force = ((shieldRadius - distance) / shieldRadius) * 0.3;
-        const nx = dx / distance;
-        const ny = dy / distance;
-
-        missile.velocity.x += nx * force;
-        missile.velocity.y += ny * force;
-
-        // Crystal gets slightly pushed back
-        this.velocity.x -= nx * force * 0.1;
-        this.velocity.y -= ny * force * 0.1;
-      }
-    });
-
-    // Update position
+    // Slow drift
     this.x += this.velocity.x;
     this.y += this.velocity.y;
 
-    // Bounce off screen edges to keep crystals contained
-    // ĐIỀU CHỈNH: Giảm độ nảy của tường (damping) xuống 0.2 để nó gần như dừng lại
-    const wallDamping = 0.2; // Giảm từ 0.7 xuống 0.2
+    // Gentle wall bounce or wrap around
+    const padding = this.size * 2;
+    if (this.x < -padding) this.x = canvas.width + padding;
+    if (this.x > canvas.width + padding) this.x = -padding;
+    if (this.y < -padding) this.y = canvas.height + padding;
+    if (this.y > canvas.height + padding) this.y = -padding;
 
-    if (this.x < this.size) {
-      this.x = this.size;
-      this.velocity.x = Math.abs(this.velocity.x) * wallDamping;
-    }
-    if (this.x > canvas.width - this.size) {
-      this.x = canvas.width - this.size;
-      this.velocity.x = -Math.abs(this.velocity.x) * wallDamping;
-    }
-    if (this.y < this.size) {
-      this.y = this.size;
-      this.velocity.y = Math.abs(this.velocity.y) * wallDamping;
-    }
-    if (this.y > canvas.height - this.size) {
-      this.y = canvas.height - this.size;
-      this.velocity.y = -Math.abs(this.velocity.y) * wallDamping;
+    // Add slight random drift change
+    this.velocity.x += (Math.random() - 0.5) * 0.02;
+    this.velocity.y += (Math.random() - 0.5) * 0.02;
+    // Clamp velocity
+    const maxDrift = GAME_CONFIG.newObjects.shieldCrystal?.driftSpeed || 0.5;
+    const speed = Math.hypot(this.velocity.x, this.velocity.y);
+    if (speed > maxDrift) {
+      this.velocity.x = (this.velocity.x / speed) * maxDrift;
+      this.velocity.y = (this.velocity.y / speed) * maxDrift;
     }
 
     this.draw();
-    return this.age < this.lifetime;
+    return this.age < this.lifetime; // Check lifetime
   }
 }
 
@@ -407,9 +321,13 @@ class ShieldGenerator {
             new Particle(
               missile.x,
               missile.y,
-              Math.cos(deflectAngle) * 3,
-              Math.sin(deflectAngle) * 3,
-              "#4fc3f7"
+              3, // radius
+              "#4fc3f7", // color
+              {
+                // velocity
+                x: Math.cos(deflectAngle) * 3,
+                y: Math.sin(deflectAngle) * 3,
+              }
             )
           );
         }
@@ -417,6 +335,7 @@ class ShieldGenerator {
 
       // Shield blocks asteroids
       asteroids.forEach((asteroid) => {
+        if (!asteroid.isActive) return;
         const dist = Math.hypot(this.x - asteroid.x, this.y - asteroid.y);
         if (dist < this.shieldRadius && dist > this.radius) {
           // Bounce asteroid away
@@ -438,7 +357,10 @@ class ShieldGenerator {
       // Check collision with player for protection
       const playerDist = Math.hypot(this.x - player.x, this.y - player.y);
       if (playerDist < this.shieldRadius) {
-        player.shieldProtected = true;
+        player.shieldProtected = true; // This needs to be handled/reset in Player class or game loop
+      } else {
+        // If player moves out, potentially reset the protected flag
+        // player.shieldProtected = false; // Add logic if needed
       }
 
       if (this.age >= this.activeTime) {
@@ -582,7 +504,7 @@ class CrystalCluster {
       ];
 
       objectsToRepel.forEach((obj) => {
-        if (!obj || !obj.velocity) return;
+        if (!obj || !obj.velocity || !obj.isActive) return; // Check isActive
 
         const dist = Math.hypot(obj.x - this.x, obj.y - this.y);
         const objectRadius = obj.radius || obj.size / 2 || 10;

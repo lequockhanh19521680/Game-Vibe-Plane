@@ -18,9 +18,11 @@ class Asteroid {
       Math.random() * GAME_CONFIG.entities.asteroids.wobbleSpeed;
     this.wobblePhase = Math.random() * Math.PI * 2;
     this.timer = 0;
+    this.isActive = true; // Ensure asteroid starts active
   }
 
   createShape() {
+    // ... existing code ...
     const p = [];
     const s = 7 + ~~(Math.random() * 5);
     for (let i = 0; i < s; i++) {
@@ -32,6 +34,7 @@ class Asteroid {
   }
 
   draw() {
+    // ... existing code ...
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rotation);
@@ -50,6 +53,9 @@ class Asteroid {
   }
 
   update() {
+    // ... existing code ...
+    if (!this.isActive) return false; // Exit early if not active
+
     this.timer++;
     this.rotation += this.rotationSpeed;
 
@@ -66,10 +72,13 @@ class Asteroid {
     }
 
     this.draw();
+    return true; // Indicate it's still active (unless filtered out later)
   }
 }
 
+// ... (Rest of the classes: Laser, BlackHole, Missile, LaserMine) ...
 class Laser {
+  // ... existing code ...
   constructor(targetPlayer = false) {
     this.targetPlayer = targetPlayer;
     const edge = Math.floor(Math.random() * 4);
@@ -161,8 +170,8 @@ class Laser {
     }
   }
 }
-
 class BlackHole {
+  // ... existing code ...
   // YÊU CẦU 3: Modify constructor to accept options for giant black hole
   constructor(x, y, options = {}) {
     this.x = x;
@@ -281,8 +290,8 @@ class BlackHole {
     this.draw();
   }
 }
-
 class Missile {
+  // ... existing code ...
   constructor(x, y, angle) {
     this.x = x;
     this.y = y;
@@ -386,8 +395,8 @@ class Missile {
     playSound("explosion");
   }
 }
-
 class LaserMine {
+  // ... existing code ...
   constructor(x, y) {
     this.x = x;
     this.y = y;

@@ -143,8 +143,11 @@ function triggerRandomEvent() {
           asteroidShower: 30,
           instantMissiles: 25,
           giantBlackHole: 15,
-          // ... thêm các sự kiện khác với trọng số nếu cần ...
-        }[type] || 10, // Trọng số mặc định là 10
+          crystalRain: 20, // Added weight
+          magneticStorm: 18, // Added weight
+          decoyTrapField: 15, // Added weight
+          // ... add other events with weights if needed ...
+        }[type] || 10, // Default weight is 10
       scoreThreshold,
     }))
     // Lọc ra các sự kiện chưa xác định (nếu có)
@@ -197,7 +200,7 @@ function triggerRandomEvent() {
 
   // Chọn ngẫu nhiên một sự kiện dựa trên trọng số
   let random = Math.random() * totalWeight;
-  let selectedEvent = availableEvents[0].type; // Mặc định là sự kiện đầu tiên
+  let selectedEvent = availableEvents[0].type; // Default to the first available
 
   console.log(`-> Random value (0 - ${totalWeight}): ${random}`);
 
@@ -226,11 +229,11 @@ function triggerRandomEvent() {
   // Kích hoạt logic cho sự kiện đã chọn
   switch (randomEventType) {
     case "asteroidShower":
+      // This event spawns asteroids over time, text warning is sufficient
       eventActive.type = "asteroidShower";
       showEventText(safeT("event.asteroidShower", "Asteroid Shower!"));
-      // YÊU CẦU 1: Điều chỉnh số lượng tiểu hành tinh trong sự kiện
       const showerConfig = GAME_CONFIG.events.asteroidShower || {};
-      const totalAsteroids = showerConfig.asteroidCount || 15; // Lấy từ config hoặc mặc định 15
+      const totalAsteroids = showerConfig.asteroidCount || 15;
       const waves = showerConfig.waveCount || 3;
       const waveDelay = showerConfig.waveDelay || 1200;
       const spawnDelayInWave = showerConfig.spawnDelayInWave || 100;
@@ -255,10 +258,11 @@ function triggerRandomEvent() {
       break;
 
     case "instantMissiles":
+      // This event already uses spawnWithWarning correctly
       eventActive.type = "instantMissiles";
       showEventText(safeT("event.missileIncoming", "Missile Incoming!"));
       const instantSides = ["left", "right", "top", "bottom"];
-      const missileCount = 2; // Số lượng tên lửa xuất hiện
+      const missileCount = 2; // Number of missiles
       for (let i = 0; i < missileCount; i++) {
         const side =
           instantSides[Math.floor(Math.random() * instantSides.length)];
@@ -267,6 +271,7 @@ function triggerRandomEvent() {
         const spawnOffset = 30;
 
         switch (side) {
+          // ... (case logic for setting coordinates remains the same) ...
           case "left":
             warningX = warningOffset;
             warningY = 100 + Math.random() * (height - 200);
@@ -301,6 +306,7 @@ function triggerRandomEvent() {
             break;
         }
 
+        // Delay the warning creation slightly for multiple missiles
         setTimeout(() => {
           if (isGameRunning) {
             const warningSystem = spawnWithWarning(
@@ -313,15 +319,18 @@ function triggerRandomEvent() {
               }
             );
             warningSystem.spawn(() => {
-              missiles.push(new Missile(spawnX, spawnY, missileAngle));
+              if (isGameRunning) {
+                // Double check if game is still running
+                missiles.push(new Missile(spawnX, spawnY, missileAngle));
+              }
             });
           }
-          // Độ trễ giữa các tên lửa (sử dụng duration của warning)
-        }, i * GAME_CONFIG.entities.missiles.warningDuration * (1000 / 60));
+        }, i * 50); // Small stagger delay
       }
       break;
 
     case "giantBlackHole":
+      // This event already uses spawnWithWarning correctly
       eventActive.type = "giantBlackHole";
       showEventText(safeT("event.giantBlackHole", "Giant Black Hole!"));
 
@@ -330,13 +339,11 @@ function triggerRandomEvent() {
       const { level: currentLevel } = getLevelInfo(score);
       const difficultyLevel = currentLevel - 1;
 
-      // Xuất hiện gần giữa màn hình với một chút biến thể
       const bhX = width / 2 + (Math.random() - 0.5) * (width * 0.2);
       const bhY = height / 2 + (Math.random() - 0.5) * (height * 0.2);
 
-      // Tính toán các thông số cho lỗ đen khổng lồ dựa trên hệ số nhân
       const giantOptions = {
-        isTemporary: true, // Đặt là tạm thời
+        isTemporary: true,
         lifetime: eventConf.lifetime,
         baseRadius: eventConf.baseRadius,
         maxRadius:
@@ -346,7 +353,7 @@ function triggerRandomEvent() {
         gravityRadius:
           (baseConf.baseGravityRadius +
             difficultyLevel * baseConf.gravityRadiusIncreasePerLevel) *
-          eventConf.gravityRadiusMultiplier,
+          (eventConf.gravityRadiusMultiplier || 1.0),
         strength:
           (baseConf.baseStrength +
             difficultyLevel * baseConf.strengthIncreasePerLevel) *
@@ -354,24 +361,175 @@ function triggerRandomEvent() {
         growthRate:
           (baseConf.baseGrowthRate +
             difficultyLevel * baseConf.growthRateIncreasePerLevel) *
-          eventConf.growthRateMultiplier,
-        // color: eventConf.color // Nếu lớp BlackHole hỗ trợ màu tùy chỉnh
+          (eventConf.growthRateMultiplier || 1.0),
+        color: eventConf.color,
       };
 
       const warningSystem = spawnWithWarning("blackhole", bhX, bhY, {
         duration: eventConf.warningTime,
-        // warningType: 'giantBlackHole' // Ví dụ, yêu cầu thay đổi trong lớp Warning
+        // warningType: 'giantBlackHole' // Potentially add specific warning type later
       });
       warningSystem.spawn(() => {
-        // Truyền giantOptions vào constructor của BlackHole
-        blackHoles.push(new BlackHole(bhX, bhY, giantOptions));
-        playSound("blackhole"); // Cân nhắc âm thanh sâu hơn/mạnh hơn
+        if (isGameRunning) {
+          // Double check
+          blackHoles.push(new BlackHole(bhX, bhY, giantOptions));
+          playSound("blackhole");
+        }
       });
       break;
 
+    // --- NEW EVENT CASES ---
+    case "crystalRain":
+      // Spawns over time, text warning is sufficient
+      eventActive.type = "crystalRain";
+      showEventText(safeT("event.crystalRain", "Crystal Rain!"));
+      const rainConfig = GAME_CONFIG.events.crystalRain || {};
+      const rainDuration = rainConfig.duration || 600;
+      const spawnInterval = rainConfig.spawnInterval || 10;
+      const countPerSpawn = rainConfig.countPerSpawn || 2;
+      let rainTimer = 0;
+
+      function rainLoop() {
+        if (!isGameRunning || rainTimer >= rainDuration) {
+          return;
+        }
+        if (rainTimer % spawnInterval === 0) {
+          for (let i = 0; i < countPerSpawn; i++) {
+            if (
+              typeof CrystalShard !== "undefined" &&
+              typeof crystalShards !== "undefined"
+            ) {
+              crystalShards.push(new CrystalShard(Math.random() * width, -20));
+            }
+          }
+        }
+        rainTimer++;
+        requestAnimationFrame(rainLoop);
+      }
+      rainLoop();
+      playSound("powerup");
+      break;
+
+    case "magneticStorm":
+      eventActive.type = "magneticStorm";
+      showEventText(safeT("event.magneticStorm", "Magnetic Storm Incoming!"));
+      // Add a generic warning before spawning the storm object
+      const stormWarningSystem = spawnWithWarning(
+        "magnetic", // Use a generic type or create specific one
+        width / 2, // Center warning (storm affects whole screen)
+        height / 2,
+        { duration: 120 } // Example duration
+      );
+      stormWarningSystem.spawn(() => {
+        if (
+          isGameRunning &&
+          typeof MagneticStorm !== "undefined" &&
+          typeof magneticStorms !== "undefined"
+        ) {
+          magneticStorms.push(new MagneticStorm());
+          playSound("warning"); // Consider specific sound
+        }
+      });
+      break;
+
+    case "decoyTrapField":
+      // Spawns multiple decoys at once, text warning seems appropriate to avoid revealing trap spots
+      eventActive.type = "decoyTrapField";
+      showEventText(safeT("event.decoyTrapField", "Beware of False Gifts!"));
+      const decoyConfig = GAME_CONFIG.events.decoyTrapField || {};
+      const decoyCount = decoyConfig.count || 5;
+      const spreadRadius = decoyConfig.spreadRadius || 200;
+      const centerX = player ? player.x : width / 2;
+      const centerY = player ? player.y - 100 : height / 3;
+
+      for (let i = 0; i < decoyCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spawnX =
+          centerX + Math.cos(angle) * (50 + Math.random() * spreadRadius);
+        const spawnY =
+          centerY + Math.sin(angle) * (50 + Math.random() * spreadRadius);
+        const boundedX = Math.max(20, Math.min(width - 20, spawnX));
+        const boundedY = Math.max(20, Math.min(height - 20, spawnY));
+
+        // No individual warning, spawn directly after event text
+        if (
+          typeof DecoyPowerUp !== "undefined" &&
+          typeof decoyPowerUps !== "undefined"
+        ) {
+          decoyPowerUps.push(new DecoyPowerUp(boundedX, boundedY));
+        }
+      }
+      playSound("trap");
+      break;
+
+    // --- ADD WARNINGS TO OTHER EXISTING EVENTS ---
+    case "asteroidCircle": // This event already uses a specific CircleWarning
+      eventActive.type = "asteroidCircle";
+      showEventText(safeT("event.asteroidCircle", "Asteroid Circle Forming!"));
+      triggerAsteroidCircle(); // triggerAsteroidCircle handles its own warning
+      break;
+
+    case "freezeZone":
+      eventActive.type = "freezeZone";
+      showEventText(safeT("event.freezeZone", "Freeze Zone Activated!"));
+      const freezeConfig = GAME_CONFIG.newObjects.freezeZone;
+      const freezeX =
+        Math.random() * (width - 2 * freezeConfig.radius) + freezeConfig.radius;
+      const freezeY =
+        Math.random() * (height - 2 * freezeConfig.radius) +
+        freezeConfig.radius;
+      // Add a generic warning before spawning the zone
+      const freezeWarningSystem = spawnWithWarning(
+        "freeze", // Use a generic type or create specific one
+        freezeX,
+        freezeY,
+        { duration: 120 } // Example duration
+      );
+      freezeWarningSystem.spawn(() => {
+        if (
+          isGameRunning &&
+          typeof FreezeZone !== "undefined" &&
+          typeof freezeZones !== "undefined"
+        ) {
+          freezeZones.push(new FreezeZone(freezeX, freezeY));
+          playSound("freeze");
+        }
+      });
+      break;
+
+    case "lightningStorm":
+      eventActive.type = "lightningStorm";
+      showEventText(safeT("event.lightningStorm", "Lightning Storm!"));
+      // Add a generic warning before spawning the storm object
+      const lightningWarningSystem = spawnWithWarning(
+        "lightning", // Use a generic type or create specific one
+        width / 2, // Center warning
+        height / 2,
+        { duration: 120 } // Example duration
+      );
+      lightningWarningSystem.spawn(() => {
+        if (
+          isGameRunning &&
+          typeof LightningStorm !== "undefined" &&
+          typeof lightningStorms !== "undefined"
+        ) {
+          lightningStorms.push(new LightningStorm());
+        }
+      });
+      break;
+
+    // Add similar warning logic for:
+    // missileBarrage (might need careful timing)
+    // laserGrid (already has delays)
+    // wormholePortal
+    // blackHoleChain
+    // gravityWells
+    // voidRifts
+    // mineFieldDetonation (already has delays/warnings)
+
     default:
-      console.warn("Unknown event type selected:", randomEventType);
-      // Đặt lại thời gian kích hoạt cuối cùng nếu sự kiện không xác định để tránh bị kẹt cooldown
+      console.warn("Unhandled event type selected:", randomEventType);
+      // Reset last trigger time if event logic is missing to avoid blocking future events
       lastEventTriggerTime = 0;
       break;
   }
