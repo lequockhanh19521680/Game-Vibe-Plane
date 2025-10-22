@@ -1,0 +1,46 @@
+/* Player Name Input Styles */
+
+.name-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 400px; /* Limit width for better appearance */
+  margin: 1rem 0;
+}
+
+.input-group {
+  position: relative;
+  width: 100%;
+}
+
+.name-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  font-family: 'Exo 2', sans-serif;
+  transition: all 0.3s ease;
+  box-sizing: border-box; /* Ensure padding doesn't affect width */
+}
+
+.name-input::placeholder {
+  color: rgba(0, 255, 255, 0.5);
+  opacity: 1; /* Firefox fix */
+}
+
+.name-input:focus {
+  outline: none;
+  box-shadow: 0 0 10px var(--primary-color);
+  background: rgba(0, 255, 255, 0.1);
+  border-color: var(--highlight-color);
+}
+
+.name-requirements {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
