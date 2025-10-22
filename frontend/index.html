@@ -1,12 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
+  <!-- Set language to English -->
   <head>
     <meta charset="UTF-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no"
     />
-    <title>Stellar Drift: Singularity</title>
+    <!-- SEO Meta Tags -->
+    <title>Vibe Plane - Competitive Online Survival Game</title>
+    <!-- New search title -->
+    <meta
+      name="description"
+      content="Play Vibe Plane (formerly Stellar Drift: Singularity), a challenging space survival game. Dodge asteroids, black holes, missiles, and compete on the global leaderboard."
+    />
+    <meta
+      name="keywords"
+      content="Vibe Plane, survival game, space game, online game, leaderboard, competitive, dodge, asteroid, black hole, missile, stellar drift, singularity"
+    />
+    <meta name="author" content="Game Vibe Plane Team" />
+
+    <!-- Open Graph Meta Tags (for Facebook, Zalo, ...) -->
+    <meta
+      property="og:title"
+      content="Vibe Plane - Competitive Online Survival Game"
+    />
+    <meta
+      property="og:description"
+      content="Challenge your space survival skills with Vibe Plane. Dodge dangers and climb to the top of the leaderboard!"
+    />
+    <meta property="og:type" content="website" />
+    <!-- Add your website URL when available -->
+    <!-- <meta property="og:url" content="https://your-game-url.com/" /> -->
+    <!-- Add URL for the game's representative image -->
+    <meta property="og:image" content="assets/images/game_banner.jpg" />
+    <meta property="og:image:alt" content="Vibe Plane Game Banner" />
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Vibe Plane - Competitive Online Survival Game"
+    />
+    <meta
+      name="twitter:description"
+      content="Play the Vibe Plane space survival game, dodge dangers, and compete on the global leaderboard."
+    />
+    <meta name="twitter:image" content="assets/images/game_banner.jpg" />
+
     <script>
       // Disable all console logs
       // (function () {
@@ -59,7 +100,8 @@
     <!-- Loading Screen -->
     <div id="loading-screen">
       <div class="spinner"></div>
-      <p class="loading-text">Loading Stellar Drift...</p>
+      <p class="loading-text">Loading Vibe Plane...</p>
+      <!-- Updated loading text -->
     </div>
 
     <canvas id="game-canvas"></canvas>
@@ -69,18 +111,22 @@
       <div id="top-bar">
         <!-- Left: High Score -->
         <div id="highscore-display">High Score: 0</div>
+        <!-- Updated text -->
 
         <!-- Center: Level, Score, Time -->
         <div class="hud-center">
           <div class="level-container">
             <div id="level-display">Level: 1</div>
+            <!-- Updated text -->
             <div id="level-progress-bar-container">
               <div id="level-progress-bar"></div>
             </div>
           </div>
           <div class="hud-stats-container">
             <div id="score-display">Score: 0</div>
+            <!-- Updated text -->
             <div id="survival-display">Time: 0:00</div>
+            <!-- Updated text -->
           </div>
         </div>
 
@@ -93,12 +139,13 @@
 
       <!-- Main Menu Screen -->
       <div id="start-screen" class="ui-element">
-        <h1>Stellar Drift</h1>
-        <h2>SINGULARITY</h2>
+        <h1>Vibe Plane</h1>
+        <h2>Survival</h2>
         <p>
           <span data-translate="menu.description">
             Move to score points. Avoid asteroids, black holes & missiles.
             Survive as long as possible!
+            <!-- Updated default text -->
           </span>
         </p>
         <!-- Player Name Input -->
@@ -109,25 +156,30 @@
               id="player-name-input"
               class="name-input"
               placeholder="Your name..."
-              data-translate-placeholder="playerName.placeholder"
-              maxlength="20"
-              autocomplete="off"
+              Use
+              standard
+              placeholder
+              --
             />
+            <!-- Removed self-closing slash -->
           </div>
           <div class="name-requirements">
-            Your name will appear on the leaderboard (2-20 chars)
+            Name will appear on the leaderboard (2-20 chars)
           </div>
         </div>
         <!-- Menu Buttons -->
         <div class="menu-buttons-group">
           <button id="start-button" data-translate="menu.startBattle">
             Start Battle
+            <!-- Updated default text -->
           </button>
           <button id="leaderboard-button" data-translate="menu.leaderboard">
             Leaderboard
+            <!-- Updated default text -->
           </button>
           <button id="how-to-play-button" data-translate="menu.howToPlay">
             How to Play
+            <!-- Updated default text -->
           </button>
           <!-- Settings button is added dynamically by settingsUI.js -->
         </div>
@@ -138,17 +190,21 @@
         <!-- Game Over Header -->
         <div class="game-over-header">
           <h2 data-translate="gameOver.title">Game Over</h2>
+          <!-- Updated default text -->
           <div id="death-cause" class="death-cause">Destroyed by asteroid</div>
+          <!-- Default text -->
         </div>
         <!-- Game Stats -->
         <div class="game-over-stats">
           <div class="primary-stats">
             <div class="stat-item highlight">
               <div class="stat-label">Final Score</div>
+              <!-- Updated text -->
               <div id="final-score" class="stat-value">0</div>
             </div>
             <div class="stat-item">
               <div class="stat-label">Survival Time</div>
+              <!-- Updated text -->
               <div id="final-time" class="stat-value">0:00</div>
             </div>
           </div>
@@ -163,18 +219,22 @@
           <div class="record-text">
             <div class="record-title" data-translate="gameOver.newHighScore">
               New High Score!
+              <!-- Updated default text -->
             </div>
             <div class="record-subtitle">You're now in the top ranks!</div>
+            <!-- Updated text -->
           </div>
         </div>
 
         <!-- Leaderboard Snippet Container -->
         <h3 class="leaderboard-snippet-title">Global Top 10</h3>
+        <!-- Updated text -->
         <div
           id="game-over-leaderboard-container"
           class="leaderboard-container game-over-lb"
         >
           <div class="loading">Loading leaderboard snippet...</div>
+          <!-- Updated text -->
         </div>
 
         <!-- Action Buttons -->
@@ -185,6 +245,7 @@
             data-translate="gameOver.tryAgain"
           >
             Try Again
+            <!-- Updated default text -->
           </button>
           <button
             id="main-menu-from-over-button"
@@ -192,6 +253,7 @@
             data-translate="gameOver.mainMenu"
           >
             Main Menu
+            <!-- Updated default text -->
           </button>
         </div>
       </div>
@@ -199,6 +261,7 @@
       <!-- Leaderboard Screen (Full Dashboard) -->
       <div id="leaderboard-screen" class="ui-element" style="display: none">
         <h2 data-translate="leaderboard.title">Live Dashboard</h2>
+        <!-- Updated default text -->
         <!-- Tabs -->
         <div class="dashboard-tabs">
           <button
@@ -207,6 +270,7 @@
             data-translate="leaderboard.topPlayers"
           >
             🏆 Top Players
+            <!-- Updated default text -->
           </button>
           <button
             class="dashboard-tab"
@@ -214,6 +278,7 @@
             data-translate="leaderboard.topCountries"
           >
             🌍 Top Countries
+            <!-- Updated default text -->
           </button>
           <button
             class="dashboard-tab"
@@ -221,25 +286,30 @@
             data-translate="leaderboard.myStats"
           >
             📊 My Stats
+            <!-- Updated default text -->
           </button>
         </div>
         <!-- Global Leaderboard Content -->
         <div id="global-leaderboard-content" class="dashboard-content active">
           <div id="global-leaderboard-list" class="leaderboard-container">
             <div class="loading">Loading leaderboard...</div>
+            <!-- Updated text -->
           </div>
         </div>
         <!-- Country Leaderboard Content -->
         <div id="country-leaderboard-content" class="dashboard-content">
           <div id="country-leaderboard-list" class="leaderboard-container">
             <div class="loading">Loading country rankings...</div>
+            <!-- Updated text -->
           </div>
         </div>
         <!-- My Stats Content -->
         <div id="my-stats-content" class="dashboard-content">
           <h3>📊 Your Statistics</h3>
+          <!-- Updated text -->
           <div id="player-stats" class="stats-container">
             <div class="loading">Loading your stats...</div>
+            <!-- Updated text -->
           </div>
         </div>
         <!-- Footer -->
@@ -247,12 +317,14 @@
           <div class="connection-status">
             <span id="connection-indicator-footer">🔴</span>
             <span id="connection-text-footer">Connecting...</span>
+            <!-- Updated text -->
           </div>
           <button
             id="back-to-main-menu-button"
             data-translate="leaderboard.back"
           >
             Back to Menu
+            <!-- Updated default text -->
           </button>
         </div>
       </div>
@@ -260,6 +332,7 @@
       <!-- How to Play Screen -->
       <div id="how-to-play-screen" class="ui-element" style="display: none">
         <h2>How to Play</h2>
+        <!-- Updated default text -->
         <p>
           - <strong>Move:</strong> Use your mouse or finger to guide the
           ship.<br />
@@ -268,13 +341,16 @@
           lasers.<br />
           - <strong>Power-ups:</strong> Collect crystals to gain a temporary
           shield.
+          <!-- Updated text -->
         </p>
         <button id="back-to-main-from-how-to-play-button">Back</button>
+        <!-- Updated default text -->
       </div>
 
       <!-- Simplified Pause Menu -->
       <div id="pause-menu" class="ui-element" style="display: none">
         <h2 data-translate="pause.title">Game Paused</h2>
+        <!-- Updated default text -->
         <div class="pause-actions">
           <button
             id="resume-button"
@@ -282,6 +358,7 @@
             data-translate="pause.resume"
           >
             Resume
+            <!-- Updated default text -->
           </button>
           <button
             id="restart-from-pause-button"
@@ -289,6 +366,7 @@
             data-translate="pause.restart"
           >
             Restart
+            <!-- Updated default text -->
           </button>
           <button
             id="main-menu-from-pause-button"
@@ -296,6 +374,7 @@
             data-translate="pause.mainMenu"
           >
             Main Menu
+            <!-- Updated default text -->
           </button>
         </div>
       </div>
