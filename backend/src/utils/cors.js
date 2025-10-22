@@ -2,9 +2,10 @@ const allowedOrigins = [
   "http://game-vibe-plane-pipeline-stagingbucket-hplrema47c4v.s3-website-ap-southeast-1.amazonaws.com",
   "https://d35gbzghcxrk3x.cloudfront.net",
   "http://113.185.74.105",
-  "http://localhost:8080",
-  "http://127.0.0.1:8080",
-  "https://vibeplane.io",
+  "http://localhost:8080", // Development
+  "http://127.0.0.1:8080", // Development
+  "https://vibeplane.io", // Production domain
+  // Add any other deployed frontend URLs here
 ];
 
 /**
@@ -16,16 +17,20 @@ const allowedOrigins = [
 function getCorsHeaders(origin, allowedMethods = "GET, OPTIONS") {
   const headers = {
     "Access-Control-Allow-Headers":
-      "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
-    "Access-Control-Allow-Methods": allowedMethods,
+      "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token", // Keep standard headers
+    "Access-Control-Allow-Methods": allowedMethods, // Use the provided methods
   };
 
-  if (allowedOrigins.includes(origin)) {
+  // Only add Allow-Origin if the request origin is in our list
+  if (origin && allowedOrigins.includes(origin)) {
     headers["Access-Control-Allow-Origin"] = origin;
+  } else if (!origin && allowedMethods.includes("GET")) {
+    // Allow GET requests even without an origin header (e.g., direct access, curl)
+    // Avoid allowing POST without origin check
+    headers["Access-Control-Allow-Origin"] = "*";
   } else {
-    // Để an toàn, bạn có thể không trả về header này nếu origin không được phép,
-    // hoặc trả về một origin mặc định nếu cần.
-    // Ở đây, chúng ta chỉ thêm header nếu origin hợp lệ.
+    // If origin is not allowed, don't add the header. The browser will block it.
+    console.warn(`CORS: Origin "${origin}" not allowed.`);
   }
 
   return headers;

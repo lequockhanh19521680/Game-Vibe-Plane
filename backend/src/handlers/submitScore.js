@@ -1,6 +1,7 @@
 const { putItem, getItem, updateItem } = require("../utils/dynamodb");
 const { getCountryFromIP, extractIPFromEvent } = require("../utils/geoip");
 const { sanitizeInput, validateScore } = require("../utils/security");
+const { getCorsHeaders } = require("../utils/cors"); // Import CORS utility
 
 /**
  * Calculate player's global rank (approximate)
@@ -27,8 +28,35 @@ async function calculatePlayerRank(score) {
  * The country stats update is now handled by the processScoreUpdate Lambda via DynamoDB Streams.
  */
 exports.handler = async (event) => {
-  // NOTE: The OPTIONS preflight request and CORS headers are now handled by API Gateway
-  // based on the configuration in `serverless.yml`. No manual code is needed here.
+  // Get Origin header for CORS
+  const origin = event.headers.origin || event.headers.Origin;
+  // Specify allowed methods for this endpoint
+  const corsHeaders = getCorsHeaders(origin, "POST, OPTIONS");
+
+  // Handle OPTIONS preflight request (Serverless framework cors:true might handle this, but explicit is safer)
+  if (
+    event.httpMethod === "OPTIONS" ||
+    event.requestContext?.http?.method === "OPTIONS"
+  ) {
+    return {
+      statusCode: 204, // No Content
+      headers: corsHeaders,
+      body: "",
+    };
+  }
+
+  // Check if origin is allowed before proceeding with POST logic
+  if (!corsHeaders["Access-Control-Allow-Origin"]) {
+    console.warn(`CORS check failed for origin: ${origin}. Aborting request.`);
+    return {
+      statusCode: 403, // Forbidden
+      headers: { "Content-Type": "application/json" }, // No CORS headers needed for rejection
+      body: JSON.stringify({
+        error: "CORS Forbidden",
+        message: `Origin ${origin} is not allowed.`,
+      }),
+    };
+  }
 
   try {
     console.log("Submit score event:", JSON.stringify(event, null, 2));
@@ -44,6 +72,7 @@ exports.handler = async (event) => {
       );
       return {
         statusCode: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, // Include CORS headers in error response
         body: JSON.stringify({
           error: "Invalid score submission",
           reason: scoreValidation.reason,
@@ -61,6 +90,7 @@ exports.handler = async (event) => {
     ) {
       return {
         statusCode: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, // Include CORS headers
         body: JSON.stringify({
           error: "Missing required fields",
           required: ["userId", "username", "score", "survivalTime"],
@@ -79,6 +109,7 @@ exports.handler = async (event) => {
       ? await getCountryFromIP(clientIP)
       : { country: "Unknown", countryCode: "XX" };
     const timestamp = Date.now();
+    const isoTimestamp = new Date(timestamp).toISOString();
 
     if (!existingScoreItem || validatedScore > existingScoreItem.score) {
       // Case 1: New high score OR first submission (userId does not exist)
@@ -91,7 +122,7 @@ exports.handler = async (event) => {
 
       const newScoreRecord = {
         userId,
-        username: sanitizeInput(username.substring(0, 50)), // SECURITY: Sanitize username
+        username: sanitizeInput(username.substring(0, 20)), // SECURITY: Sanitize & Limit length
         score: validatedScore,
         survivalTime: Math.floor(survivalTime),
         deathCause: deathCause || "unknown",
@@ -102,11 +133,11 @@ exports.handler = async (event) => {
         clientIP,
         fingerprint: fingerprint || null,
         userAgent: body.userAgent || event.headers?.["user-agent"],
-        timestamp,
+        timestamp, // Use numerical timestamp for potential sorting/filtering
         createdAt: existingScoreItem
           ? existingScoreItem.createdAt
-          : new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+          : isoTimestamp,
+        updatedAt: isoTimestamp,
         leaderboard: "global", // For GSI querying
       };
 
@@ -125,17 +156,18 @@ exports.handler = async (event) => {
       dbOperationPromise = updateItem(
         process.env.SCORES_TABLE,
         { userId },
-        "SET #u = :username, #ca = :country, #cc = :countryCode, lastSurvivalTime = :lastSurvivalTime, lastDeathCause = :lastDeathCause, updatedAt = :updatedAt, #fp = :fingerprint, #ua = :userAgent, lastScore = :lastScore",
+        "SET #u = :username, #ca = :country, #cc = :countryCode, lastSurvivalTime = :lastSurvivalTime, lastDeathCause = :lastDeathCause, updatedAt = :updatedAt, #fp = :fingerprint, #ua = :userAgent, lastScore = :lastScore, #ts = :timestamp", // Added timestamp
         {
-          ":username": sanitizeInput(username.substring(0, 50)), // SECURITY: Sanitize username
+          ":username": sanitizeInput(username.substring(0, 20)), // SECURITY: Sanitize & Limit length
           ":country": countryInfo.country,
           ":countryCode": countryInfo.countryCode,
           ":lastSurvivalTime": Math.floor(survivalTime),
           ":lastDeathCause": deathCause || "unknown",
-          ":updatedAt": new Date().toISOString(),
+          ":updatedAt": isoTimestamp,
           ":fingerprint": fingerprint || null,
           ":userAgent": body.userAgent || event.headers?.["user-agent"],
           ":lastScore": validatedScore, // Store the last game's score
+          ":timestamp": timestamp, // Update numerical timestamp
         },
         {
           ExpressionAttributeNames: {
@@ -144,6 +176,7 @@ exports.handler = async (event) => {
             "#cc": "countryCode",
             "#fp": "fingerprint",
             "#ua": "userAgent",
+            "#ts": "timestamp", // Added alias for timestamp
           },
         }
       );
@@ -154,15 +187,19 @@ exports.handler = async (event) => {
     await dbOperationPromise;
     console.log("Game result processed. Stream triggered for userId:", userId);
 
+    // Calculate rank AFTER DB operation completes
+    const rank = await calculatePlayerRank(validatedScore);
+
     return {
       statusCode: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }, // Include CORS headers
       body: JSON.stringify({
         success: true,
         isNewHighScore: isNewHighScore,
         userId,
         country: countryInfo.country,
         countryCode: countryInfo.countryCode,
-        rank: await calculatePlayerRank(validatedScore),
+        rank: rank,
         message: isNewHighScore
           ? "New high score submitted successfully"
           : "Game result submitted, metadata updated.",
@@ -172,6 +209,7 @@ exports.handler = async (event) => {
     console.error("Error submitting score:", error);
     return {
       statusCode: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }, // Include CORS headers
       body: JSON.stringify({
         error: "Internal server error",
         message: error.message,
