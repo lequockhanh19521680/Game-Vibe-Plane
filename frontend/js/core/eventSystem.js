@@ -113,7 +113,11 @@ function resetEventSystem() {
  * Triggers a random event based on score thresholds and weights.
  */
 function triggerRandomEvent() {
-  if (!window.isGameRunning) return;
+  console.log("--- triggerRandomEvent FUNCTION CALLED ---"); // ADDED LOG
+  if (!window.isGameRunning) {
+    console.log("-> Exiting triggerRandomEvent: Game not running.");
+    return;
+  }
 
   const baseEventWeights = [
     { type: "asteroidShower", weight: 35 },
@@ -143,39 +147,62 @@ function triggerRandomEvent() {
 
   const unlockThresholds = GAME_CONFIG.events.unlockThresholds || {};
 
+  // Log current score for threshold checking
+  console.log(`-> Current score for event check: ${score}`);
+
   const availableEvents = baseEventWeights.filter((event) => {
     const threshold = unlockThresholds[event.type] || 0;
-    return score >= threshold;
+    const isAvailable = score >= threshold;
+    // console.log(`   - Event: ${event.type}, Threshold: ${threshold}, Score: ${score}, Available: ${isAvailable}`); // Detailed log per event
+    return isAvailable;
   });
 
   if (availableEvents.length === 0) {
+    console.log(
+      "-> No events available for current score. Checking default..."
+    );
     const defaultEvent =
       baseEventWeights.find((e) => e.type === "asteroidShower") ||
       baseEventWeights[0];
-    if (defaultEvent) {
+    if (defaultEvent && score >= (unlockThresholds[defaultEvent.type] || 0)) {
+      console.log(`-> Using default event: ${defaultEvent.type}`);
       availableEvents.push(defaultEvent);
     } else {
+      console.log("-> No events available, including default. Exiting.");
       return; // No events available at all
     }
   }
+
+  console.log(
+    `-> Available events (${availableEvents.length}):`,
+    availableEvents.map((e) => e.type)
+  );
 
   const totalWeight = availableEvents.reduce(
     (sum, event) => sum + event.weight,
     0
   );
+  console.log(`-> Total weight: ${totalWeight}`);
 
   let random = Math.random() * totalWeight;
-  let selectedEvent = availableEvents[0].type;
+  let selectedEvent = availableEvents[0].type; // Default to first available
+
+  console.log(`-> Random value (0 - ${totalWeight}): ${random}`);
 
   for (const event of availableEvents) {
+    console.log(
+      `   - Checking ${event.type} (weight ${event.weight})... Current random: ${random}`
+    );
     random -= event.weight;
     if (random <= 0) {
       selectedEvent = event.type;
+      console.log(`   --> Selected: ${selectedEvent}`);
       break;
     }
   }
 
   const randomEventType = selectedEvent;
+  console.log(`-> FINAL SELECTED EVENT: ${randomEventType}`);
 
   // Set a general end time for the event's *active* state influence, if applicable
   eventActive.endTime =

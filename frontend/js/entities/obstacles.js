@@ -249,8 +249,8 @@ class BlackHole {
             ? GAME_CONFIG.entities.blackHoles.playerForceMultiplier
             : 1;
 
-        // Increased force calculation for a more noticeable pull
-        const force = falloff * this.strength * forceMultiplier * 5;
+        // FIX: Reduced force calculation by removing '* 5'
+        const force = falloff * this.strength * forceMultiplier;
 
         obj.velocity.x += Math.cos(angle) * force;
         obj.velocity.y += Math.sin(angle) * force;

@@ -253,16 +253,29 @@ function animate() {
 
   // --- Trigger Events ---
   const eventConfig = GAME_CONFIG.events;
-  if (
-    score >= nextEventScore &&
-    score >= eventConfig.scoreThreshold.min &&
-    score < eventConfig.scoreThreshold.max
-  ) {
+  // FIX: Removed the 'score < eventConfig.scoreThreshold.max' condition
+  // ADD MORE LOGGING: Check conditions explicitly
+  const shouldTriggerEvent =
+    score >= nextEventScore && score >= eventConfig.scoreThreshold.min;
+
+  if (shouldTriggerEvent) {
+    console.log(
+      `--- EVENT TRIGGER CHECK ---
+      Score: ${score}
+      Next Event Score: ${nextEventScore}
+      Min Threshold: ${eventConfig.scoreThreshold.min}
+      Condition Met: ${shouldTriggerEvent}`
+    );
+
     if (typeof window.triggerRandomEvent === "function") {
+      console.log("-> Calling triggerRandomEvent()...");
       window.triggerRandomEvent();
+    } else {
+      console.warn("-> triggerRandomEvent function not found!");
     }
     const eventVariation = 0.7 + Math.random() * 0.6; // Add variability to event timing
     nextEventScore += eventConfig.interval * eventVariation;
+    console.log(`-> Updated Next Event Score: ${nextEventScore}`);
   }
 
   // Deactivate expired events

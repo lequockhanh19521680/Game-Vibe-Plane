@@ -71,7 +71,7 @@ const GAME_CONFIG = {
       strengthIncreasePerLevel: 0.02,
       baseGrowthRate: 0.018,
       growthRateIncreasePerLevel: 0.035,
-      playerForceMultiplier: 1.8,
+      playerForceMultiplier: 0.5, // FIX: Reduced from 1.8
       shakeThreshold: 0.7,
       shakeIntensity: 0.05,
       temporaryLifetime: 200,
@@ -157,8 +157,8 @@ const GAME_CONFIG = {
     interval: 1500,
     duration: 5000,
     scoreThreshold: {
-      min: 5000,
-      max: 9000, // Reduced max to make events more common earlier
+      min: 500, // Reduced min threshold
+      max: 900000, // Increased max threshold significantly (effectively no max)
     },
     unlockThresholds: {
       // Thresholds for events that are actually implemented in eventSystem.js
