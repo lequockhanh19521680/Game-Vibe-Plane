@@ -32,17 +32,12 @@ class Warning extends Entity {
         warningColor = "#aa66cc";
         warningSymbol = "!";
         break;
-      case "voidrift":
-        warningColor = "#3d2963";
-        warningSymbol = "⚠";
-        break;
+
       case "plasma":
         warningColor = "#ff6600";
         warningSymbol = "🔥";
         break;
-      case "magnetic":
-        warningColor = "#88ddff";
-        warningSymbol = "⚡";
+
         break;
       case "lasermine":
         warningColor = "#ff4444";

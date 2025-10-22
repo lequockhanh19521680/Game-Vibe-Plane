@@ -31,10 +31,9 @@ const GAME_CONFIG = {
     spawnDecreaseStep: 2.5, // How much spawn interval decreases per level (Giảm để thiên thạch không xuất hiện quá nhanh)
     baseSpeed: 0.5, // Initial global speed multiplier
     speedIncreaseStep: 0.05, // How much global speed increases per level (Giảm để tốc độ game không tăng quá nhanh)
-    microSpeedIncrease: 0.01, // Small speed increase at regular intervals
+    microSpeedIncrease: 0.0075, // Small speed increase at regular intervals
     microProgressInterval: 900, // Frames between micro speed increases (15 seconds)
     levelUpScores: [
-      // Scores required to reach each level
       500, 1500, 3000, 5000, 7500, 10000, 15000, 20000, 30000, 40000, 50000,
       65000, 80000, 100000,
     ],

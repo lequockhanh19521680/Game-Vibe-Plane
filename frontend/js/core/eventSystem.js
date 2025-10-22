@@ -144,9 +144,6 @@ function triggerRandomEvent() {
           instantMissiles: 25,
           giantBlackHole: 15,
           crystalRain: 20, // Added weight
-          magneticStorm: 18, // Added weight
-          decoyTrapField: 15, // Added weight
-          // ... add other events with weights if needed ...
         }[type] || 10, // Default weight is 10
       scoreThreshold,
     }))
@@ -410,34 +407,8 @@ function triggerRandomEvent() {
       playSound("powerup");
       break;
 
-    case "magneticStorm":
-      eventActive.type = "magneticStorm";
-      showEventText(safeT("event.magneticStorm", "Magnetic Storm Incoming!"));
-      // Add a generic warning before spawning the storm object
-      const stormWarningSystem = spawnWithWarning(
-        "magnetic", // Use a generic type or create specific one
-        width / 2, // Center warning (storm affects whole screen)
-        height / 2,
-        { duration: 120 } // Example duration
-      );
-      stormWarningSystem.spawn(() => {
-        if (
-          isGameRunning &&
-          typeof MagneticStorm !== "undefined" &&
-          typeof magneticStorms !== "undefined"
-        ) {
-          magneticStorms.push(new MagneticStorm());
-          playSound("warning"); // Consider specific sound
-        }
-      });
       break;
 
-    case "decoyTrapField":
-      // Spawns multiple decoys at once, text warning seems appropriate to avoid revealing trap spots
-      eventActive.type = "decoyTrapField";
-      showEventText(safeT("event.decoyTrapField", "Beware of False Gifts!"));
-      const decoyConfig = GAME_CONFIG.events.decoyTrapField || {};
-      const decoyCount = decoyConfig.count || 5;
       const spreadRadius = decoyConfig.spreadRadius || 200;
       const centerX = player ? player.x : width / 2;
       const centerY = player ? player.y - 100 : height / 3;
