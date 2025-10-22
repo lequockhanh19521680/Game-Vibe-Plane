@@ -17,10 +17,10 @@ class EndpointManager {
     try {
       // Direct endpoint data from your 'prod' deployment
       this.endpoints.api =
-        "https://otpedzrgnk.execute-api.ap-southeast-1.amazonaws.com/prod";
+        "https://x0awoh4lx1.execute-api.ap-southeast-1.amazonaws.com/prod";
       // WebSocket endpoint, trailing slash removed.
       this.endpoints.ws =
-        "wss://27elhcgzu9.execute-api.ap-southeast-1.amazonaws.com/prod";
+        "wss://t3he3fvk4c.execute-api.ap-southeast-1.amazonaws.com/prod";
       this.endpoints.token = "stellar_drift_secure_token_v1";
 
       // Add timestamp for potential future validation/rotation
