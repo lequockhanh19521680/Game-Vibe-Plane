@@ -4,23 +4,23 @@
 
 /**
  * Base Entity class - Foundation for all game objects
- * Follows Single Responsibility Principle and provides common functionality
  */
 class Entity {
   constructor(x, y, config = {}) {
     this.x = x;
     this.y = y;
-    this.config = config;
+    this.config = config; // Store config if needed by subclasses
     this.isActive = true;
-    this.id = Entity.generateId();
+    this.id = Entity.generateId(); // Unique ID for each entity
   }
 
+  // Simple ID generator
   static generateId() {
     return `entity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   /**
-   * Template method pattern - defines the algorithm structure
+   * Main update loop for an entity. Returns false if inactive.
    */
   update() {
     if (!this.isActive) return false;
@@ -28,27 +28,18 @@ class Entity {
     this.beforeUpdate();
     this.updateLogic();
     this.afterUpdate();
-    this.draw();
+    this.draw(); // Draw after logic update
 
     return this.isActive;
   }
 
-  beforeUpdate() {
-    // Hook for pre-update logic
-  }
+  // Hooks for subclasses
+  beforeUpdate() {}
+  updateLogic() {}
+  afterUpdate() {}
+  draw() {}
 
-  updateLogic() {
-    // To be overridden by subclasses
-  }
-
-  afterUpdate() {
-    // Hook for post-update logic
-  }
-
-  draw() {
-    // To be overridden by subclasses
-  }
-
+  // Deactivate entity for removal
   destroy() {
     this.isActive = false;
   }
@@ -64,7 +55,7 @@ class Entity {
 }
 
 /**
- * Circular Entity - Base class for entities with circular collision
+ * Circular Entity - For objects with radius-based collision
  */
 class CircularEntity extends Entity {
   constructor(x, y, radius, config = {}) {
@@ -76,13 +67,16 @@ class CircularEntity extends Entity {
    * Check collision with another circular entity
    */
   collidesWith(other) {
-    if (!other || !other.radius) return false;
-    const distance = Math.hypot(this.x - other.x, this.y - other.y);
-    return distance < this.radius + other.radius;
+    if (!other || typeof other.radius !== "number") return false; // Basic validation
+    const dx = this.x - other.x;
+    const dy = this.y - other.y;
+    const distanceSquared = dx * dx + dy * dy;
+    const radiiSum = this.radius + other.radius;
+    return distanceSquared < radiiSum * radiiSum; // More efficient check
   }
 
   /**
-   * Get bounding box for optimization
+   * Get bounding box
    */
   getBounds() {
     return {
@@ -94,9 +88,14 @@ class CircularEntity extends Entity {
   }
 
   /**
-   * Check if entity is within screen bounds
+   * Check if entity is within screen bounds (with optional margin)
    */
   isOnScreen(margin = 0) {
+    // Check global width/height variables (should be defined in game scope)
+    if (typeof width === "undefined" || typeof height === "undefined") {
+      console.warn("Screen width/height not defined for isOnScreen check.");
+      return true; // Assume on screen if dimensions unknown
+    }
     const bounds = this.getBounds();
     return (
       bounds.right >= -margin &&
@@ -108,15 +107,15 @@ class CircularEntity extends Entity {
 }
 
 /**
- * Movable Entity - Base class for entities with velocity and physics
+ * Movable Entity - Adds velocity and basic physics
  */
 class MovableEntity extends CircularEntity {
   constructor(x, y, radius, velocity = { x: 0, y: 0 }, config = {}) {
     super(x, y, radius, config);
     this.velocity = { ...velocity };
     this.acceleration = { x: 0, y: 0 };
-    this.friction = config.friction || 1.0;
-    this.maxSpeed = config.maxSpeed || Infinity;
+    this.friction = config.friction || 1.0; // Default no friction
+    this.maxSpeed = config.maxSpeed || Infinity; // Default no speed limit
   }
 
   updateLogic() {
@@ -125,15 +124,12 @@ class MovableEntity extends CircularEntity {
   }
 
   updatePhysics() {
-    // Apply acceleration
     this.velocity.x += this.acceleration.x;
     this.velocity.y += this.acceleration.y;
 
-    // Apply friction
     this.velocity.x *= this.friction;
     this.velocity.y *= this.friction;
 
-    // Limit maximum speed
     const speed = Math.hypot(this.velocity.x, this.velocity.y);
     if (speed > this.maxSpeed) {
       const ratio = this.maxSpeed / speed;
@@ -141,7 +137,7 @@ class MovableEntity extends CircularEntity {
       this.velocity.y *= ratio;
     }
 
-    // Reset acceleration
+    // Reset acceleration for the next frame
     this.acceleration.x = 0;
     this.acceleration.y = 0;
   }
@@ -166,57 +162,51 @@ class MovableEntity extends CircularEntity {
   }
 
   getDirection() {
+    // Return angle in radians
     return Math.atan2(this.velocity.y, this.velocity.x);
   }
 }
 
 /**
- * Colored Entity - Base class for entities with visual properties
+ * Colored Entity - Adds color, alpha, and rotation
  */
 class ColoredEntity extends MovableEntity {
   constructor(x, y, radius, color, velocity = { x: 0, y: 0 }, config = {}) {
     super(x, y, radius, velocity, config);
     this.color = color;
-    this.alpha = config.alpha || 1.0;
-    this.rotation = config.rotation || 0;
-    this.rotationSpeed = config.rotationSpeed || 0;
+    this.alpha = typeof config.alpha === "number" ? config.alpha : 1.0; // Default alpha 1
+    this.rotation = config.rotation || 0; // Default rotation 0
+    this.rotationSpeed = config.rotationSpeed || 0; // Default no rotation speed
   }
 
   updateLogic() {
     super.updateLogic();
-    this.rotation += this.rotationSpeed;
+    this.rotation += this.rotationSpeed; // Update rotation based on speed
   }
 
-  /**
-   * Common drawing setup
-   */
+  // Helper for setting up context transformations
   setupDrawing(ctx) {
+    if (!ctx) return; // Add null check for context
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rotation);
     ctx.globalAlpha = this.alpha;
   }
 
-  /**
-   * Common drawing cleanup
-   */
+  // Helper for restoring context state
   finishDrawing(ctx) {
+    if (!ctx) return; // Add null check for context
     ctx.restore();
   }
 
-  /**
-   * Draw a basic circle (can be overridden)
-   */
+  // Default draw method (simple circle) - intended to be overridden
   draw() {
+    if (!ctx) return; // Add null check for context
     this.setupDrawing(ctx);
-
     ctx.beginPath();
     ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
     ctx.fillStyle = this.color;
     ctx.fill();
-
     this.finishDrawing(ctx);
   }
 }
-
-// REMOVED: Unused classes TemporaryEntity, AnimatedEntity, WeaponEntity, CollectibleEntity

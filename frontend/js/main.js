@@ -18,6 +18,7 @@ const uiElements = {
   pauseMenu: document.getElementById("pause-menu"),
   pauseButton: document.getElementById("pause-button"),
 };
+// Button references (assuming they exist in index.html)
 const startButton = document.getElementById("start-button");
 const restartButton = document.getElementById("restart-button");
 const leaderboardButton = document.getElementById("leaderboard-button");
@@ -39,6 +40,7 @@ const mainMenuFromOverButton = document.getElementById(
   "main-menu-from-over-button"
 );
 
+// Game state variables
 let width, height;
 let player,
   stars,
@@ -47,19 +49,21 @@ let player,
   lasers,
   blackHoles,
   missiles,
-  laserMines,
-  crystalClusters,
+  laserMines;
+let crystalClusters,
   fragments,
   warnings,
   energyOrbs,
   plasmaFields,
-  crystalShards,
-  quantumPortals,
-  shieldGenerators,
+  crystalShards;
+let shieldGenerators,
   freezeZones,
-  wormholes,
   magneticStorms,
-  lightningStorms;
+  lightningStorms,
+  decoyPowerUps;
+// REMOVED: Unused portal arrays
+// let quantumPortals, wormholes;
+
 let mouse = { x: 0, y: 0 },
   prevMouse = { x: 0, y: 0 };
 let score = 0,
@@ -76,6 +80,7 @@ let timers = {
   missile: 0,
   mine: 0,
   crystal: 0,
+  energyOrb: 0,
 };
 let spawnInterval = GAME_CONFIG.difficulty.baseSpawnInterval;
 let isGameRunning = false;
@@ -86,24 +91,28 @@ let nextEventScore = GAME_CONFIG.events.interval;
 let eventActive = { type: null, endTime: 0 };
 
 function startGame() {
-  gameStateManager.changeState("playing");
+  // Use gameStateManager to handle state transitions
+  gameStateManager.changeState("playing", { restart: true });
 }
 
 function togglePause() {
   if (isGameRunning) {
+    // Only allow pause if game is running
     if (isPaused) {
-      gameStateManager.changeState("playing");
+      gameStateManager.changeState("playing"); // Resume
     } else {
-      gameStateManager.changeState("paused");
+      gameStateManager.changeState("paused"); // Pause
     }
   }
 }
 
 // --- Event Listeners ---
 startButton.addEventListener("click", (e) => {
+  // Check if button is disabled (name not valid)
   if (startButton.classList.contains("disabled") || startButton.disabled) {
     e.preventDefault();
     e.stopPropagation();
+    // Prompt user to enter name
     if (window.playerNameUI) {
       window.playerNameUI.show();
     }
@@ -112,85 +121,89 @@ startButton.addEventListener("click", (e) => {
     }
     return false;
   }
+  // Play sound and check name validity again
   playSound("buttonHover");
   if (window.playerNameUI && !window.playerNameUI.hasValidName()) {
-    window.playerNameUI.show();
+    window.playerNameUI.show(); // Focus the input again
     if (typeof showEventText === "function") {
-      showEventText("Please enter a valid name!");
+      showEventText("Please enter a valid name (2-20 characters)!");
     }
     return;
   }
+  // Save name and start game
   if (window.playerNameUI) {
     window.playerNameUI.saveName();
   }
   startGame();
 });
+
 restartButton.addEventListener("click", () => {
   playSound("buttonHover");
-  startGame();
+  startGame(); // Let startGame handle the reset via gameStateManager
 });
+
 leaderboardButton.addEventListener("click", () => {
-  initAudioSystem();
+  initAudioSystem(); // Ensure audio is ready
   playSound("buttonHover");
   gameStateManager.changeState("leaderboard");
 });
+
 howToPlayButton.addEventListener("click", () => {
   initAudioSystem();
   playSound("buttonHover");
   gameStateManager.changeState("howToPlay");
 });
+
 backToMainMenuButton.addEventListener("click", () => {
   playSound("buttonHover");
   gameStateManager.changeState("menu");
 });
+
 backToMainFromHowToPlayButton.addEventListener("click", () => {
   playSound("buttonHover");
   gameStateManager.changeState("menu");
 });
+
 uiElements.pauseButton.addEventListener("click", () => {
   playSound("buttonHover");
   togglePause();
 });
+
 resumeButton.addEventListener("click", () => {
   playSound("buttonHover");
-  togglePause();
+  togglePause(); // Will transition back to 'playing' state
 });
+
 restartFromPauseButton.addEventListener("click", () => {
   playSound("buttonHover");
-  // SỬA LỖI: Game đang resume thay vì restart.
-  // Bằng cách đặt isGameRunning thành false, chúng ta đảm bảo hàm init() của game
-  // được gọi để reset hoàn toàn.
-  isGameRunning = false;
-  isPaused = false;
-  startGame();
+  // Let gameStateManager handle the full reset
+  gameStateManager.changeState("playing", { restart: true });
 });
+
 mainMenuFromPauseButton.addEventListener("click", () => {
   playSound("buttonHover");
-  // REFACTOR: Cleanly exit to main menu by setting game state flags
-  // and letting the gameStateManager handle the transition.
-  isGameRunning = false;
-  isPaused = false;
-  gameStateManager.changeState("menu");
-});
-mainMenuFromOverButton.addEventListener("click", () => {
-  playSound("buttonHover");
-  uiElements.gameOverScreen.style.display = "none";
-  ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
-  ctx.fillRect(0, 0, width, height);
-  if (stars && stars.length > 0) {
-    stars.forEach((s) => s.draw());
-  }
+  // Cleanly exit to main menu via gameStateManager
   gameStateManager.changeState("menu");
 });
 
+mainMenuFromOverButton.addEventListener("click", () => {
+  playSound("buttonHover");
+  // Cleanly exit to main menu via gameStateManager
+  gameStateManager.changeState("menu");
+});
+
+// Mouse movement listener
 window.addEventListener("mousemove", (e) => {
   mouse.x = e.clientX;
   mouse.y = e.clientY;
 });
+
+// Touch movement listener (passive: false to allow preventDefault)
 window.addEventListener(
   "touchmove",
   (e) => {
     if (e.touches.length > 0) {
+      // Prevent scrolling page only when game is active and not paused
       if (isGameRunning && !isPaused) {
         e.preventDefault();
       }
@@ -200,25 +213,35 @@ window.addEventListener(
   },
   { passive: false }
 );
+
+// Resize listener
 window.addEventListener("resize", () => {
   width = canvas.width = window.innerWidth;
   height = canvas.height = window.innerHeight;
+  // Redraw background elements if not currently playing
   if (!isGameRunning) {
-    ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
-    ctx.fillRect(0, 0, width, height);
-    nebulae = Array(5)
-      .fill(null)
-      .map(() => createNebula());
-    nebulae.forEach((n) => {
-      ctx.fillStyle = n;
+    if (ctx) {
+      // Check if ctx exists before drawing
+      ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
       ctx.fillRect(0, 0, width, height);
-    });
-    stars.forEach((s) => s.draw());
+      nebulae = Array(GAME_CONFIG.visual.nebula.count)
+        .fill(null)
+        .map(() => createNebula());
+      nebulae.forEach((n) => {
+        ctx.fillStyle = n;
+        ctx.fillRect(0, 0, width, height);
+      });
+      if (stars && stars.length > 0) {
+        stars.forEach((s) => s.draw());
+      }
+    }
   }
 });
 
+// Keyboard listener for pause
 window.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "Escape") {
+    // Only toggle pause if game is running
     if (isGameRunning) {
       togglePause();
     }
@@ -226,27 +249,30 @@ window.addEventListener("keydown", (e) => {
 });
 
 // --- Initial Setup ---
-width = canvas.width = window.innerWidth;
-height = canvas.height = window.innerHeight;
-nebulae = Array(GAME_CONFIG.visual.nebula.count)
-  .fill(null)
-  .map(() => createNebula());
-stars = [];
-for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
-  const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
-  for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
-    stars.push(
-      new Star(
-        Math.random() * width,
-        Math.random() * height,
-        Math.random() * GAME_CONFIG.visual.stars.maxRadius * layer,
-        layer
-      )
-    );
-}
-highScore = localStorage.getItem(GAME_CONFIG.core.localStorageKey) || 0;
-if (uiElements.highscoreDisplay) {
-  uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
+function setupInitialBackground() {
+  width = canvas.width = window.innerWidth;
+  height = canvas.height = window.innerHeight;
+  nebulae = Array(GAME_CONFIG.visual.nebula.count)
+    .fill(null)
+    .map(() => createNebula());
+  stars = []; // Initialize stars array
+  for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
+    const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
+    for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
+      stars.push(
+        new Star(
+          Math.random() * width,
+          Math.random() * height,
+          Math.random() * GAME_CONFIG.visual.stars.maxRadius * layer,
+          layer
+        )
+      );
+  }
+  // Load high score
+  highScore = localStorage.getItem(GAME_CONFIG.core.localStorageKey) || 0;
+  if (uiElements.highscoreDisplay) {
+    uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
+  }
 }
 
 async function initializeUserIdentification() {
@@ -260,42 +286,44 @@ async function initializeUserIdentification() {
   }
 }
 
+// App Initialization Function
 async function initializeApp() {
   const loadingScreen = document.getElementById("loading-screen");
 
-  await initializeUserIdentification();
+  setupInitialBackground(); // Setup background visuals first
 
-  if (window.BackendAPI && window.BackendAPI.initialize) {
-    await window.BackendAPI.initialize();
-  }
-  if (window.gameSettings) {
-    await window.gameSettings.initialize();
-  }
-  if (window.settingsUI) {
-    window.settingsUI.initialize();
-  }
-  if (window.playerNameUI) {
-    window.playerNameUI.initialize();
-  }
-  if (window.initializeDashboard) {
-    window.initializeDashboard();
-  }
+  // Initialize systems concurrently where possible
+  await Promise.all([
+    initializeUserIdentification(),
+    window.BackendAPI?.initialize(),
+    window.gameSettings?.initialize(),
+  ]);
 
-  // Set up hover sounds for all buttons, moved from initUI.js
+  // Initialize UI components that depend on settings/user ID
+  window.settingsUI?.initialize();
+  window.playerNameUI?.initialize();
+  window.initializeDashboard?.(); // Assumes this function exists in dashboard.js
+
+  // Set up hover sounds for all buttons after UI is potentially modified
   document.querySelectorAll("button").forEach((button) => {
     if (typeof playSound === "function") {
       button.addEventListener("mouseenter", () => playSound("buttonHover"));
     }
   });
 
+  // Start in the menu state
   gameStateManager.changeState("menu");
 
+  // Hide loading screen
   if (loadingScreen) {
     loadingScreen.classList.add("hidden");
+    // Remove element after transition for cleaner DOM
     setTimeout(() => {
       loadingScreen.style.display = "none";
-    }, 500);
+      // Optional: loadingScreen.remove();
+    }, 500); // Match CSS transition duration
   }
 }
 
+// Start the application initialization
 initializeApp();

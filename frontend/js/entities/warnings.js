@@ -3,7 +3,7 @@
 class Warning extends Entity {
   constructor(x, y, type, duration = 120) {
     super(x, y);
-    this.type = type; // 'blackhole' or 'missile'
+    this.type = type;
     this.duration = duration;
     this.timer = 0;
     this.radius = GAME_CONFIG.ui.warning.radius;
@@ -11,6 +11,7 @@ class Warning extends Entity {
   }
 
   draw() {
+    if (!ctx) return; // Context check
     ctx.save();
     ctx.globalAlpha = this.alpha;
     ctx.translate(this.x, this.y);
@@ -24,44 +25,43 @@ class Warning extends Entity {
     ctx.beginPath();
     ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 
-    // Different colors for different warning types
+    // Color and symbol based on type
     let warningColor, warningSymbol;
     switch (this.type) {
       case "blackhole":
-        warningColor = "#aa66cc"; // Purple for blackholes
+        warningColor = "#aa66cc";
         warningSymbol = "!";
         break;
       case "voidrift":
-        warningColor = "#3d2963"; // Dark purple for void rifts
+        warningColor = "#3d2963";
         warningSymbol = "⚠";
         break;
-
       case "plasma":
-        warningColor = "#ff6600"; // Orange for plasma
+        warningColor = "#ff6600";
         warningSymbol = "🔥";
         break;
-      case "magnetic": // New type for Magnetic Storm
-        warningColor = "#88ddff"; // Electric blue
+      case "magnetic":
+        warningColor = "#88ddff";
         warningSymbol = "⚡";
         break;
       case "lasermine":
-        warningColor = "#ff4444"; // Red for mines
+        warningColor = "#ff4444";
         warningSymbol = "!";
         break;
       case "crystalcluster":
-        warningColor = "#40c4ff"; // Crystal color
+        warningColor = "#40c4ff";
         warningSymbol = "!";
         break;
-      case "freeze": // Added freeze zone warning
+      case "freeze":
         warningColor = "#81d4fa";
         warningSymbol = "❄️";
         break;
-      case "meteor": // Added meteor warning
+      case "meteor":
         warningColor = "#ff6b35";
         warningSymbol = "☄️";
         break;
-      default:
-        warningColor = "#f48fb1"; // Pink for missiles and others
+      default: // Includes 'missile' implicitly now
+        warningColor = "#f48fb1";
         warningSymbol = "!";
     }
 
@@ -69,7 +69,7 @@ class Warning extends Entity {
     ctx.lineWidth = 3;
     ctx.setLineDash([5, 5]);
     ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.setLineDash([]); // Reset line dash
 
     // Warning symbol
     ctx.fillStyle = warningColor;
@@ -84,7 +84,7 @@ class Warning extends Entity {
   update() {
     this.timer++;
 
-    // Fade in and out logic
+    // Fade in/out logic
     const fadeInTime = GAME_CONFIG.ui.warning.fadeInTime;
     const fadeOutTime = GAME_CONFIG.ui.warning.fadeOutTime;
 
@@ -96,40 +96,40 @@ class Warning extends Entity {
       this.alpha = 1;
     }
 
-    this.draw();
+    this.alpha = Math.max(0, Math.min(1, this.alpha)); // Clamp alpha
 
-    // Self-destruct logic (FIXED: The filtering happens in game.js, but ensure timer update)
-    // The core game loop filters warnings based on (w.timer < w.duration).
+    this.draw();
+    // No self-destruction logic needed here, handled by game loop filter
   }
 }
 
-// New Directional Warning class for Missile/Laser Turrets/Edge Hazards
+// Directional Warning (for Missiles, etc.)
 class DirectionalWarning extends Entity {
   constructor(x, y, type, angle, duration = 120) {
     super(x, y);
-    this.type = type; // e.g., 'missile'
-    this.angle = angle; // Radians, direction of travel
+    this.type = type;
+    this.angle = angle; // Radians
     this.duration = duration;
     this.timer = 0;
-    this.size = 25; // Arrow size
+    this.size = 25; // Base size
     this.alpha = 0;
   }
 
   draw() {
+    if (!ctx) return; // Context check
     ctx.save();
     ctx.globalAlpha = this.alpha;
     ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle); // Rotate to point in the direction of travel
+    ctx.rotate(this.angle); // Point in direction of travel
 
-    // Pulsing effect
-    const pulse = Math.sin(this.timer * 0.3) * 0.1 + 0.9;
-    const arrowColor = this.type === "missile" ? "#f48fb1" : "#ff4444";
+    const pulse = Math.sin(this.timer * 0.3) * 0.1 + 0.9; // Subtle pulse
+    const arrowColor = this.type === "missile" ? "#f48fb1" : "#ff4444"; // Default red for non-missiles
     const finalSize = this.size * pulse;
 
     // Outer glow
     ctx.beginPath();
     ctx.arc(0, 0, finalSize * 1.5, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255, 0, 0, ${this.alpha * 0.1})`;
+    ctx.fillStyle = `rgba(255, 0, 0, ${this.alpha * 0.1})`; // Faint red glow
     ctx.fill();
 
     // Arrow Head
@@ -138,19 +138,21 @@ class DirectionalWarning extends Entity {
     ctx.lineTo(-finalSize * 0.5, finalSize * 0.5);
     ctx.lineTo(-finalSize * 0.5, -finalSize * 0.5);
     ctx.closePath();
-
     ctx.fillStyle = arrowColor;
     ctx.shadowColor = arrowColor;
     ctx.shadowBlur = 10;
     ctx.fill();
+    ctx.shadowBlur = 0; // Reset shadow
 
-    // Missile Icon at the center
-    ctx.globalAlpha = this.alpha;
-    ctx.fillStyle = "#fff";
-    ctx.font = "12px Exo 2";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("🚀", 0, 0);
+    // Missile Icon at the center (optional, could be conditional)
+    if (this.type === "missile") {
+      ctx.globalAlpha = this.alpha; // Reset alpha for text
+      ctx.fillStyle = "#fff";
+      ctx.font = "12px 'Exo 2', sans-serif"; // Use game font
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("🚀", 0, 0);
+    }
 
     ctx.restore();
   }
@@ -158,7 +160,7 @@ class DirectionalWarning extends Entity {
   update() {
     this.timer++;
 
-    // Fade in and out
+    // Fade in/out logic (same as generic Warning)
     const fadeInTime = GAME_CONFIG.ui.warning.fadeInTime;
     const fadeOutTime = GAME_CONFIG.ui.warning.fadeOutTime;
 
@@ -169,17 +171,18 @@ class DirectionalWarning extends Entity {
     } else {
       this.alpha = 1;
     }
+    this.alpha = Math.max(0, Math.min(1, this.alpha)); // Clamp alpha
 
     this.draw();
   }
 }
 
 /**
- * CircleWarning for events like Asteroid Circle/Belt/Gravity Wells.
- * FIXED: Inherits from Warning for consistency and uses a proper update cycle.
+ * CircleWarning for events like Asteroid Circle. Inherits from Warning.
  */
 class CircleWarning extends Warning {
   constructor(centerX, centerY, radius) {
+    // Uses its own duration from config, passed to parent
     super(
       centerX,
       centerY,
@@ -187,75 +190,73 @@ class CircleWarning extends Warning {
       GAME_CONFIG.events.asteroidCircle.warningTime
     );
     this.radius = radius;
+    // Store centerX/Y separately as parent x/y might be less clear
     this.centerX = centerX;
     this.centerY = centerY;
   }
 
   draw() {
+    if (!ctx) return; // Context check
     ctx.save();
 
-    // Nhấp nháy warning
+    // Blinking effect combined with parent's alpha fade
     const blinkSpeed = 0.08;
-    // Sử dụng alpha của lớp cha để fade in/out tổng thể, nhân với nhấp nháy
     const blinkAlpha = Math.abs(Math.sin(this.timer * blinkSpeed));
-    ctx.globalAlpha = this.alpha * blinkAlpha * 0.8;
+    ctx.globalAlpha = this.alpha * blinkAlpha * 0.8; // Use parent's alpha
 
-    // Vẽ vòng tròn warning
+    // Draw warning circle
     ctx.beginPath();
     ctx.arc(this.centerX, this.centerY, this.radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "#ffff00";
+    ctx.strokeStyle = "#ffff00"; // Yellow
     ctx.lineWidth = 3;
     ctx.setLineDash([10, 10]);
     ctx.shadowColor = "#ffff00";
     ctx.shadowBlur = 15;
     ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.shadowBlur = 0;
+    ctx.setLineDash([]); // Reset line dash
+    ctx.shadowBlur = 0; // Reset shadow
 
-    // Vẽ text warning ở giữa
+    // Draw warning text in center (adjust alpha for text visibility)
+    ctx.globalAlpha = this.alpha * 0.9; // Slightly less fade than circle
     ctx.fillStyle = "#ffff00";
     ctx.font = "bold 16px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("⚠️ ZONE DANGER ⚠️", this.centerX, this.centerY);
+    // Using simple text, emoji might not render consistently everywhere
+    ctx.fillText("DANGER ZONE", this.centerX, this.centerY);
 
     ctx.restore();
   }
 
-  // FIX: Use the parent update logic to handle timer and alpha fade.
-  // We override draw, but keep the parent update.
-  // Since parent update is simple timer/alpha logic, we can call it directly:
-  update() {
-    super.update(); // Cập nhật timer và alpha
-    this.draw();
-  }
+  // Uses the parent update() method for timer and alpha logic
 }
 
 /**
- * BeltWarning is essentially the same as CircleWarning, just kept separate for clarity.
- * FIXED: Inherits from Warning for consistency.
+ * BeltWarning, similar to CircleWarning. Inherits from Warning.
  */
 class BeltWarning extends Warning {
   constructor(centerX, centerY, radius) {
-    // Sử dụng giá trị duration cố định 180 frames (3 giây)
-    super(centerX, centerY, "asteroidBelt", 180);
+    // Define a fixed duration or get from config if available
+    const duration = GAME_CONFIG.events.asteroidBelt?.warningTime || 180;
+    super(centerX, centerY, "asteroidBelt", duration);
     this.centerX = centerX;
     this.centerY = centerY;
     this.radius = radius;
   }
 
   draw() {
+    if (!ctx) return; // Context check
     ctx.save();
 
-    // Nhấp nháy warning
+    // Blinking effect combined with parent alpha
     const blinkSpeed = 0.08;
     const blinkAlpha = Math.abs(Math.sin(this.timer * blinkSpeed));
-    ctx.globalAlpha = this.alpha * blinkAlpha * 0.7;
+    ctx.globalAlpha = this.alpha * blinkAlpha * 0.7; // Use parent alpha
 
-    // Vẽ vòng tròn orbit warning
+    // Draw orbit warning circle
     ctx.beginPath();
     ctx.arc(this.centerX, this.centerY, this.radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "#ffbb33";
+    ctx.strokeStyle = "#ffbb33"; // Orange/Yellow
     ctx.lineWidth = 4;
     ctx.setLineDash([15, 10]);
     ctx.shadowColor = "#ffbb33";
@@ -263,32 +264,30 @@ class BeltWarning extends Warning {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Vẽ các điểm asteroid sẽ xuất hiện
+    // Draw indicators for asteroid positions
     const count = 20;
+    ctx.globalAlpha = this.alpha * 0.8; // Use parent alpha for indicators
     for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2 + this.timer * 0.02; // Thêm chuyển động nhẹ
+      const angle = (i / count) * Math.PI * 2 + this.timer * 0.02; // Slight rotation
       const x = this.centerX + Math.cos(angle) * this.radius;
       const y = this.centerY + Math.sin(angle) * this.radius;
 
       ctx.beginPath();
       ctx.arc(x, y, 4, 0, Math.PI * 2);
       ctx.fillStyle = "#ffbb33";
-      ctx.shadowBlur = 0;
+      ctx.shadowBlur = 0; // No shadow for small indicators
       ctx.fill();
     }
 
-    // Vẽ text warning ở giữa
+    // Draw warning text in center
+    ctx.globalAlpha = this.alpha * 0.9; // Use parent alpha
     ctx.fillStyle = "#ffbb33";
     ctx.font = "bold 18px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("⚠️ ASTEROID BELT ⚠️", this.centerX, this.centerY);
+    ctx.fillText("ASTEROID BELT", this.centerX, this.centerY);
 
     ctx.restore();
   }
-
-  update() {
-    super.update(); // Cập nhật timer và alpha
-    this.draw();
-  }
+  // Uses the parent update() method for timer and alpha logic
 }

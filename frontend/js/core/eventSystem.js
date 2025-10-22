@@ -3,66 +3,51 @@ let eventTextQueue = [];
 let isShowingEventText = false;
 let currentEventTimeout = null;
 
-// FIX: Safe translation helper to prevent crashes if gameSettings.t is missing
+// Safe translation helper
 const safeT = (key, fallback) => {
   if (window.gameSettings && typeof window.gameSettings.t === "function") {
     return window.gameSettings.t(key) || fallback;
   }
   return fallback;
 };
-// END FIX
 
 /**
- * Public function to show event text, using a queue system to handle overlaps.
- * This function should be the ONLY way to show event text.
+ * Public function to show event text, using a queue.
  */
 function showEventText(text) {
-  // The functions calling this (animate, triggerRandomEvent) already check if the game is running.
-  // Removing the check here allows for messages to be queued and displayed even if the game ends on the same frame,
-  // such as a level-up message on death. The queue is cleared on game restart by resetEventSystem().
   console.log("showEventText called with:", text);
-
-  // Add to queue if currently showing text
   if (isShowingEventText) {
     eventTextQueue.push(text);
     console.log("Added to queue:", text);
     return;
   }
-
-  // Mark as showing and display immediately
   isShowingEventText = true;
   displayEventText(text);
 }
 
 /**
- * Internal function to visually display the text and set fade timers/animations.
+ * Internal function to display text and handle animations/timers.
  */
 function displayEventText(text) {
   console.log("displayEventText called with:", text);
-
-  // Clear any existing timeout
   if (currentEventTimeout) {
     clearTimeout(currentEventTimeout);
     currentEventTimeout = null;
   }
-
-  // Get event text element safely
   const eventTextElement = document.getElementById("event-text");
   if (!eventTextElement) {
     console.warn("Event text element not found!");
-    isShowingEventText = false; // Reset state if element is missing
+    isShowingEventText = false;
     return;
   }
-
   console.log("Event text element found, displaying:", text);
-
   eventTextElement.innerText = text;
   eventTextElement.style.fontSize = GAME_CONFIG.ui.eventText.fontSize;
   eventTextElement.style.opacity = "1";
   eventTextElement.style.textShadow = "0 0 15px #ffff00, 0 0 25px #ffff00";
-  eventTextElement.style.zIndex = "1000"; // Ensure it's on top
+  eventTextElement.style.zIndex = "1000";
 
-  // Add a light shake effect for attention
+  // Shake effect
   let shakeCount = 0;
   const shakeInterval = setInterval(() => {
     shakeCount++;
@@ -71,14 +56,13 @@ function displayEventText(text) {
       eventTextElement.style.transform = "translateX(-50%)";
       return;
     }
-
     const direction = shakeCount % 2 === 0 ? 1 : -1;
     eventTextElement.style.transform = `translateX(calc(-50% + ${
       direction * 3
     }px))`;
   }, 50);
 
-  // Add a color flash effect
+  // Color flash effect
   eventTextElement.style.animation = "textFlash 0.5s linear 3";
   if (!document.querySelector("#event-text-style")) {
     const style = document.createElement("style");
@@ -97,11 +81,8 @@ function displayEventText(text) {
     eventTextElement.style.opacity = "0";
     eventTextElement.style.textShadow = "none";
     eventTextElement.style.animation = "none";
-
-    // Process next text in queue
     isShowingEventText = false;
     currentEventTimeout = null;
-
     if (eventTextQueue.length > 0) {
       const nextText = eventTextQueue.shift();
       showEventText(nextText);
@@ -110,18 +91,15 @@ function displayEventText(text) {
 }
 
 /**
- * Resets the event system queue and clears display.
- * Should be called when starting a new game.
+ * Resets the event system.
  */
 function resetEventSystem() {
   eventTextQueue.length = 0;
-
   if (currentEventTimeout) {
     clearTimeout(currentEventTimeout);
     currentEventTimeout = null;
   }
   isShowingEventText = false;
-
   const eventTextElement = document.getElementById("event-text");
   if (eventTextElement) {
     eventTextElement.style.opacity = "0";
@@ -132,8 +110,7 @@ function resetEventSystem() {
 }
 
 /**
- * Triggers a random event based on current score thresholds and weights.
- * The core spawning logic remains here, while text display is handled by showEventText.
+ * Triggers a random event based on score thresholds and weights.
  */
 function triggerRandomEvent() {
   if (!window.isGameRunning) return;
@@ -148,20 +125,20 @@ function triggerRandomEvent() {
     { type: "blackHoleChain", weight: 12 },
     { type: "asteroidCircle", weight: 15 },
     { type: "missileBarrage", weight: 18 },
-    { type: "gravitationalAnomaly", weight: 10 },
+    //{ type: "gravitationalAnomaly", weight: 10 }, // Config commented out
     { type: "asteroidRain", weight: 20 },
     { type: "wormholePortal", weight: 10 },
     { type: "voidRifts", weight: 10 },
     { type: "lightningStorm", weight: 15 },
     { type: "plasmaStorm", weight: 10 },
-    { type: "temporalChaos", weight: 7 },
-    { type: "lightningNetwork", weight: 7 },
-    { type: "voidStorm", weight: 6 },
+    //{ type: "temporalChaos", weight: 7 }, // Config commented out, case removed below
+    //{ type: "lightningNetwork", weight: 7 }, // Config commented out, case removed below
+    //{ type: "voidStorm", weight: 6 }, // Config commented out, case removed below
     { type: "mineFieldDetonation", weight: 8 },
     { type: "shieldGenerator", weight: 20 },
     { type: "gravityWells", weight: 10 },
-    { type: "decoyPowerUp", weight: 18 }, // New Event
-    { type: "chaosMode", weight: 8 }, // New Event
+    { type: "decoyPowerUp", weight: 18 },
+    { type: "chaosMode", weight: 8 },
   ];
 
   const unlockThresholds = GAME_CONFIG.events.unlockThresholds || {};
@@ -178,7 +155,7 @@ function triggerRandomEvent() {
     if (defaultEvent) {
       availableEvents.push(defaultEvent);
     } else {
-      return;
+      return; // No events available at all
     }
   }
 
@@ -200,9 +177,11 @@ function triggerRandomEvent() {
 
   const randomEventType = selectedEvent;
 
+  // Set a general end time for the event's *active* state influence, if applicable
   eventActive.endTime =
-    timers.difficulty + Math.floor(GAME_CONFIG.events.duration * 0.75);
+    timers.difficulty + Math.floor(GAME_CONFIG.events.duration * 0.75); // Slightly shorter active duration
 
+  // Trigger the selected event logic
   switch (randomEventType) {
     case "decoyPowerUp":
       eventActive.type = "decoyPowerUp";
@@ -220,7 +199,6 @@ function triggerRandomEvent() {
     case "chaosMode":
       eventActive.type = "chaosMode";
       showEventText(safeT("event.chaosMode", "CHAOS MODE ACTIVATED!"));
-      // Rapidly spawn a few different hazards
       setTimeout(() => {
         if (isGameRunning) lasers.push(new Laser(true));
       }, 200);
@@ -252,10 +230,10 @@ function triggerRandomEvent() {
                 if (isGameRunning) {
                   asteroids.push(createMiniShowerAsteroid(direction));
                 }
-              }, i * 80);
+              }, i * 80); // Spawn delay within wave
             }
           }
-        }, wave * 1000);
+        }, wave * 1000); // Delay between waves
       }
       break;
 
@@ -270,6 +248,7 @@ function triggerRandomEvent() {
         let warningX, warningY, warningAngle, spawnX, spawnY, missileAngle;
         const warningOffset = 50;
         const spawnOffset = 30;
+        // ... (switch case for side setup remains the same) ...
         switch (side) {
           case "left":
             warningX = warningOffset;
@@ -304,6 +283,7 @@ function triggerRandomEvent() {
             missileAngle = -Math.PI / 2;
             break;
         }
+
         setTimeout(() => {
           if (isGameRunning) {
             const warningSystem = spawnWithWarning(
@@ -319,7 +299,7 @@ function triggerRandomEvent() {
               missiles.push(new Missile(spawnX, spawnY, missileAngle));
             });
           }
-        }, i * GAME_CONFIG.entities.missiles.warningDuration * (1000 / 60));
+        }, i * GAME_CONFIG.entities.missiles.warningDuration * (1000 / 60)); // Delay between missiles
       }
       break;
 
@@ -328,7 +308,7 @@ function triggerRandomEvent() {
       showEventText(
         safeT("event.asteroidCircle", "Asteroid Circle Formation!")
       );
-      triggerAsteroidCircle();
+      triggerAsteroidCircle(); // Assumes this helper function exists and works
       break;
 
     case "missileBarrage":
@@ -341,6 +321,7 @@ function triggerRandomEvent() {
         let warningX, warningY, warningAngle, spawnX, spawnY, missileAngle;
         const warningOffset = 50;
         const spawnOffset = 30;
+        // ... (switch case for side setup remains the same) ...
         switch (side) {
           case "left":
             warningX = warningOffset;
@@ -383,14 +364,14 @@ function triggerRandomEvent() {
               warningY,
               {
                 angle: warningAngle,
-                duration: 90,
+                duration: 90, // Shorter warning for barrage
               }
             );
             warningSystem.spawn(() => {
               missiles.push(new Missile(spawnX, spawnY, missileAngle));
             });
           }
-        }, i * (GAME_CONFIG.events.missileBarrage.delay / 2));
+        }, i * (GAME_CONFIG.events.missileBarrage.delay / 2)); // Faster spawn delay
       }
       break;
 
@@ -400,9 +381,10 @@ function triggerRandomEvent() {
       for (let i = 0; i < GAME_CONFIG.events.laserGrid.gridSize; i++) {
         setTimeout(() => {
           if (isGameRunning) {
-            lasers.push(new Laser(false));
-            lasers.push(new Laser(true));
+            lasers.push(new Laser(false)); // Random laser
+            lasers.push(new Laser(true)); // Targeted laser
             if (i % 2 === 0) {
+              // Add extra randomness
               lasers.push(new Laser(Math.random() < 0.5));
             }
           }
@@ -417,12 +399,12 @@ function triggerRandomEvent() {
         setTimeout(() => {
           if (isGameRunning) {
             const x = Math.random() * width;
-            const y = Math.random() * height * 0.7;
+            const y = Math.random() * height * 0.7; // Spawn higher up
             const warningSystem = spawnWithWarning("blackhole", x, y, {
               duration: GAME_CONFIG.entities.blackHoles.warningDuration,
             });
             warningSystem.spawn(() => {
-              blackHoles.push(new BlackHole(x, y, true));
+              blackHoles.push(new BlackHole(x, y, true)); // Ensure temporary
               playSound("blackhole");
             });
           }
@@ -458,7 +440,7 @@ function triggerRandomEvent() {
             });
             warningSystem.spawn(() => {
               const mine = new LaserMine(x, y);
-              mine.maxTime = mineConfig.chargeTime;
+              mine.maxTime = mineConfig.chargeTime; // Use specific charge time for event
               laserMines.push(mine);
             });
           }
@@ -466,35 +448,39 @@ function triggerRandomEvent() {
       }
       break;
 
-    case "wormholePortal":
+    case "wormholePortal": // Logic requires Wormhole class
       eventActive.type = "wormholePortal";
       showEventText(safeT("event.wormholePortal", "Wormhole Opened!"));
       const wormholeX = Math.random() * (width - 200) + 100;
       const wormholeY = Math.random() * (height / 2) + 100;
-      if (typeof wormholes !== "undefined") {
+      if (typeof Wormhole !== "undefined" && typeof wormholes !== "undefined") {
+        // Check if class and array exist
         wormholes.push(new Wormhole(wormholeX, wormholeY));
         playSound("wormhole");
+      } else {
+        console.warn("Wormhole class or array not found for event.");
       }
       break;
 
     case "freezeZone":
       eventActive.type = "freezeZone";
       showEventText(safeT("event.freezeZone", "❄️ FREEZE ZONES IMMINENT ❄️"));
-      for (let i = 0; i < (GAME_CONFIG.events.freezeZone.count || 3); i++) {
+      const freezeConfig = GAME_CONFIG.events.freezeZone || {};
+      for (let i = 0; i < (freezeConfig.count || 3); i++) {
         setTimeout(() => {
           if (isGameRunning) {
             const x = Math.random() * canvas.width;
             const y = Math.random() * canvas.height;
             const warningSystem = spawnWithWarning("freeze", x, y, {
               radius: GAME_CONFIG.newObjects.freezeZone.radius,
-              duration: 120,
+              duration: freezeConfig.warningDuration || 120,
             });
             warningSystem.spawn(() => {
               freezeZones.push(new FreezeZone(x, y));
               playSound("freeze");
             });
           }
-        }, i * 500);
+        }, i * 500); // Stagger spawn
       }
       break;
 
@@ -510,9 +496,7 @@ function triggerRandomEvent() {
         "magnetic",
         width / 2,
         height / 2,
-        {
-          duration: 180,
-        }
+        { duration: 180 }
       );
       magneticWarningSystem.spawn(() => {
         if (isGameRunning) {
@@ -526,11 +510,12 @@ function triggerRandomEvent() {
       });
       break;
 
-    case "asteroidBelt":
-      eventActive.type = "asteroidBelt";
-      showEventText(safeT("event.asteroidBelt", "Asteroid Belt!"));
-      triggerAsteroidBelt();
-      break;
+    // REMOVED: Unused event case
+    // case "asteroidBelt":
+    //   eventActive.type = "asteroidBelt";
+    //   showEventText(safeT("event.asteroidBelt", "Asteroid Belt!"));
+    //   triggerAsteroidBelt(); // This helper function might be unused
+    //   break;
 
     case "plasmaStorm":
       eventActive.type = "plasmaStorm";
@@ -540,6 +525,7 @@ function triggerRandomEvent() {
       const fieldsPerWave = plasmaConfig.fieldsPerWave || 5;
       const fieldStagger = plasmaConfig.fieldStagger || 80;
       const warningDuration = plasmaConfig.warningDuration || 180;
+
       for (let wave = 0; wave < waveCount; wave++) {
         const baseY = (canvas.height / (waveCount + 1)) * (wave + 1);
         for (let field = 0; field < fieldsPerWave; field++) {
@@ -553,7 +539,8 @@ function triggerRandomEvent() {
             (plasmaConfig.minRadius || 60) +
             Math.random() *
               ((plasmaConfig.maxRadius || 90) - (plasmaConfig.minRadius || 60));
-          const timing = wave * fieldsPerWave + field;
+          const timing = wave * fieldsPerWave + field; // Calculate timing offset
+
           setTimeout(() => {
             if (isGameRunning) {
               const warningSystem = spawnWithWarning("plasma", x, y, {
@@ -572,13 +559,14 @@ function triggerRandomEvent() {
           }, timing * fieldStagger);
         }
       }
+      // Schedule the "UNLEASHED" message and effect after the last warning + spawn delay
       setTimeout(() => {
         if (isGameRunning) {
           showEventText(
             safeT("event.plasmaUnleashed", "🔥 PLASMA INFERNO UNLEASHED 🔥")
           );
           triggerScreenShake(plasmaConfig.shakeIntensity || 0.8);
-          playSound("explosion");
+          playSound("explosion"); // Play sound when unleashed
         }
       }, waveCount * fieldsPerWave * fieldStagger + warningDuration * (1000 / 60));
       break;
@@ -586,26 +574,39 @@ function triggerRandomEvent() {
     case "crystalRain":
       eventActive.type = "crystalRain";
       showEventText(safeT("event.crystalStorm", "Cosmic Crystal Storm!"));
-      for (let cluster = 0; cluster < 4; cluster++) {
-        const clusterX = (canvas.width / 5) * (cluster + 1);
-        const clusterY = Math.random() * canvas.height * 0.3;
-        for (let i = 0; i < GAME_CONFIG.events.crystalRain.count / 4; i++) {
+      const crystalRainConfig = GAME_CONFIG.events.crystalRain || {};
+      const clusterCount = crystalRainConfig.clusterCount || 4; // Use config or default
+      const shardsPerCluster = Math.floor(
+        (crystalRainConfig.count || 20) / clusterCount
+      ); // Use config or default
+      const clusterDelay = crystalRainConfig.clusterDelay || 200; // Use config or default
+      const shardDelay = crystalRainConfig.delay || 80; // Use config or default
+
+      // Spawn in clusters
+      for (let cluster = 0; cluster < clusterCount; cluster++) {
+        const clusterX = (canvas.width / (clusterCount + 1)) * (cluster + 1);
+        const clusterY = Math.random() * canvas.height * 0.3; // Spawn higher up
+        for (let i = 0; i < shardsPerCluster; i++) {
           setTimeout(() => {
             if (isGameRunning) {
               const x = clusterX + (Math.random() - 0.5) * 150;
               const y = clusterY + (Math.random() - 0.5) * 80;
               const crystal = new CrystalShard(x, y);
+              // Add slight outward velocity from cluster center
               const angle = Math.atan2(y - clusterY, x - clusterX);
-              crystal.velocity.x += Math.cos(angle + Math.PI / 2) * 0.3;
-              crystal.velocity.y += Math.sin(angle + Math.PI / 2) * 0.3;
+              crystal.velocity.x += Math.cos(angle) * 0.3;
+              crystal.velocity.y += Math.sin(angle) * 0.3;
               crystalShards.push(crystal);
             }
-          }, i * GAME_CONFIG.events.crystalRain.delay + cluster * 200);
+          }, i * shardDelay + cluster * clusterDelay);
         }
       }
+      // Spawn some from edges too
       for (let i = 0; i < 8; i++) {
+        // Spawn a fixed number from edges
         setTimeout(() => {
           if (isGameRunning) {
+            // ... (edge spawning logic remains the same) ...
             const edge = Math.floor(Math.random() * 4);
             let x, y;
             switch (edge) {
@@ -634,24 +635,27 @@ function triggerRandomEvent() {
             crystal.velocity.y = Math.sin(angle) * (0.8 + Math.random() * 0.6);
             crystalShards.push(crystal);
           }
-        }, Math.random() * 3000);
+        }, Math.random() * 3000); // Random delay for edge spawns
       }
-      playSound("powerup"); // Changed from crystal to powerup for better sound
+      playSound("powerup");
       break;
 
-    case "quantumTunnels":
-      eventActive.type = "quantumTunnels";
-      showEventText(safeT("event.quantumPortal", "Quantum Portal Pair!"));
-      const tunnelX1 = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
-      const tunnelY1 =
-        Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
-      const tunnelX2 = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
-      const tunnelY2 =
-        Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
-      quantumPortals.push(new QuantumPortal(tunnelX1, tunnelY1));
-      quantumPortals.push(new QuantumPortal(tunnelX2, tunnelY2));
-      playSound("wormhole");
-      break;
+    // REMOVED: Unused event case
+    // case "quantumTunnels": // Logic requires QuantumPortal class
+    //     eventActive.type = "quantumTunnels";
+    //     showEventText(safeT("event.quantumPortal", "Quantum Portal Pair!"));
+    //     const tunnelX1 = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
+    //     const tunnelY1 = Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
+    //     const tunnelX2 = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
+    //     const tunnelY2 = Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
+    //     if (typeof QuantumPortal !== 'undefined' && typeof quantumPortals !== "undefined") { // Check if class and array exist
+    //         quantumPortals.push(new QuantumPortal(tunnelX1, tunnelY1));
+    //         quantumPortals.push(new QuantumPortal(tunnelX2, tunnelY2));
+    //         playSound("wormhole");
+    //     } else {
+    //         console.warn("QuantumPortal class or array not found for event.");
+    //     }
+    //     break;
 
     case "gravityWells":
       eventActive.type = "gravityWells";
@@ -663,10 +667,10 @@ function triggerRandomEvent() {
           duration: 120,
         });
         warningSystem.spawn(() => {
-          const bh = new BlackHole(x, y, true);
-          bh.radius = GAME_CONFIG.events.gravityWells.radius;
-          bh.maxRadius = GAME_CONFIG.events.gravityWells.radius;
-          bh.strength *= 0.5;
+          const bh = new BlackHole(x, y, true); // Temporary
+          bh.radius = GAME_CONFIG.events.gravityWells.radius; // Use event specific radius
+          bh.maxRadius = GAME_CONFIG.events.gravityWells.radius; // Cap radius
+          bh.strength *= 0.5; // Weaker gravity
           blackHoles.push(bh);
         });
       }
@@ -678,13 +682,13 @@ function triggerRandomEvent() {
         safeT("event.meteorBombardment", "⚠️ METEOR BOMBARDMENT IMMINENT ⚠️")
       );
       const meteorCfg = GAME_CONFIG.events.meteorBombardment;
-      const warningDurationM = 180;
+      const warningDurationM = 180; // Warning duration for meteors
       for (let i = 0; i < meteorCfg.count; i++) {
         setTimeout(() => {
           if (isGameRunning) {
             const x = Math.random() * canvas.width;
-            const y = -30;
-            const impactY = Math.random() * (canvas.height - 100) + 50;
+            const y = -30; // Start off-screen top
+            const impactY = Math.random() * (canvas.height - 100) + 50; // Target impact Y
             const warningSystem = spawnWithWarning("meteor", x, impactY, {
               duration: warningDurationM,
             });
@@ -693,18 +697,15 @@ function triggerRandomEvent() {
                 const meteor = new Asteroid(
                   x,
                   y,
-                  20 + Math.random() * 15,
-                  "#ff6b35",
-                  {
-                    x: (Math.random() - 0.5) * 2,
-                    y: meteorCfg.speed,
-                  }
+                  20 + Math.random() * 15, // Size
+                  "#ff6b35", // Color
+                  { x: (Math.random() - 0.5) * 2, y: meteorCfg.speed } // Velocity
                 );
                 asteroids.push(meteor);
               }
             });
           }
-        }, i * meteorCfg.delay);
+        }, i * meteorCfg.delay); // Stagger spawn
       }
       playSound("warning");
       break;
@@ -720,9 +721,9 @@ function triggerRandomEvent() {
         });
         warningSystem.spawn(() => {
           if (isGameRunning) {
-            const voidRift = new BlackHole(x, y, true);
-            voidRift.isVoidRift = true;
-            voidRift.lifetime = 300;
+            const voidRift = new BlackHole(x, y, true); // Temporary
+            voidRift.isVoidRift = true; // Flag for different behavior? (Currently unused)
+            voidRift.lifetime = 300; // Shorter lifetime than normal temporary BHs
             blackHoles.push(voidRift);
             playSound("blackhole");
           }
@@ -733,50 +734,66 @@ function triggerRandomEvent() {
     case "lightningStorm":
       eventActive.type = "lightningStorm";
       showEventText(safeT("event.lightningStorm", "⚡ THUNDER SHIELD! ⚡"));
-      lightningStorms.push(new LightningStorm());
-      playSound("warning");
-      triggerScreenShake(0.4);
+      if (
+        typeof LightningStorm !== "undefined" &&
+        typeof lightningStorms !== "undefined"
+      ) {
+        // Check class/array
+        lightningStorms.push(new LightningStorm());
+        playSound("warning");
+        triggerScreenShake(0.4);
+      } else {
+        console.warn("LightningStorm class or array not found for event.");
+      }
       break;
 
-    case "speedZone":
+    // REMOVED: Unused/unimplemented event cases
+    // case "temporalChaos":
+    // case "lightningNetwork":
+    // case "voidStorm":
+
+    case "speedZone": // Referenced in animate(), kept for now
       eventActive.type = "speedZone";
-      globalSpeedMultiplier *= GAME_CONFIG.events.speedZone.speedMultiplier;
+      // The speed multiplier is applied directly in animate() based on eventActive.type
       showEventText(safeT("event.difficultySpike", "Difficulty Spike!"));
       break;
 
     case "asteroidRain":
       eventActive.type = "asteroidRain";
       showEventText(safeT("event.asteroidRain", "Asteroid Rain!"));
-      for (let i = 0; i < GAME_CONFIG.events.asteroidRain.count; i++) {
+      const rainConfig = GAME_CONFIG.events.asteroidRain;
+      for (let i = 0; i < rainConfig.count; i++) {
         setTimeout(() => {
           if (isGameRunning) {
             asteroids.push(
               new Asteroid(
                 Math.random() * width,
                 -30,
-                GAME_CONFIG.events.asteroidRain.minRadius +
-                  Math.random() *
-                    (GAME_CONFIG.events.asteroidRain.maxRadius -
-                      GAME_CONFIG.events.asteroidRain.minRadius),
-                "#ff4444",
+                rainConfig.minRadius +
+                  Math.random() * (rainConfig.maxRadius - rainConfig.minRadius),
+                "#ff4444", // Specific color for this event
                 {
                   x: 0,
                   y:
-                    (GAME_CONFIG.events.asteroidRain.speedMultiplier +
-                      Math.random() *
-                        GAME_CONFIG.events.asteroidRain.speedVariation) *
+                    (rainConfig.speedMultiplier +
+                      Math.random() * rainConfig.speedVariation) *
                     globalSpeedMultiplier,
                 }
               )
             );
           }
-        }, i * GAME_CONFIG.events.asteroidRain.delay);
+        }, i * rainConfig.delay);
       }
+      break;
+
+    default:
+      console.warn("Unknown event type selected:", randomEventType);
       break;
   }
 }
 
-// Expose to global scope for access from game.js
+// Expose functions globally
 window.triggerRandomEvent = triggerRandomEvent;
 window.showEventText = showEventText;
 window.resetEventSystem = resetEventSystem;
+window.safeT = safeT; // Expose safe translate helper

@@ -1,15 +1,15 @@
 // Endpoint Configuration with Security
-// This file contains obfuscated endpoint configurations
+// This file contains endpoint configurations
 
 class EndpointManager {
   constructor() {
     this.initialized = false;
     this.endpoints = {};
-    this.wsEndpoint = null;
+    this.wsEndpoint = null; // Storing wsEndpoint separately might be redundant
   }
 
   /**
-   * Initialize endpoints with obfuscation
+   * Initialize endpoints
    */
   async initialize() {
     if (this.initialized) return;
@@ -18,37 +18,25 @@ class EndpointManager {
       // Direct endpoint data from your 'prod' deployment
       this.endpoints.api =
         "https://bzxl0yj0qi.execute-api.ap-southeast-1.amazonaws.com/prod";
-      // FIX: Removed the trailing slash. The connection URL typically does not end with a slash.
+      // WebSocket endpoint, trailing slash removed.
       this.endpoints.ws =
         "wss://27elhcgzu9.execute-api.ap-southeast-1.amazonaws.com/prod";
       this.endpoints.token = "stellar_drift_secure_token_v1";
 
-      // Add timestamp-based validation
+      // Add timestamp for potential future validation/rotation
       this.endpoints.timestamp = Date.now();
 
       this.initialized = true;
-      console.log("Endpoints initialized securely");
+      console.log("Endpoints initialized");
     } catch (error) {
       console.error("Failed to initialize endpoints:", error);
-      // Fallback to environment detection
+      // Fallback to environment detection if direct assignment fails
       this.initializeFallback();
     }
   }
 
   /**
-   * Decode base64 strings (No longer used for endpoints but kept for compatibility if needed elsewhere)
-   */
-  decode(encoded) {
-    try {
-      return atob(encoded);
-    } catch (error) {
-      console.error("Decode error:", error);
-      return null;
-    }
-  }
-
-  /**
-   * Fallback initialization
+   * Fallback initialization (primarily for development)
    */
   initializeFallback() {
     // Check if we're in development
@@ -60,7 +48,10 @@ class EndpointManager {
       this.endpoints.api = "http://localhost:3000";
       this.endpoints.ws = "ws://localhost:3001";
     } else {
-      // In production, these would be loaded from a secure configuration service
+      // Production fallback if direct init fails (should ideally not happen)
+      console.error(
+        "Production endpoint initialization failed, falling back to null."
+      );
       this.endpoints.api = null;
       this.endpoints.ws = null;
     }
@@ -69,34 +60,32 @@ class EndpointManager {
   }
 
   /**
-   * Get API endpoint with validation
+   * Get API endpoint
    */
   getApiEndpoint() {
     if (!this.initialized) {
       console.error("Endpoints not initialized");
       return null;
     }
-
-    // Add timestamp validation (endpoints expire after 1 hour)
-    if (Date.now() - this.endpoints.timestamp > 3600000) {
-      console.warn("Endpoints expired, reinitializing...");
-      this.initialized = false;
-      this.initialize();
-      return null;
-    }
-
+    // Simple timestamp validation example (e.g., re-initialize if older than 1 hour)
+    // if (Date.now() - this.endpoints.timestamp > 3600000) {
+    //   console.warn("Endpoints potentially stale, consider reinitializing...");
+    //   // Optionally re-initialize:
+    //   // this.initialized = false;
+    //   // this.initialize();
+    //   // return null; // or return the stale endpoint
+    // }
     return this.endpoints.api;
   }
 
   /**
-   * Get WebSocket endpoint with validation
+   * Get WebSocket endpoint
    */
   getWsEndpoint() {
     if (!this.initialized) {
       console.error("Endpoints not initialized");
       return null;
     }
-
     return this.endpoints.ws;
   }
 
@@ -108,37 +97,17 @@ class EndpointManager {
       console.error("Endpoints not initialized");
       return null;
     }
-
     return this.endpoints.token;
   }
 
-  /**
-   * Validate endpoint health
-   */
-  async validateEndpoints() {
-    if (!this.endpoints.api) return false;
+  // REMOVED: Unused decode function
+  // decode(encoded) { ... }
 
-    try {
-      const response = await fetch(`${this.endpoints.api}/health`, {
-        method: "GET",
-        timeout: 5000,
-      });
+  // REMOVED: Unused validateEndpoints function
+  // async validateEndpoints() { ... }
 
-      return response.ok;
-    } catch (error) {
-      console.error("Endpoint validation failed:", error);
-      return false;
-    }
-  }
-
-  /**
-   * Rotate endpoints (for security)
-   */
-  async rotateEndpoints() {
-    console.log("Rotating endpoints for security...");
-    this.initialized = false;
-    await this.initialize();
-  }
+  // REMOVED: Unused rotateEndpoints function and associated interval in backendApi.js
+  // async rotateEndpoints() { ... }
 }
 
 // Create global instance

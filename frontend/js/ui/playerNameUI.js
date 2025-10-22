@@ -8,6 +8,8 @@ class PlayerNameUI {
     this.minLength = 2;
     this.maxLength = 20;
     this.initialized = false;
+    this.nameInput = null; // Store reference to input element
+    this.startButton = null; // Store reference to start button
   }
 
   /**
@@ -16,9 +18,20 @@ class PlayerNameUI {
   initialize() {
     if (this.initialized) return;
 
+    this.nameInput = document.getElementById("player-name-input");
+    this.startButton = document.getElementById("start-button");
+
+    if (!this.nameInput || !this.startButton) {
+      console.error(
+        "Player name input or start button not found during initialization."
+      );
+      return;
+    }
+
     this.setupNameInput();
     this.loadSavedName();
-    this.updateStartButton();
+    this.updateStartButton(); // Initial state update
+    this.updateInputVisuals(); // Initial visual state
     this.initialized = true;
 
     console.log("Player Name UI initialized");
@@ -28,29 +41,28 @@ class PlayerNameUI {
    * Setup name input event listeners
    */
   setupNameInput() {
-    const nameInput = document.getElementById("player-name-input");
-    const startButton = document.getElementById("start-button");
-
-    if (!nameInput || !startButton) {
-      console.warn("Player name input or start button not found");
-      return;
-    }
-
     // Real-time validation as user types
-    nameInput.addEventListener("input", (e) => {
+    this.nameInput.addEventListener("input", (e) => {
       const value = e.target.value;
       this.validateName(value);
       this.updateStartButton();
-      this.updateInputVisuals(nameInput);
+      this.updateInputVisuals();
     });
 
-    // Save name on Enter key
-    nameInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter" && this.isValid) {
-        this.saveName();
-        // Try to start game if name is valid
-        if (this.hasValidName()) {
-          startButton.click();
+    // Save name on Enter key and attempt to start game
+    this.nameInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault(); // Prevent default form submission if applicable
+        if (this.isValid) {
+          this.saveName();
+          // Directly click the start button if valid
+          this.startButton.click();
+        } else {
+          // Optionally provide feedback if name is invalid on Enter
+          this.show(); // Refocus input if invalid
+          if (typeof showEventText === "function") {
+            showEventText("Please enter a valid name (2-20 characters).");
+          }
         }
       }
     });
@@ -68,10 +80,12 @@ class PlayerNameUI {
       trimmedName.length <= this.maxLength
     ) {
       this.isValid = true;
-      this.playerName = trimmedName;
+      this.playerName = trimmedName; // Store the valid, trimmed name
     } else {
       this.isValid = false;
-      this.playerName = "";
+      // Keep playerName potentially non-empty for visual feedback,
+      // but isValid flag prevents saving/starting.
+      this.playerName = trimmedName; // Store trimmed name for consistency
     }
   }
 
@@ -79,33 +93,28 @@ class PlayerNameUI {
    * Update start button state based on name validation
    */
   updateStartButton() {
-    const startButton = document.getElementById("start-button");
-    if (!startButton) return;
-
     if (this.isValid) {
-      startButton.classList.remove("disabled");
-      startButton.disabled = false;
+      this.startButton.classList.remove("disabled");
+      this.startButton.disabled = false;
     } else {
-      startButton.classList.add("disabled");
-      startButton.disabled = true;
+      this.startButton.classList.add("disabled");
+      this.startButton.disabled = true;
     }
   }
 
   /**
    * Update input visual feedback
-   * @param {HTMLInputElement} nameInput - The input element.
    */
-  updateInputVisuals(nameInput) {
-    nameInput.classList.remove("valid", "invalid");
+  updateInputVisuals() {
+    this.nameInput.classList.remove("valid", "invalid");
 
-    if (nameInput.value.trim().length === 0) {
-      return;
-    }
-
-    if (this.isValid) {
-      nameInput.classList.add("valid");
-    } else {
-      nameInput.classList.add("invalid");
+    // Only add validation class if the input is not empty
+    if (this.nameInput.value.length > 0) {
+      if (this.isValid) {
+        this.nameInput.classList.add("valid");
+      } else {
+        this.nameInput.classList.add("invalid");
+      }
     }
   }
 
@@ -116,16 +125,24 @@ class PlayerNameUI {
     try {
       const savedName = localStorage.getItem("stellarDriftPlayerName");
       if (savedName) {
-        const nameInput = document.getElementById("player-name-input");
-        if (nameInput) {
-          nameInput.value = savedName;
-          this.validateName(savedName);
-          this.updateStartButton();
-          this.updateInputVisuals(nameInput);
-        }
+        this.nameInput.value = savedName;
+        // Re-validate the loaded name
+        this.validateName(savedName);
+        // Update UI based on validation result
+        this.updateStartButton();
+        this.updateInputVisuals();
+      } else {
+        // If no saved name, ensure initial state is invalid
+        this.validateName(""); // Explicitly validate empty string
+        this.updateStartButton();
+        this.updateInputVisuals();
       }
     } catch (error) {
       console.error("Error loading saved player name:", error);
+      // Ensure invalid state on error
+      this.validateName("");
+      this.updateStartButton();
+      this.updateInputVisuals();
     }
   }
 
@@ -133,6 +150,7 @@ class PlayerNameUI {
    * Save player name to localStorage
    */
   saveName() {
+    // Only save if the name is currently valid AND the stored playerName is not empty
     if (this.isValid && this.playerName) {
       try {
         localStorage.setItem("stellarDriftPlayerName", this.playerName);
@@ -140,19 +158,22 @@ class PlayerNameUI {
       } catch (error) {
         console.error("Error saving player name:", error);
       }
+    } else {
+      console.warn("Attempted to save invalid or empty player name.");
     }
   }
 
   /**
-   * Get current player name
-   * @returns {string} The current player name.
+   * Get current valid player name
+   * @returns {string} The current valid player name, or an empty string if invalid.
    */
   getPlayerName() {
-    return this.playerName;
+    // Return the stored playerName only if it's currently considered valid
+    return this.isValid ? this.playerName : "";
   }
 
   /**
-   * Check if player has a valid name
+   * Check if player has a valid name currently entered/loaded
    * @returns {boolean} True if the name is valid.
    */
   hasValidName() {
@@ -163,10 +184,12 @@ class PlayerNameUI {
    * Show name input and focus it.
    */
   show() {
-    const nameInput = document.getElementById("player-name-input");
-    if (nameInput) {
-      nameInput.focus();
-      nameInput.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (this.nameInput) {
+      this.nameInput.focus();
+      // Scroll into view if needed, especially on mobile
+      if (typeof this.nameInput.scrollIntoView === "function") {
+        this.nameInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
     }
   }
 }

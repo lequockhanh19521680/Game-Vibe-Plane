@@ -31,7 +31,7 @@ coverage/
 .nyc_output
 
 # Dependency directories
-jspm_packages/
+# jspm_packages/ # Assuming jspm is not used
 
 # Optional npm cache directory
 .npm
@@ -48,33 +48,35 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# parcel-bundler cache (https://parceljs.org/)
+# parcel-bundler cache (https://parceljs.org/) - Keep if Parcel might be used
 .cache
 .parcel-cache
 
-# next.js build output
-.next
+# next.js build output - Remove if Next.js is not used
+# .next
 
-# nuxt.js build output
-.nuxt
+# nuxt.js build output - Remove if Nuxt.js is not used
+# .nuxt
 
-# vuepress build directory
-.vuepress/dist
+# vuepress build directory - Remove if VuePress is not used
+# .vuepress/dist
 
-# Serverless directories
+# Serverless directories (often specific to backend)
+# Keep if serverless framework might be used at root, otherwise move to backend/.gitignore
 .serverless/
 
-# FuseBox cache
-.fusebox/
+# FuseBox cache - Remove if FuseBox is not used
+# .fusebox/
 
-# DynamoDB Local files
+# DynamoDB Local files (often specific to backend)
+# Keep if DynamoDB local might be used at root, otherwise move to backend/.gitignore
 .dynamodb/
 
-# TernJS port file
-.tern-port
+# TernJS port file - Remove if TernJS is not used
+# .tern-port
 
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
+# Stores VSCode versions used for testing VSCode extensions - Remove if not developing VSCode extensions
+# .vscode-test
 
 # IDE files
 .vscode/
@@ -92,17 +94,17 @@ jspm_packages/
 ehthumbs.db
 Thumbs.db
 
-# Build outputs
+# Build outputs (Common names, adjust if needed)
 dist/
 build/
 out/
 
-# Temporary files
-tmp/
-temp/
+# Temporary files - Removed /tmp/ as it's too broad
+# tmp/
+# temp/
 
-# AWS deployment files
-.aws/
+# AWS deployment files (usually backend specific)
+# .aws/ # Move to backend/.gitignore if only used there
 
 # Backup files
 *.backup
@@ -112,8 +114,3 @@ temp/
 config.local.js
 settings.local.js
 
-# Game-specific
-game-data/
-player-data/
-screenshots/
-recordings/

@@ -1,20 +1,28 @@
 # Backup files
 *.backup
+# REMOVED: *.bak pattern is already in root .gitignore
+# *.bak
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# IDE files (covered by root .gitignore)
+# .vscode/
+# .idea/
+# *.swp
+# *.swo
+# *~
 
-# OS files
-.DS_Store
-Thumbs.db
+# OS files (covered by root .gitignore)
+# .DS_Store
+# Thumbs.db
 
-# Logs
-*.log
+# Logs (covered by root .gitignore)
+# *.log
 
 # Temporary files
-/tmp/
-js/entities.js.bak
+# REMOVED: /tmp/ pattern is too broad and often system-level
+# /tmp/
+# REMOVED: js/entities.js.bak is covered by *.bak in root
+# js/entities.js.bak
+
+# Environment files (Good practice to ignore these in frontend too)
+.env
+.env.*.local

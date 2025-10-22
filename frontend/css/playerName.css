@@ -20,22 +20,22 @@
   font-family: "Exo 2", sans-serif;
   text-align: center;
   transition: all 0.3s ease;
-  box-sizing: border-box;
+  box-sizing: border-box; /* Ensure padding doesn't affect width */
 }
 
 .name-input:focus {
   outline: none;
-  box-shadow: 0 0 var(--primary-color);
+  box-shadow: 0 0 10px var(--primary-color); /* Corrected box-shadow value */
   background: rgba(0, 255, 255, 0.1);
 }
 
 .name-input.valid {
-  border-color: #4caf50;
+  border-color: #4caf50; /* Green for valid */
   box-shadow: 0 0 10px #4caf50;
 }
 
 .name-input.invalid {
-  border-color: #f44336;
+  border-color: #f44336; /* Red for invalid */
   box-shadow: 0 0 10px #f44336;
 }
 
@@ -149,8 +149,6 @@
   box-shadow: none !important;
   transform: none !important;
 }
-
-/* REMOVED: Unused .character-counter rule */
 
 /* Animation for validation states */
 @keyframes shake {

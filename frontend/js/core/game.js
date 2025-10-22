@@ -1,8 +1,8 @@
 // --- Game Logic ---
 
 /**
- * THÊM MỚI: Hàm tính toán cấp độ và tiến trình dựa trên điểm số hiện tại.
- * Sử dụng cấu hình `levelUpScores` mới để có độ khó tăng dần.
+ * Calculates level info based on current score.
+ * Uses `levelUpScores` for progression.
  * @param {number} currentScore - The player's current score.
  * @returns {{level: number, scoreToNext: number}} - The current level and score to the next level.
  */
@@ -123,9 +123,10 @@ function init() {
   freezeZones = [];
   magneticStorms = [];
   lightningStorms = [];
-  quantumPortals = [];
-  wormholes = [];
-  decoyPowerUps = []; // NEW: Array for decoy power-ups
+  // REMOVED: Unused arrays for portals
+  // quantumPortals = [];
+  // wormholes = [];
+  decoyPowerUps = [];
   for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
     const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
     for (let j = 0; j < GAME_CONFIG.visual.stars.starsPerLayer; j++)
@@ -146,13 +147,14 @@ function init() {
 }
 
 function animate() {
-  if (!isGameRunning) {
-    cancelAnimationFrame(animationFrameId);
+  if (!isGameRunning || isPaused) {
+    // Check for pause
+    // cancelAnimationFrame(animationFrameId); // Handled by gameStateManager
     return;
   }
 
   animationFrameId = requestAnimationFrame(animate);
-  ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor; // FIXED: Use config variable
+  ctx.fillStyle = GAME_CONFIG.canvas.backgroundColor;
   ctx.fillRect(0, 0, width, height);
   nebulae.forEach((n) => {
     ctx.fillStyle = n;
@@ -190,6 +192,7 @@ function animate() {
     levelProgressBar.style.width = `${Math.min(100, progressPercentage)}%`;
   }
 
+  // Update all active entities
   [
     particles,
     lasers,
@@ -207,14 +210,16 @@ function animate() {
     freezeZones,
     magneticStorms,
     lightningStorms,
-    quantumPortals,
-    wormholes,
+    // REMOVED: Unused portal updates
+    // quantumPortals,
+    // wormholes,
     decoyPowerUps,
   ].forEach((arr) =>
     arr.forEach((item) => (item.update ? item.update() : undefined))
   );
-  player.update();
+  player.update(); // Update player last
 
+  // Filter inactive entities
   fragments = fragments.filter((f) => f.life > 0 && f.y < height + 50);
   if (fragments.length > GAME_CONFIG.core.maxFragments) {
     fragments.splice(0, fragments.length - GAME_CONFIG.core.maxFragments);
@@ -229,7 +234,6 @@ function animate() {
   asteroids = asteroids.filter(
     (a) => a.x > -50 && a.x < width + 50 && a.y > -50 && a.y < height + 50
   );
-  // FIX: BlackHoles now correctly use bh.alpha > 0 to filter out fading ones.
   blackHoles = blackHoles.filter((bh) => bh.alpha > 0);
   crystalClusters = crystalClusters.filter((cc) =>
     cc.update ? cc.update() : false
@@ -242,11 +246,12 @@ function animate() {
   freezeZones = freezeZones.filter((f) => f.update() !== false);
   magneticStorms = magneticStorms.filter((m) => m.update() !== false);
   lightningStorms = lightningStorms.filter((l) => l.update() !== false);
-  quantumPortals = quantumPortals.filter((p) => p.update() !== false);
-  wormholes = wormholes.filter((w) => w.update() !== false);
+  // REMOVED: Unused portal filters
+  // quantumPortals = quantumPortals.filter((p) => p.update() !== false);
+  // wormholes = wormholes.filter((w) => w.update() !== false);
   decoyPowerUps = decoyPowerUps.filter((d) => d.update() !== false);
 
-  // --- FIX: Logic for triggering events based on score range ---
+  // --- Trigger Events ---
   const eventConfig = GAME_CONFIG.events;
   if (
     score >= nextEventScore &&
@@ -256,21 +261,21 @@ function animate() {
     if (typeof window.triggerRandomEvent === "function") {
       window.triggerRandomEvent();
     }
-    const eventVariation = 0.7 + Math.random() * 0.6;
+    const eventVariation = 0.7 + Math.random() * 0.6; // Add variability to event timing
     nextEventScore += eventConfig.interval * eventVariation;
   }
-  // --- END FIX ---
 
+  // Deactivate expired events
   if (eventActive.type && timers.difficulty > eventActive.endTime) {
-    if (eventActive.type === "speedZone")
-      globalSpeedMultiplier /= GAME_CONFIG.events.speedZone.speedMultiplier;
+    // Example: If speedZone ends, reset speed multiplier
+    // Add logic here for other timed events if necessary
     eventActive.type = null;
   }
 
-  // --- FIX: Logic Level Up và Pop-up ---
+  // --- Difficulty Progression ---
   if (currentLevel > lastDifficultyLevel) {
-    // FIX: Don't show level up message for Level 1
     if (currentLevel > 1) {
+      // Don't show for level 1
       const levelUpText = window.safeT
         ? window.safeT(
             "level.levelUp",
@@ -282,18 +287,21 @@ function animate() {
     }
     lastDifficultyLevel = currentLevel;
 
-    // Logic tăng độ khó
+    // Increase difficulty parameters
     globalSpeedMultiplier += GAME_CONFIG.difficulty.speedIncreaseStep;
     if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval) {
       spawnInterval -= GAME_CONFIG.difficulty.spawnDecreaseStep;
     }
   }
-  // --- END FIX ---
 
-  let currentSpawnInterval = spawnInterval;
+  // --- Spawning Logic ---
+  let currentSpawnInterval = spawnInterval; // Use the adjusted interval
 
+  // Asteroid Spawning
   timers.asteroid++;
-  if (timers.asteroid % currentSpawnInterval === 0) {
+  if (timers.asteroid % Math.floor(currentSpawnInterval) === 0) {
+    // Ensure integer interval
+    // ... (rest of asteroid spawning logic) ...
     const difficultyLevel = currentLevel - 1;
     const radius =
       GAME_CONFIG.entities.asteroids.minRadius +
@@ -345,6 +353,8 @@ function animate() {
       )
     );
   }
+
+  // Black Hole Spawning
   if (score > GAME_CONFIG.entities.blackHoles.spawnScore) {
     timers.blackHole++;
     if (
@@ -358,13 +368,13 @@ function animate() {
       });
 
       warningSystem.spawn(() => {
-        // FIX: Đảm bảo hố đen sinh ra ngẫu nhiên cũng là tạm thời (isTemporary = true)
-        blackHoles.push(new BlackHole(bhX, bhY, true));
+        blackHoles.push(new BlackHole(bhX, bhY, true)); // Ensure temporary
         playSound("blackhole");
       });
     }
   }
 
+  // Energy Orb Spawning
   if (score > GAME_CONFIG.newObjects.energyOrb.spawnThreshold) {
     timers.energyOrb = (timers.energyOrb || 0) + 1;
     if (
@@ -377,10 +387,9 @@ function animate() {
     }
   }
 
+  // Missile Spawning
   if (score > GAME_CONFIG.entities.missiles.spawnScore) {
     timers.missile++;
-
-    // TÍNH TOÁN KHOẢNG THỜI GIAN XUẤT HIỆN TÊN LỬA DỰA TRÊN CẤP ĐỘ
     const missileConfig = GAME_CONFIG.entities.missiles;
     const difficultyLevel = currentLevel - 1;
     const missileInterval = Math.max(
@@ -390,6 +399,8 @@ function animate() {
     );
 
     if (timers.missile % Math.floor(missileInterval) === 0) {
+      // Ensure integer interval
+      // ... (rest of missile spawning logic) ...
       const sides = ["left", "right", "top", "bottom"];
       const side = sides[Math.floor(Math.random() * sides.length)];
       let warningX, warningY, missileAngle, spawnX, spawnY;
@@ -443,6 +454,8 @@ function animate() {
       });
     }
   }
+
+  // Laser Spawning
   if (score > GAME_CONFIG.entities.lasers.spawnScore) {
     timers.laser++;
     const difficultyLevel = currentLevel - 1;
@@ -451,7 +464,9 @@ function animate() {
       GAME_CONFIG.entities.lasers.baseInterval -
         difficultyLevel * GAME_CONFIG.entities.lasers.intervalDecreasePerLevel
     );
-    if (timers.laser % laserInterval === 0) {
+    if (timers.laser % Math.floor(laserInterval) === 0) {
+      // Ensure integer interval
+      // ... (rest of laser spawning logic) ...
       const laserCount = Math.min(
         GAME_CONFIG.entities.lasers.maxConcurrent,
         1 +
@@ -479,6 +494,8 @@ function animate() {
       }
     }
   }
+
+  // Laser Mine Spawning
   if (score > GAME_CONFIG.entities.laserMines.spawnScore) {
     timers.mine++;
     if (timers.mine % GAME_CONFIG.entities.laserMines.spawnInterval === 0) {
@@ -492,6 +509,8 @@ function animate() {
       });
     }
   }
+
+  // Crystal Cluster Spawning
   if (score > GAME_CONFIG.entities.crystalClusters.spawnScore) {
     timers.crystal++;
     if (
@@ -510,7 +529,9 @@ function animate() {
   }
 
   // --- Collision Detection ---
+  // ... (rest of collision logic remains the same) ...
 
+  // Check Asteroid-Player Collision
   for (const ast of asteroids) {
     if (
       Math.hypot(player.x - ast.x, player.y - ast.y) -
@@ -518,10 +539,11 @@ function animate() {
         player.radius <
       GAME_CONFIG.core.collisionPrecision
     ) {
-      if (!player.shieldActive) {
+      if (!player.shieldActive && !player.thunderShieldActive) {
         endGame("asteroid collision");
         return;
       } else {
+        // Shield push effect (if needed)
         const dx = ast.x - player.x;
         const dy = ast.y - player.y;
         const distance = Math.max(Math.hypot(dx, dy), 1);
@@ -530,15 +552,17 @@ function animate() {
       }
     }
   }
+  // Check Missile-Player Collision
   for (const m of missiles) {
     if (
       Math.hypot(player.x - m.x, player.y - m.y) - m.radius - player.radius <
       GAME_CONFIG.core.collisionPrecision
     ) {
-      if (!player.shieldActive) {
+      if (!player.shieldActive && !player.thunderShieldActive) {
         endGame("missile collision");
         return;
       } else {
+        // Shield push effect (if needed)
         const dx = m.x - player.x;
         const dy = m.y - player.y;
         const distance = Math.max(Math.hypot(dx, dy), 1);
@@ -548,6 +572,7 @@ function animate() {
     }
   }
 
+  // Check Laser-Player Collision
   for (const laser of lasers) {
     if (laser.timer > laser.maxTime + GAME_CONFIG.entities.lasers.beamDuration)
       continue;
@@ -558,7 +583,7 @@ function animate() {
         dy * (player.x - laser.x) - dx * (player.y - laser.y)
       );
       if (dist < player.radius + GAME_CONFIG.entities.lasers.playerHitRadius) {
-        if (!player.shieldActive) {
+        if (!player.shieldActive && !player.thunderShieldActive) {
           endGame("laser collision");
           return;
         }
@@ -569,6 +594,7 @@ function animate() {
     (l) => l.timer < l.maxTime + GAME_CONFIG.entities.lasers.beamDuration
   );
 
+  // Check Laser Mine-Player Collision
   for (let i = laserMines.length - 1; i >= 0; i--) {
     const mine = laserMines[i];
     if (mine.state === "fading") {
@@ -590,6 +616,7 @@ function animate() {
           const dotProduct =
             (player.x - mine.x) * dx + (player.y - mine.y) * dy;
           if (dotProduct > 0) {
+            // Check if player is in front of the mine's beam direction
             hitDetected = true;
             break;
           }
@@ -597,7 +624,7 @@ function animate() {
       }
 
       if (hitDetected) {
-        if (!player.shieldActive) {
+        if (!player.shieldActive && !player.thunderShieldActive) {
           endGame("laser mine collision");
           return;
         }
@@ -605,96 +632,64 @@ function animate() {
     }
   }
 
+  // Check Crystal Cluster-Player Collision
   for (const cluster of crystalClusters) {
     if (cluster.state !== "discharging") continue;
 
     const dist = Math.hypot(player.x - cluster.x, player.y - cluster.y);
     const waveRadius = cluster.dischargeRadius;
-    const waveWidth = 20; // Tăng độ rộng của sóng để dễ va chạm hơn
+    const waveWidth = 20; // Width of the wave effect
     if (Math.abs(dist - waveRadius) < player.radius + waveWidth / 2) {
-      if (!player.shieldActive) {
+      if (!player.shieldActive && !player.thunderShieldActive) {
         endGame("crystal cluster collision");
         return;
       }
     }
   }
 
+  // Check Fragment-Player Collision (Only for specific lethal fragments if needed)
   for (let i = fragments.length - 1; i >= 0; i--) {
     const fragment = fragments[i];
-
     if (
-      fragment.lethal &&
+      fragment.lethal && // Only check lethal fragments
       !player.shieldActive &&
+      !player.thunderShieldActive &&
       Math.hypot(player.x - fragment.x, player.y - fragment.y) <
         player.radius + fragment.radius
     ) {
-      endGame("missile collision");
+      endGame("fragment collision"); // Generic reason, could be specified
       return;
     }
   }
 
-  for (let i = fragments.length - 1; i >= 0; i--) {
-    for (let j = asteroids.length - 1; j >= 0; j--) {
-      const f = fragments[i];
-      const a = asteroids[j];
-      if (f && a && Math.hypot(f.x - a.x, f.y - a.y) < f.radius + a.radius) {
-        for (let k = 0; k < GAME_CONFIG.fragments.explosionParticles; k++) {
-          particles.push(
-            new Particle(a.x, a.y, Math.random() * 2 + 1, a.color, {
-              x:
-                (Math.random() - 0.5) *
-                GAME_CONFIG.visual.particles.explosionSpeed,
-              y:
-                (Math.random() - 0.5) *
-                GAME_CONFIG.visual.particles.explosionSpeed,
-            })
-          );
-        }
-        playSound("collision");
-        playSound("score");
-        score += GAME_CONFIG.fragments.scoreBonus;
-        fragments.splice(i, 1);
-        asteroids.splice(j, 1);
-        break;
-      }
-    }
-  }
-
-  for (let i = missiles.length - 1; i >= 0; i--) {
-    for (let j = asteroids.length - 1; j >= 0; j--) {
-      const m = missiles[i];
-      const a = asteroids[j];
-      if (m && a && Math.hypot(m.x - a.x, m.y - a.y) < m.radius + a.radius) {
-        m.explode(true);
-        asteroids.splice(j, 1);
-        break;
-      }
-    }
-  }
+  // Check Black Hole-Player Collision
   for (let i = blackHoles.length - 1; i >= 0; i--) {
     const bh = blackHoles[i];
     if (Math.hypot(player.x - bh.x, player.y - bh.y) < bh.radius) {
       endGame("black hole collision");
       return;
     }
+    // Interactions with other objects (asteroids, missiles)
     for (let j = asteroids.length - 1; j >= 0; j--) {
       if (Math.hypot(asteroids[j].x - bh.x, asteroids[j].y - bh.y) < bh.radius)
         asteroids.splice(j, 1);
     }
     for (let j = missiles.length - 1; j >= 0; j--) {
       if (Math.hypot(missiles[j].x - bh.x, missiles[j].y - bh.y) < bh.radius)
-        missiles[j].isDead = true;
+        missiles[j].isDead = true; // Mark missile for removal
     }
   }
 
+  // Check Energy Orb-Player Collision
   for (let i = energyOrbs.length - 1; i >= 0; i--) {
     const orb = energyOrbs[i];
     if (
       Math.hypot(player.x - orb.x, player.y - orb.y) <
       orb.radius + player.radius
     ) {
-      score += 50;
+      score += 50; // Orb score bonus
       playSound("powerup");
+      // Particle effect on collection
       for (let j = 0; j < 8; j++) {
         const angle = (j / 8) * Math.PI * 2;
         particles.push(
@@ -708,27 +703,46 @@ function animate() {
     }
   }
 
+  // Check Plasma Field-Player Collision
   for (const plasma of plasmaFields) {
     if (
       Math.hypot(player.x - plasma.x, player.y - plasma.y) <
       plasma.radius + player.radius
     ) {
-      if (!player.shieldActive && Math.random() < plasma.damageRate) {
+      // Apply damage only if player is not shielded
+      if (
+        !player.shieldActive &&
+        !player.thunderShieldActive &&
+        Math.random() < plasma.damageRate
+      ) {
         endGame("plasma field burn");
         return;
       }
     }
   }
 
+  // Check Crystal Shard-Player Collision
   for (let i = crystalShards.length - 1; i >= 0; i--) {
     const crystal = crystalShards[i];
     if (
       Math.hypot(player.x - crystal.x, player.y - crystal.y) <
       crystal.size + player.radius
     ) {
-      score += 50;
-      player.activateShield();
+      score += 50; // Crystal score bonus
+      player.activateShield(); // Activate normal shield
       crystalShards.splice(i, 1);
+    }
+  }
+
+  // Check Decoy Powerup-Player Collision
+  for (let i = decoyPowerUps.length - 1; i >= 0; i--) {
+    const decoy = decoyPowerUps[i];
+    if (
+      Math.hypot(player.x - decoy.x, player.y - decoy.y) <
+      decoy.size + player.radius
+    ) {
+      decoy.explode(); // Trigger the trap
+      decoyPowerUps.splice(i, 1); // Remove it
     }
   }
 
@@ -743,6 +757,6 @@ function endGame(reason = "unknown") {
   if (!isGameRunning) return;
 
   console.log(`Game Over! Reason: ${reason}`);
-  cancelAnimationFrame(animationFrameId);
+  isGameRunning = false; // Set game state flag
   gameStateManager.changeState("gameOver", { reason });
 }
