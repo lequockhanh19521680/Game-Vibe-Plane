@@ -192,14 +192,28 @@ class GameOverState extends GameState {
           : null;
 
       // Render the leaderboard snippet into the game over screen container
-      if (typeof renderCurrentLeaderboardData === "function") {
+      // SỬA ĐỔI: Sử dụng hàm mới `renderLeaderboardSnippet` hoặc đảm bảo `renderCurrentLeaderboardData` xử lý đúng
+      if (typeof renderLeaderboardSnippet === "function") {
+        renderLeaderboardSnippet({
+          targetElementId: "game-over-leaderboard-container",
+          highlightUserId: userId,
+          highlightRank: submitResult ? submitResult.rank : null,
+        });
+      } else if (typeof renderCurrentLeaderboardData === "function") {
+        // Fallback if only the old function exists (ensure it handles targetElementId)
+        console.warn(
+          "renderLeaderboardSnippet not found, attempting renderCurrentLeaderboardData."
+        );
         renderCurrentLeaderboardData({
-          targetElementId: "game-over-leaderboard-container", // Target the specific container
+          targetElementId: "game-over-leaderboard-container",
           highlightUserId: userId,
           highlightRank: submitResult ? submitResult.rank : null,
         });
       } else {
-        // Fallback if rendering function not found
+        // Fallback if neither rendering function not found
+        console.error(
+          "Leaderboard rendering function not found for game over screen."
+        );
         const lbContainer = document.getElementById(
           "game-over-leaderboard-container"
         );
@@ -315,6 +329,13 @@ class GameOverState extends GameState {
       };
 
       let submitResult = null;
+      // SỬA ĐỔI: Luôn đặt trạng thái loading ban đầu cho container game over
+      const lbContainer = document.getElementById(
+        "game-over-leaderboard-container"
+      );
+      if (lbContainer) {
+        lbContainer.innerHTML = '<div class="loading">Loading...</div>'; // Loading leaderboard...
+      }
 
       if (
         window.BackendAPI &&
@@ -339,25 +360,25 @@ class GameOverState extends GameState {
         } catch (error) {
           console.error("Failed to send data to backend:", error);
           // Attempt to render local leaderboard snippet on backend failure
-          const lbContainer = document.getElementById(
-            "game-over-leaderboard-container"
-          );
           if (lbContainer) {
             lbContainer.innerHTML =
               '<div class="no-data">Lỗi kết nối. Hiển thị điểm cục bộ.</div>'; // Connection error. Showing local scores.
             // Optionally call a function here to render local scores if needed
+            if (typeof showOfflineLeaderboard === "function") {
+              showOfflineLeaderboard("game-over-leaderboard-container");
+            }
           }
         }
       } else {
         console.log("Backend not available, game over data logged locally");
         // Render local leaderboard snippet if backend is disabled
-        const lbContainer = document.getElementById(
-          "game-over-leaderboard-container"
-        );
         if (lbContainer) {
           lbContainer.innerHTML =
             '<div class="no-data">Chế độ ngoại tuyến. Hiển thị điểm cục bộ.</div>'; // Offline mode. Showing local scores.
           // Optionally call a function here to render local scores if needed
+          if (typeof showOfflineLeaderboard === "function") {
+            showOfflineLeaderboard("game-over-leaderboard-container");
+          }
         }
       }
 
@@ -386,6 +407,9 @@ class GameOverState extends GameState {
         lbContainer.innerHTML =
           '<div class="no-data">Đã xảy ra lỗi. Hiển thị điểm cục bộ.</div>'; // An error occurred. Showing local scores.
         // Optionally call a function here to render local scores if needed
+        if (typeof showOfflineLeaderboard === "function") {
+          showOfflineLeaderboard("game-over-leaderboard-container");
+        }
       }
       return null;
     }
@@ -422,9 +446,10 @@ class LeaderboardState extends GameState {
     if (typeof renderCurrentLeaderboardData === "function") {
       // Target the main leaderboard container
       renderCurrentLeaderboardData({
-        targetElementId: "global-leaderboard-list",
+        targetElementId: "global-leaderboard-list", // SỬA ĐỔI: Đảm bảo nhắm đúng mục tiêu container chính
         highlightUserId: userId,
         highlightRank: userRank,
+        forceRefresh: true, // SỬA ĐỔI: Thêm cờ để buộc làm mới nếu cần
       });
     } else {
       console.warn("renderCurrentLeaderboardData function not found.");
@@ -446,6 +471,14 @@ class LeaderboardState extends GameState {
         ".leaderboard-container"
       );
       if (listContainer) listContainer.scrollTop = 0;
+    }
+
+    // SỬA ĐỔI: Tải dữ liệu quốc gia và cập nhật tab thống kê khi vào màn hình leaderboard
+    if (typeof loadCountryData === "function") {
+      loadCountryData();
+    }
+    if (typeof updatePlayerStats === "function") {
+      updatePlayerStats();
     }
   }
 
