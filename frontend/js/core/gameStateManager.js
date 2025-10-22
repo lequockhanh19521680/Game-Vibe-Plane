@@ -44,8 +44,15 @@ class GameStateManager {
       this.currentState.enterImmediateEffects();
       // Set a timeout to show the UI after the configured delay
       this.gameOverTimeoutId = setTimeout(() => {
-        this.currentState.enterDelayedUI();
-        this.gameOverTimeoutId = null; // Clear ID after execution
+        // Double check if the state is still gameOver before showing UI
+        if (this.getCurrentStateName() === "gameOver") {
+          this.currentState.enterDelayedUI();
+        } else {
+          console.log(
+            "State changed before game over UI delay completed. Aborting UI display."
+          );
+        }
+        this.gameOverTimeoutId = null; // Clear ID after execution or abort
       }, GAME_CONFIG.ui.gameOverDelay || 0); // Use config value, default 0
     } else {
       // For other states, call enter normally
@@ -363,15 +370,104 @@ class GameOverState extends GameState {
         BACKEND_CONFIG.USE_BACKEND
       ) {
         try {
-          const playerName =
+          // --- FIX START: More robust player name retrieval with correct validation call ---
+          let playerName = "Anonymous"; // Default
+          let retrievedName = null;
+          let isValid = false;
+
+          console.log(
+            "[sendGameOverData] Attempting to retrieve player name..."
+          ); // Log: Bắt đầu lấy tên
+
+          if (
             window.playerNameUI &&
-            typeof window.playerNameUI.getPlayerName === "function" &&
-            window.playerNameUI.getPlayerName()
-              ? window.playerNameUI.getPlayerName()
-              : "Anonymous";
+            typeof window.playerNameUI.getPlayerName === "function"
+          ) {
+            try {
+              retrievedName = window.playerNameUI.getPlayerName();
+              // Log the raw retrieved value immediately
+              console.log(
+                "[sendGameOverData] playerNameUI.getPlayerName() returned:",
+                retrievedName,
+                "(type:",
+                typeof retrievedName + ")"
+              ); // Log: Giá trị trả về từ getPlayerName
+            } catch (err) {
+              console.error(
+                "[sendGameOverData] Error calling playerNameUI.getPlayerName():",
+                err
+              ); // Log: Lỗi khi gọi getPlayerName
+            }
+          } else {
+            console.warn(
+              "[sendGameOverData] playerNameUI or getPlayerName function not available."
+            ); // Log: Không tìm thấy playerNameUI hoặc getPlayerName
+          }
+
+          // Validate the retrieved name
+          if (
+            typeof retrievedName === "string" &&
+            retrievedName.trim().length > 0
+          ) {
+            const trimmedName = retrievedName.trim();
+            console.log("[sendGameOverData] Trimmed name:", trimmedName); // Log: Tên sau khi cắt khoảng trắng
+
+            // Correctly call the validation method on the playerNameUI instance
+            if (
+              window.playerNameUI &&
+              typeof window.playerNameUI.validateName === "function"
+            ) {
+              try {
+                // Add try-catch around validation
+                isValid = window.playerNameUI.validateName(trimmedName);
+                console.log(
+                  `[sendGameOverData] Validation result for "${trimmedName}":`,
+                  isValid
+                ); // Log: Kết quả validateName
+              } catch (validationErr) {
+                console.error(
+                  `[sendGameOverData] Error during validation for "${trimmedName}":`,
+                  validationErr
+                ); // Log: Lỗi khi validateName
+                isValid = false; // Assume invalid on error
+              }
+            } else {
+              console.warn(
+                "[sendGameOverData] playerNameUI.validateName function not available. Using fallback length check."
+              ); // Log: Không tìm thấy validateName, dùng kiểm tra dự phòng
+              // Fallback check if validateName method is missing
+              isValid = trimmedName.length >= 2 && trimmedName.length <= 20;
+              console.log(
+                `[sendGameOverData] Fallback validation result for "${trimmedName}":`,
+                isValid
+              ); // Log: Kết quả kiểm tra dự phòng
+            }
+
+            if (isValid) {
+              playerName = trimmedName;
+              console.log(
+                "[sendGameOverData] Name is valid. Using:",
+                playerName
+              ); // Log: Tên hợp lệ, sử dụng tên này
+            } else {
+              console.warn(
+                `[sendGameOverData] Retrieved name "${trimmedName}" failed validation. Falling back to 'Anonymous'.`
+              ); // Log: Tên không hợp lệ, dùng 'Anonymous'
+            }
+          } else {
+            console.warn(
+              `[sendGameOverData] Retrieved name "${retrievedName}" is invalid or empty. Falling back to 'Anonymous'.`
+            ); // Log: Tên rỗng hoặc không hợp lệ, dùng 'Anonymous'
+          }
+          // Log the name right before submitting
+          console.log(
+            "[sendGameOverData] Submitting score with username:",
+            playerName
+          ); // Log: Tên cuối cùng sẽ gửi đi
+          // --- FIX END ---
 
           submitResult = await BackendAPI.submitScore(
-            playerName,
+            playerName, // Use the potentially corrected playerName
             gameOverData.score,
             gameOverData.time,
             gameOverData.deathBy

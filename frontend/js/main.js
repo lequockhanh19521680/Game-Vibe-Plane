@@ -18,7 +18,7 @@ const uiElements = {
   pauseMenu: document.getElementById("pause-menu"),
   pauseButton: document.getElementById("pause-button"),
 };
-// Button references (assuming they exist in index.html)
+// Button references
 const startButton = document.getElementById("start-button");
 const restartButton = document.getElementById("restart-button");
 const leaderboardButton = document.getElementById("leaderboard-button");
@@ -39,6 +39,8 @@ const mainMenuFromPauseButton = document.getElementById(
 const mainMenuFromOverButton = document.getElementById(
   "main-menu-from-over-button"
 );
+// Player Name Input
+const playerNameInput = document.getElementById("player-name-input"); // Get player name input
 
 // Game state variables
 let width, height;
@@ -55,14 +57,13 @@ let crystalClusters,
   warnings,
   energyOrbs,
   plasmaFields,
-  crystalShards;
+  shieldCrystals; // Renamed from crystalShards
 let shieldGenerators,
   freezeZones,
   magneticStorms,
   lightningStorms,
   decoyPowerUps;
 // REMOVED: Unused portal arrays
-// let quantumPortals, wormholes;
 
 let mouse = { x: 0, y: 0 },
   prevMouse = { x: 0, y: 0 };
@@ -90,6 +91,34 @@ let nebulae = [];
 let nextEventScore = GAME_CONFIG.events.interval;
 let eventActive = { type: null, endTime: 0 };
 
+// --- Player Name Validation ---
+/**
+ * Validates the player name.
+ * @param {string} name - The name to validate.
+ * @returns {boolean} True if the name is valid (2-20 characters), false otherwise.
+ */
+function validatePlayerName(name) {
+  const trimmedName = name.trim();
+  return trimmedName.length >= 2 && trimmedName.length <= 20;
+}
+
+/**
+ * Updates the state (enabled/disabled) of the Start Battle button based on name validity.
+ */
+function updateStartButtonState() {
+  const name = playerNameInput.value;
+  const isValid = validatePlayerName(name);
+
+  if (isValid) {
+    startButton.disabled = false;
+    startButton.classList.remove("disabled");
+  } else {
+    startButton.disabled = true;
+    startButton.classList.add("disabled");
+  }
+}
+
+// --- Game Logic Functions ---
 function startGame() {
   // Use gameStateManager to handle state transitions
   gameStateManager.changeState("playing", { restart: true });
@@ -107,90 +136,114 @@ function togglePause() {
 }
 
 // --- Event Listeners ---
-startButton.addEventListener("click", (e) => {
-  // Check if button is disabled (name not valid)
-  if (startButton.classList.contains("disabled") || startButton.disabled) {
-    e.preventDefault();
-    e.stopPropagation();
-    // Prompt user to enter name
+if (startButton) {
+  startButton.addEventListener("click", (e) => {
+    // Check if button is disabled (name not valid) - checks attribute directly now
+    if (startButton.disabled) {
+      e.preventDefault(); // Prevent potential form submission if it were in a form
+      e.stopPropagation(); // Stop event bubbling
+      // Optionally show a message or focus the input
+      playerNameInput.focus(); // Focus input if name is invalid
+      if (typeof showEventText === "function") {
+        const name = playerNameInput.value.trim();
+        if (name.length === 0) {
+          showEventText("Please enter your name first!");
+        } else {
+          showEventText("Name must be 2-20 characters!");
+        }
+      }
+      return false; // Stop further execution
+    }
+
+    // Play sound and start game if name is valid
+    playSound("buttonHover");
     if (window.playerNameUI) {
-      window.playerNameUI.show();
+      // Save name if playerNameUI exists
+      window.playerNameUI.saveName();
     }
-    if (typeof showEventText === "function") {
-      showEventText("Please enter your name first!");
-    }
-    return false;
-  }
-  // Play sound and check name validity again
-  playSound("buttonHover");
-  if (window.playerNameUI && !window.playerNameUI.hasValidName()) {
-    window.playerNameUI.show(); // Focus the input again
-    if (typeof showEventText === "function") {
-      showEventText("Please enter a valid name (2-20 characters)!");
-    }
-    return;
-  }
-  // Save name and start game
-  if (window.playerNameUI) {
-    window.playerNameUI.saveName();
-  }
-  startGame();
-});
+    startGame();
+  });
+}
 
-restartButton.addEventListener("click", () => {
-  playSound("buttonHover");
-  startGame(); // Let startGame handle the reset via gameStateManager
-});
+if (restartButton) {
+  restartButton.addEventListener("click", () => {
+    playSound("buttonHover");
+    startGame(); // Let startGame handle the reset via gameStateManager
+  });
+}
 
-leaderboardButton.addEventListener("click", () => {
-  initAudioSystem(); // Ensure audio is ready
-  playSound("buttonHover");
-  gameStateManager.changeState("leaderboard");
-});
+if (leaderboardButton) {
+  leaderboardButton.addEventListener("click", () => {
+    initAudioSystem(); // Ensure audio is ready
+    playSound("buttonHover");
+    gameStateManager.changeState("leaderboard");
+  });
+}
 
-howToPlayButton.addEventListener("click", () => {
-  initAudioSystem();
-  playSound("buttonHover");
-  gameStateManager.changeState("howToPlay");
-});
+if (howToPlayButton) {
+  howToPlayButton.addEventListener("click", () => {
+    initAudioSystem();
+    playSound("buttonHover");
+    gameStateManager.changeState("howToPlay");
+  });
+}
 
-backToMainMenuButton.addEventListener("click", () => {
-  playSound("buttonHover");
-  gameStateManager.changeState("menu");
-});
+if (backToMainMenuButton) {
+  backToMainMenuButton.addEventListener("click", () => {
+    playSound("buttonHover");
+    gameStateManager.changeState("menu");
+  });
+}
 
-backToMainFromHowToPlayButton.addEventListener("click", () => {
-  playSound("buttonHover");
-  gameStateManager.changeState("menu");
-});
+if (backToMainFromHowToPlayButton) {
+  backToMainFromHowToPlayButton.addEventListener("click", () => {
+    playSound("buttonHover");
+    gameStateManager.changeState("menu");
+  });
+}
 
-uiElements.pauseButton.addEventListener("click", () => {
-  playSound("buttonHover");
-  togglePause();
-});
+if (uiElements.pauseButton) {
+  uiElements.pauseButton.addEventListener("click", () => {
+    playSound("buttonHover");
+    togglePause();
+  });
+}
 
-resumeButton.addEventListener("click", () => {
-  playSound("buttonHover");
-  togglePause(); // Will transition back to 'playing' state
-});
+if (resumeButton) {
+  resumeButton.addEventListener("click", () => {
+    playSound("buttonHover");
+    togglePause(); // Will transition back to 'playing' state
+  });
+}
 
-restartFromPauseButton.addEventListener("click", () => {
-  playSound("buttonHover");
-  // Let gameStateManager handle the full reset
-  gameStateManager.changeState("playing", { restart: true });
-});
+if (restartFromPauseButton) {
+  restartFromPauseButton.addEventListener("click", () => {
+    playSound("buttonHover");
+    // Let gameStateManager handle the full reset
+    gameStateManager.changeState("playing", { restart: true });
+  });
+}
 
-mainMenuFromPauseButton.addEventListener("click", () => {
-  playSound("buttonHover");
-  // Cleanly exit to main menu via gameStateManager
-  gameStateManager.changeState("menu");
-});
+if (mainMenuFromPauseButton) {
+  mainMenuFromPauseButton.addEventListener("click", () => {
+    playSound("buttonHover");
+    // Cleanly exit to main menu via gameStateManager
+    gameStateManager.changeState("menu");
+  });
+}
 
-mainMenuFromOverButton.addEventListener("click", () => {
-  playSound("buttonHover");
-  // Cleanly exit to main menu via gameStateManager
-  gameStateManager.changeState("menu");
-});
+if (mainMenuFromOverButton) {
+  mainMenuFromOverButton.addEventListener("click", () => {
+    playSound("buttonHover");
+    // Cleanly exit to main menu via gameStateManager
+    gameStateManager.changeState("menu");
+  });
+}
+
+// Add input listener for player name validation
+if (playerNameInput) {
+  playerNameInput.addEventListener("input", updateStartButtonState);
+}
 
 // Mouse movement listener
 window.addEventListener("mousemove", (e) => {
@@ -313,6 +366,11 @@ async function initializeApp() {
 
   // Start in the menu state
   gameStateManager.changeState("menu");
+
+  // Call updateStartButtonState initially to set the button state
+  if (playerNameInput) {
+    updateStartButtonState();
+  }
 
   // Hide loading screen
   if (loadingScreen) {
