@@ -163,8 +163,8 @@ class Laser {
 }
 
 class BlackHole {
-  // THAY ĐỔI: Thêm tham số isTemporary để kiểm soát vòng đời.
-  constructor(x, y, isTemporary = true) {
+  // YÊU CẦU 3: Modify constructor to accept options for giant black hole
+  constructor(x, y, options = {}) {
     this.x = x;
     this.y = y;
     const config = GAME_CONFIG.entities.blackHoles;
@@ -172,20 +172,39 @@ class BlackHole {
     const { level: currentLevel } = getLevelInfo(score);
     const difficultyLevel = currentLevel - 1;
 
+    // Use options if provided, otherwise fall back to config + difficulty scaling
     this.gravityRadius =
-      config.baseGravityRadius +
-      difficultyLevel * config.gravityRadiusIncreasePerLevel;
+      options.gravityRadius !== undefined
+        ? options.gravityRadius
+        : config.baseGravityRadius +
+          difficultyLevel * config.gravityRadiusIncreasePerLevel;
     this.strength =
-      config.baseStrength + difficultyLevel * config.strengthIncreasePerLevel;
+      options.strength !== undefined
+        ? options.strength
+        : config.baseStrength +
+          difficultyLevel * config.strengthIncreasePerLevel;
     this.maxRadius =
-      config.baseMaxRadius + difficultyLevel * config.radiusIncreasePerLevel;
+      options.maxRadius !== undefined
+        ? options.maxRadius
+        : config.baseMaxRadius +
+          difficultyLevel * config.radiusIncreasePerLevel;
     this.growthRate =
-      config.baseGrowthRate +
-      difficultyLevel * config.growthRateIncreasePerLevel;
-    this.radius = config.baseRadius;
+      options.growthRate !== undefined
+        ? options.growthRate
+        : config.baseGrowthRate +
+          difficultyLevel * config.growthRateIncreasePerLevel;
+    this.radius =
+      options.baseRadius !== undefined ? options.baseRadius : config.baseRadius;
+
     this.alpha = 0;
-    this.isTemporary = isTemporary;
-    this.life = config.temporaryLifetime;
+    // Use options.isTemporary, default to true if not specified
+    this.isTemporary =
+      options.isTemporary !== undefined ? options.isTemporary : true;
+    // Use options.lifetime, otherwise use config's temporaryLifetime
+    this.life =
+      options.lifetime !== undefined
+        ? options.lifetime
+        : config.temporaryLifetime;
     this.state = "growing"; // growing, fading
   }
 
@@ -208,10 +227,8 @@ class BlackHole {
   }
 
   update() {
-    // Tăng tuổi thọ (life) cho hố đen tạm thời.
     if (this.isTemporary) {
       this.life--;
-      // Kích hoạt trạng thái fading khi hết thời gian sống hoặc đạt kích thước tối đa.
       if (this.life <= 0 && this.state === "growing") {
         this.state = "fading";
       }
@@ -220,12 +237,11 @@ class BlackHole {
     if (this.state === "growing") {
       if (this.alpha < 1) this.alpha += 0.02;
 
-      // Bắt đầu fading khi đạt maxRadius, ngay cả khi không phải là hố đen tạm thời.
       if (this.radius < this.maxRadius) {
         this.radius += this.growthRate;
         this.gravityRadius += this.growthRate * 2; // Gravity radius grows with the core
-      } else if (!this.isTemporary) {
-        // Kích hoạt fading cho hố đen ngẫu nhiên sau khi đạt kích thước tối đa
+      } else {
+        // If it reaches max radius (temporary or not), start fading
         this.state = "fading";
       }
     } else if (this.state === "fading") {
@@ -240,7 +256,6 @@ class BlackHole {
       if (!obj || !obj.velocity) return;
       const dist = Math.hypot(obj.x - this.x, obj.y - this.y);
 
-      // Only apply force if outside the core and inside the gravity well
       if (dist < this.gravityRadius && dist > this.radius) {
         const angle = Math.atan2(this.y - obj.y, this.x - obj.x);
         const falloff = 1 - dist / this.gravityRadius;
@@ -249,7 +264,6 @@ class BlackHole {
             ? GAME_CONFIG.entities.blackHoles.playerForceMultiplier
             : 1;
 
-        // FIX: Reduced force calculation by removing '* 5'
         const force = falloff * this.strength * forceMultiplier;
 
         obj.velocity.x += Math.cos(angle) * force;
@@ -412,7 +426,6 @@ class LaserMine {
     ctx.save();
     ctx.globalAlpha = this.alpha;
 
-    // Draw the central mine part (common for all states until fading)
     if (this.state !== "fading") {
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -423,15 +436,14 @@ class LaserMine {
     }
 
     if (this.state === "charging") {
-      // Draw warning lines for upcoming beams
       const warningAlpha =
         Math.sin((this.timer / this.maxTime) * Math.PI) * 0.7;
       ctx.globalAlpha = this.alpha * warningAlpha;
 
       const angles = this.getFireAngles();
-      const len = Math.max(width, height) * 1.5; // A long enough length
+      const len = Math.max(width, height) * 1.5;
 
-      ctx.strokeStyle = "#ff8a8a"; // Faint red, same as Laser warning
+      ctx.strokeStyle = "#ff8a8a";
       ctx.lineWidth = 2;
       ctx.setLineDash([15, 10]);
       ctx.shadowColor = "#ff4444";
@@ -457,7 +469,6 @@ class LaserMine {
 
         ctx.globalAlpha = this.alpha * (0.8 + Math.random() * 0.2);
 
-        // Outer beam
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(length, 0);
@@ -467,7 +478,6 @@ class LaserMine {
         ctx.shadowBlur = 20;
         ctx.stroke();
 
-        // Inner beam
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(length, 0);

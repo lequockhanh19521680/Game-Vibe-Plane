@@ -123,9 +123,6 @@ function init() {
   freezeZones = [];
   magneticStorms = [];
   lightningStorms = [];
-  // REMOVED: Unused arrays for portals
-  // quantumPortals = [];
-  // wormholes = [];
   decoyPowerUps = [];
   for (let i = 0; i < GAME_CONFIG.visual.stars.layers; i++) {
     const layer = (i + 1) / GAME_CONFIG.visual.stars.layers;
@@ -148,8 +145,6 @@ function init() {
 
 function animate() {
   if (!isGameRunning || isPaused) {
-    // Check for pause
-    // cancelAnimationFrame(animationFrameId); // Handled by gameStateManager
     return;
   }
 
@@ -210,9 +205,6 @@ function animate() {
     freezeZones,
     magneticStorms,
     lightningStorms,
-    // REMOVED: Unused portal updates
-    // quantumPortals,
-    // wormholes,
     decoyPowerUps,
   ].forEach((arr) =>
     arr.forEach((item) => (item.update ? item.update() : undefined))
@@ -246,15 +238,10 @@ function animate() {
   freezeZones = freezeZones.filter((f) => f.update() !== false);
   magneticStorms = magneticStorms.filter((m) => m.update() !== false);
   lightningStorms = lightningStorms.filter((l) => l.update() !== false);
-  // REMOVED: Unused portal filters
-  // quantumPortals = quantumPortals.filter((p) => p.update() !== false);
-  // wormholes = wormholes.filter((w) => w.update() !== false);
   decoyPowerUps = decoyPowerUps.filter((d) => d.update() !== false);
 
   // --- Trigger Events ---
   const eventConfig = GAME_CONFIG.events;
-  // FIX: Removed the 'score < eventConfig.scoreThreshold.max' condition
-  // ADD MORE LOGGING: Check conditions explicitly
   const shouldTriggerEvent =
     score >= nextEventScore && score >= eventConfig.scoreThreshold.min;
 
@@ -280,15 +267,12 @@ function animate() {
 
   // Deactivate expired events
   if (eventActive.type && timers.difficulty > eventActive.endTime) {
-    // Example: If speedZone ends, reset speed multiplier
-    // Add logic here for other timed events if necessary
     eventActive.type = null;
   }
 
   // --- Difficulty Progression ---
   if (currentLevel > lastDifficultyLevel) {
     if (currentLevel > 1) {
-      // Don't show for level 1
       const levelUpText = window.safeT
         ? window.safeT(
             "level.levelUp",
@@ -300,7 +284,6 @@ function animate() {
     }
     lastDifficultyLevel = currentLevel;
 
-    // Increase difficulty parameters
     globalSpeedMultiplier += GAME_CONFIG.difficulty.speedIncreaseStep;
     if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval) {
       spawnInterval -= GAME_CONFIG.difficulty.spawnDecreaseStep;
@@ -308,13 +291,11 @@ function animate() {
   }
 
   // --- Spawning Logic ---
-  let currentSpawnInterval = spawnInterval; // Use the adjusted interval
+  let currentSpawnInterval = spawnInterval;
 
   // Asteroid Spawning
   timers.asteroid++;
   if (timers.asteroid % Math.floor(currentSpawnInterval) === 0) {
-    // Ensure integer interval
-    // ... (rest of asteroid spawning logic) ...
     const difficultyLevel = currentLevel - 1;
     const radius =
       GAME_CONFIG.entities.asteroids.minRadius +
@@ -381,7 +362,7 @@ function animate() {
       });
 
       warningSystem.spawn(() => {
-        blackHoles.push(new BlackHole(bhX, bhY, true)); // Ensure temporary
+        blackHoles.push(new BlackHole(bhX, bhY)); // Default temporary black hole
         playSound("blackhole");
       });
     }
@@ -412,8 +393,6 @@ function animate() {
     );
 
     if (timers.missile % Math.floor(missileInterval) === 0) {
-      // Ensure integer interval
-      // ... (rest of missile spawning logic) ...
       const sides = ["left", "right", "top", "bottom"];
       const side = sides[Math.floor(Math.random() * sides.length)];
       let warningX, warningY, missileAngle, spawnX, spawnY;
@@ -444,7 +423,6 @@ function animate() {
           missileAngle = Math.PI / 2;
           spawnX = warningX;
           spawnY = -spawnOffset;
-          missileAngle = Math.PI / 2;
           break;
         case "bottom":
           warningX =
@@ -453,7 +431,6 @@ function animate() {
           missileAngle = -Math.PI / 2;
           spawnX = warningX;
           spawnY = height + spawnOffset;
-          missileAngle = -Math.PI / 2;
           break;
       }
 
@@ -478,8 +455,6 @@ function animate() {
         difficultyLevel * GAME_CONFIG.entities.lasers.intervalDecreasePerLevel
     );
     if (timers.laser % Math.floor(laserInterval) === 0) {
-      // Ensure integer interval
-      // ... (rest of laser spawning logic) ...
       const laserCount = Math.min(
         GAME_CONFIG.entities.lasers.maxConcurrent,
         1 +
@@ -541,11 +516,17 @@ function animate() {
     }
   }
 
+  if (timers.difficulty % GAME_CONFIG.difficulty.microProgressInterval === 0) {
+    if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval + 3)
+      spawnInterval -= 1;
+    globalSpeedMultiplier += GAME_CONFIG.difficulty.microSpeedIncrease;
+  }
+
   // --- Collision Detection ---
-  // ... (rest of collision logic remains the same) ...
 
   // Check Asteroid-Player Collision
-  for (const ast of asteroids) {
+  for (let i = asteroids.length - 1; i >= 0; i--) {
+    const ast = asteroids[i];
     if (
       Math.hypot(player.x - ast.x, player.y - ast.y) -
         ast.radius -
@@ -556,17 +537,22 @@ function animate() {
         endGame("asteroid collision");
         return;
       } else {
-        // Shield push effect (if needed)
+        // Shield push effect
         const dx = ast.x - player.x;
         const dy = ast.y - player.y;
         const distance = Math.max(Math.hypot(dx, dy), 1);
         ast.velocity.x += (dx / distance) * 3;
         ast.velocity.y += (dy / distance) * 3;
+        // Optionally remove asteroid on shield impact or create particles
+        // asteroids.splice(i, 1);
+        // playSound('collision');
       }
     }
   }
+
   // Check Missile-Player Collision
-  for (const m of missiles) {
+  for (let i = missiles.length - 1; i >= 0; i--) {
+    const m = missiles[i];
     if (
       Math.hypot(player.x - m.x, player.y - m.y) - m.radius - player.radius <
       GAME_CONFIG.core.collisionPrecision
@@ -575,12 +561,35 @@ function animate() {
         endGame("missile collision");
         return;
       } else {
-        // Shield push effect (if needed)
+        // Shield push effect and missile explosion
         const dx = m.x - player.x;
         const dy = m.y - player.y;
         const distance = Math.max(Math.hypot(dx, dy), 1);
         m.velocity.x += (dx / distance) * 4;
         m.velocity.y += (dy / distance) * 4;
+        m.explode(true); // Explode missile on shield impact
+        // Missiles are removed by the filter based on m.isDead
+        // playSound('collision'); // Explosion sound is played in explode()
+      }
+    }
+  }
+
+  // YÊU CẦU 1: Check Missile-Asteroid Collision
+  for (let i = missiles.length - 1; i >= 0; i--) {
+    const missile = missiles[i];
+    if (missile.isDead) continue; // Skip already exploded missiles
+
+    for (let j = asteroids.length - 1; j >= 0; j--) {
+      const asteroid = asteroids[j];
+      if (
+        Math.hypot(missile.x - asteroid.x, missile.y - asteroid.y) <
+        missile.radius + asteroid.radius
+      ) {
+        missile.explode(true); // Missile explodes on impact
+        asteroids.splice(j, 1); // Remove the asteroid
+        score += 10; // Optional score bonus
+        playSound("explosion", 0.3); // Optional sound effect
+        break; // Missile can only hit one asteroid
       }
     }
   }
@@ -629,7 +638,6 @@ function animate() {
           const dotProduct =
             (player.x - mine.x) * dx + (player.y - mine.y) * dy;
           if (dotProduct > 0) {
-            // Check if player is in front of the mine's beam direction
             hitDetected = true;
             break;
           }
@@ -664,13 +672,13 @@ function animate() {
   for (let i = fragments.length - 1; i >= 0; i--) {
     const fragment = fragments[i];
     if (
-      fragment.lethal && // Only check lethal fragments
+      fragment.lethal &&
       !player.shieldActive &&
       !player.thunderShieldActive &&
       Math.hypot(player.x - fragment.x, player.y - fragment.y) <
         player.radius + fragment.radius
     ) {
-      endGame("fragment collision"); // Generic reason, could be specified
+      endGame("fragment collision");
       return;
     }
   }
@@ -722,7 +730,6 @@ function animate() {
       Math.hypot(player.x - plasma.x, player.y - plasma.y) <
       plasma.radius + player.radius
     ) {
-      // Apply damage only if player is not shielded
       if (
         !player.shieldActive &&
         !player.thunderShieldActive &&
@@ -757,12 +764,6 @@ function animate() {
       decoy.explode(); // Trigger the trap
       decoyPowerUps.splice(i, 1); // Remove it
     }
-  }
-
-  if (timers.difficulty % GAME_CONFIG.difficulty.microProgressInterval === 0) {
-    if (spawnInterval > GAME_CONFIG.difficulty.minSpawnInterval + 3)
-      spawnInterval -= 1;
-    globalSpeedMultiplier += GAME_CONFIG.difficulty.microSpeedIncrease;
   }
 }
 

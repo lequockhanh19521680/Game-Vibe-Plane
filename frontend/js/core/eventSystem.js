@@ -2,6 +2,7 @@
 let eventTextQueue = [];
 let isShowingEventText = false;
 let currentEventTimeout = null;
+let lastEventTriggerTime = 0; // Timestamp of the last triggered event
 
 // Safe translation helper
 const safeT = (key, fallback) => {
@@ -100,6 +101,7 @@ function resetEventSystem() {
     currentEventTimeout = null;
   }
   isShowingEventText = false;
+  lastEventTriggerTime = 0; // Reset cooldown timer on game reset
   const eventTextElement = document.getElementById("event-text");
   if (eventTextElement) {
     eventTextElement.style.opacity = "0";
@@ -113,27 +115,35 @@ function resetEventSystem() {
  * Triggers a random event based on score thresholds and weights.
  */
 function triggerRandomEvent() {
-  console.log("--- triggerRandomEvent FUNCTION CALLED ---"); // ADDED LOG
-  // REMOVED: Redundant check - the call from game.js should already ensure the game is running.
-  // if (!window.isGameRunning) {
-  //   console.log("-> Exiting triggerRandomEvent: Game not running.");
-  //   return;
-  // }
+  console.log("--- triggerRandomEvent FUNCTION CALLED ---");
+
+  // YÊU CẦU 2: Check event cooldown (10 seconds)
+  const now = Date.now();
+  const cooldown = 10000; // 10 seconds in milliseconds
+  if (now - lastEventTriggerTime < cooldown) {
+    console.log(
+      `-> Event cooldown active. Time remaining: ${(
+        (cooldown - (now - lastEventTriggerTime)) /
+        1000
+      ).toFixed(1)}s`
+    );
+    return; // Still in cooldown, do not trigger a new event
+  }
 
   const baseEventWeights = [
-    { type: "asteroidShower", weight: 35 },
+    { type: "asteroidShower", weight: 30 }, // Slightly reduced weight
     { type: "instantMissiles", weight: 25 },
+    { type: "giantBlackHole", weight: 15 }, // Added giant black hole event
+    // Add other events back here with their weights as needed
   ];
 
   const unlockThresholds = GAME_CONFIG.events.unlockThresholds || {};
 
-  // Log current score for threshold checking
   console.log(`-> Current score for event check: ${score}`);
 
   const availableEvents = baseEventWeights.filter((event) => {
     const threshold = unlockThresholds[event.type] || 0;
     const isAvailable = score >= threshold;
-    // console.log(`   - Event: ${event.type}, Threshold: ${threshold}, Score: ${score}, Available: ${isAvailable}`); // Detailed log per event
     return isAvailable;
   });
 
@@ -149,7 +159,7 @@ function triggerRandomEvent() {
       availableEvents.push(defaultEvent);
     } else {
       console.log("-> No events available, including default. Exiting.");
-      return; // No events available at all
+      return;
     }
   }
 
@@ -165,7 +175,7 @@ function triggerRandomEvent() {
   console.log(`-> Total weight: ${totalWeight}`);
 
   let random = Math.random() * totalWeight;
-  let selectedEvent = availableEvents[0].type; // Default to first available
+  let selectedEvent = availableEvents[0].type;
 
   console.log(`-> Random value (0 - ${totalWeight}): ${random}`);
 
@@ -184,16 +194,18 @@ function triggerRandomEvent() {
   const randomEventType = selectedEvent;
   console.log(`-> FINAL SELECTED EVENT: ${randomEventType}`);
 
-  // Set a general end time for the event's *active* state influence, if applicable
-  eventActive.endTime =
-    timers.difficulty + Math.floor(GAME_CONFIG.events.duration * 0.75); // Slightly shorter active duration
+  // Record the time this event is triggered BEFORE starting the event logic
+  lastEventTriggerTime = Date.now();
 
-  // Trigger the selected event logic
+  eventActive.endTime =
+    timers.difficulty + Math.floor(GAME_CONFIG.events.duration * 0.75);
+
   switch (randomEventType) {
     case "asteroidShower":
       eventActive.type = "asteroidShower";
       showEventText(safeT("event.asteroidShower", "Asteroid Shower!"));
-      const totalAsteroids = 25;
+      // YÊU CẦU 1: Reduce number of asteroids
+      const totalAsteroids = 15; // Reduced from 25
       const waves = 3;
       const asteroidsPerWave = Math.floor(totalAsteroids / waves);
       for (let wave = 0; wave < waves; wave++) {
@@ -207,14 +219,15 @@ function triggerRandomEvent() {
                 if (isGameRunning) {
                   asteroids.push(createMiniShowerAsteroid(direction));
                 }
-              }, i * 80); // Spawn delay within wave
+              }, i * 100); // Slightly increased spawn delay within wave
             }
           }
-        }, wave * 1000); // Delay between waves
+        }, wave * 1200); // Slightly increased delay between waves
       }
       break;
 
     case "instantMissiles":
+      // ... (logic remains the same) ...
       eventActive.type = "instantMissiles";
       showEventText(safeT("event.missileIncoming", "Missile Incoming!"));
       const instantSides = ["left", "right", "top", "bottom"];
@@ -278,6 +291,56 @@ function triggerRandomEvent() {
           }
         }, i * GAME_CONFIG.entities.missiles.warningDuration * (1000 / 60)); // Delay between missiles
       }
+      break;
+
+    // YÊU CẦU 3: Add giant black hole case
+    case "giantBlackHole":
+      eventActive.type = "giantBlackHole";
+      showEventText(safeT("event.giantBlackHole", "Giant Black Hole!")); // Add translation key if needed
+
+      const eventConf = GAME_CONFIG.events.giantBlackHole;
+      const baseConf = GAME_CONFIG.entities.blackHoles;
+      const { level: currentLevel } = getLevelInfo(score);
+      const difficultyLevel = currentLevel - 1;
+
+      // Spawn near the center but with some variation
+      const bhX = width / 2 + (Math.random() - 0.5) * (width * 0.2);
+      const bhY = height / 2 + (Math.random() - 0.5) * (height * 0.2);
+
+      // Calculate giant black hole parameters using multipliers
+      const giantOptions = {
+        isTemporary: true, // Make it temporary
+        lifetime: eventConf.lifetime,
+        baseRadius: eventConf.baseRadius,
+        maxRadius:
+          (baseConf.baseMaxRadius +
+            difficultyLevel * baseConf.radiusIncreasePerLevel) *
+          eventConf.maxRadiusMultiplier,
+        gravityRadius:
+          (baseConf.baseGravityRadius +
+            difficultyLevel * baseConf.gravityRadiusIncreasePerLevel) *
+          eventConf.gravityRadiusMultiplier,
+        strength:
+          (baseConf.baseStrength +
+            difficultyLevel * baseConf.strengthIncreasePerLevel) *
+          eventConf.strengthMultiplier,
+        growthRate:
+          (baseConf.baseGrowthRate +
+            difficultyLevel * baseConf.growthRateIncreasePerLevel) *
+          eventConf.growthRateMultiplier,
+        // color: eventConf.color // If you modify BlackHole class to accept color
+      };
+
+      const warningSystem = spawnWithWarning("blackhole", bhX, bhY, {
+        duration: eventConf.warningTime,
+        // You could add specific options here if WarningSystem/Warning class supports custom visuals
+        // warningType: 'giantBlackHole' // Example, requires changes in Warning class
+      });
+      warningSystem.spawn(() => {
+        // Pass the giantOptions to the BlackHole constructor
+        blackHoles.push(new BlackHole(bhX, bhY, giantOptions));
+        playSound("blackhole"); // Consider a deeper/more intense sound
+      });
       break;
 
     default:
