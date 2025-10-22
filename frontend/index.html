@@ -13,6 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700&display=swap"
       rel="stylesheet"
     />
+    <!-- Link CSS files -->
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/leaderboard.css" />
     <link rel="stylesheet" href="css/settings.css" />
@@ -52,6 +53,7 @@
         <button id="pause-button">❚❚</button>
       </div>
 
+      <!-- Event Text Display -->
       <div id="event-text"></div>
 
       <!-- Main Menu Screen -->
@@ -64,7 +66,7 @@
             Survive as long as possible!
           </span>
         </p>
-
+        <!-- Player Name Input -->
         <div class="name-input-section" id="name-input-wrapper">
           <div class="input-group">
             <input
@@ -81,7 +83,7 @@
             Your name will appear on the leaderboard (2-20 chars)
           </div>
         </div>
-
+        <!-- Menu Buttons -->
         <div class="menu-buttons-group">
           <button id="start-button" data-translate="menu.startBattle">
             Start Battle
@@ -98,11 +100,12 @@
 
       <!-- Enhanced Game Over Screen -->
       <div id="game-over-screen" class="ui-element game-over-enhanced">
+        <!-- Game Over Header -->
         <div class="game-over-header">
           <h2 data-translate="gameOver.title">Game Over</h2>
           <div id="death-cause" class="death-cause">Destroyed by asteroid</div>
         </div>
-
+        <!-- Game Stats -->
         <div class="game-over-stats">
           <div class="primary-stats">
             <div class="stat-item highlight">
@@ -115,7 +118,7 @@
             </div>
           </div>
         </div>
-
+        <!-- New High Score Banner -->
         <div
           id="new-highscore-msg"
           class="new-record-banner"
@@ -130,6 +133,16 @@
           </div>
         </div>
 
+        <!-- Leaderboard Snippet Container -->
+        <h3 class="leaderboard-snippet-title">Global Top 10</h3>
+        <div
+          id="game-over-leaderboard-container"
+          class="leaderboard-container game-over-lb"
+        >
+          <div class="loading">Loading leaderboard snippet...</div>
+        </div>
+
+        <!-- Action Buttons -->
         <div class="game-over-actions">
           <button
             id="restart-button"
@@ -148,9 +161,10 @@
         </div>
       </div>
 
-      <!-- Leaderboard Screen -->
+      <!-- Leaderboard Screen (Full Dashboard) -->
       <div id="leaderboard-screen" class="ui-element" style="display: none">
         <h2 data-translate="leaderboard.title">Live Dashboard</h2>
+        <!-- Tabs -->
         <div class="dashboard-tabs">
           <button
             class="dashboard-tab active"
@@ -174,26 +188,26 @@
             📊 My Stats
           </button>
         </div>
-
+        <!-- Global Leaderboard Content -->
         <div id="global-leaderboard-content" class="dashboard-content active">
           <div id="global-leaderboard-list" class="leaderboard-container">
             <div class="loading">Loading leaderboard...</div>
           </div>
         </div>
-
+        <!-- Country Leaderboard Content -->
         <div id="country-leaderboard-content" class="dashboard-content">
           <div id="country-leaderboard-list" class="leaderboard-container">
             <div class="loading">Loading country rankings...</div>
           </div>
         </div>
-
+        <!-- My Stats Content -->
         <div id="my-stats-content" class="dashboard-content">
           <h3>📊 Your Statistics</h3>
           <div id="player-stats" class="stats-container">
             <div class="loading">Loading your stats...</div>
           </div>
         </div>
-
+        <!-- Footer -->
         <div class="leaderboard-footer">
           <div class="connection-status">
             <span id="connection-indicator-footer">🔴</span>
@@ -252,6 +266,7 @@
       </div>
     </div>
 
+    <!-- Background Music -->
     <audio id="background-music" loop src="assets/audio/background.mp3"></audio>
 
     <!-- SCRIPTS -->
@@ -273,6 +288,7 @@
     <script src="js/entities/obstacles.js"></script>
     <script src="js/entities/collectibles.js"></script>
     <script src="js/entities/hazards.js"></script>
+    <script src="js/entities/portals.js"></script>
 
     <script src="js/core/gameStateManager.js"></script>
     <script src="js/core/game.js"></script>
