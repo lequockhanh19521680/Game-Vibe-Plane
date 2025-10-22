@@ -28,9 +28,9 @@ const GAME_CONFIG = {
   difficulty: {
     baseSpawnInterval: 80, // Initial frames between asteroid spawns
     minSpawnInterval: 20, // Minimum frames between asteroid spawns at high levels
-    spawnDecreaseStep: 3.5, // How much spawn interval decreases per level
+    spawnDecreaseStep: 2.5, // How much spawn interval decreases per level (Giảm để thiên thạch không xuất hiện quá nhanh)
     baseSpeed: 0.5, // Initial global speed multiplier
-    speedIncreaseStep: 0.07, // How much global speed increases per level
+    speedIncreaseStep: 0.05, // How much global speed increases per level (Giảm để tốc độ game không tăng quá nhanh)
     microSpeedIncrease: 0.01, // Small speed increase at regular intervals
     microProgressInterval: 900, // Frames between micro speed increases (15 seconds)
     levelUpScores: [
@@ -137,7 +137,6 @@ const GAME_CONFIG = {
   fragments: {
     minRadius: 2,
     maxRadius: 5,
-    // scoreBonus: 5, // YÊU CẦU 3: Removed unused config
     missileFragments: {
       minRadius: 3,
       maxRadius: 6,
@@ -165,6 +164,7 @@ const GAME_CONFIG = {
       asteroidRain: 2500,
       asteroidCircle: 3000,
       decoyPowerUp: 4000,
+      meteorBombardment: 4000,
       magneticStorm: 4500,
       freezeZone: 5000,
       missileBarrage: 6500,
@@ -172,9 +172,8 @@ const GAME_CONFIG = {
       lightningStorm: 8000,
       wormholePortal: 9000,
       blackHoleChain: 10000,
-      plasmaStorm: 11000,
-      // chaosMode removed
       gravityWells: 16000,
+      voidRifts: 15000,
       mineFieldDetonation: 21000,
     },
     // Config for specific events
@@ -183,19 +182,10 @@ const GAME_CONFIG = {
       lifetime: 800,
       baseRadius: 15,
       maxRadiusMultiplier: 2.5,
-      gravityRadiusMultiplier: 2.0,
       strengthMultiplier: 2.2,
       color: "#6a0dad",
     },
     laserGrid: { gridSize: 3, delay: 350 },
-    asteroidRain: {
-      count: 18,
-      delay: 180,
-      minRadius: 6,
-      maxRadius: 30,
-      speedMultiplier: 2.2,
-      speedVariation: 3.5,
-    },
     asteroidCircle: {
       count: 12,
       radius: 180,
@@ -204,32 +194,11 @@ const GAME_CONFIG = {
       speed: 1.5,
       centerVariation: 50,
     },
-    missileBarrage: { count: 5, delay: 500 },
-    blackHoleChain: { count: 3, delay: 1000 },
-    crystalRain: { count: 5, delay: 80 },
-    gravityWells: { count: 5, radius: 100 },
-    wormholePortal: { count: 1 },
-    shieldGenerator: { count: 1 },
     mineFieldDetonation: {
       count: 8,
       delay: 200,
       chargeTime: 60,
       warningTime: 90,
-    },
-    plasmaStorm: {
-      waveCount: 4,
-      fieldsPerWave: 5,
-      fieldStagger: 80,
-      warningDuration: 180,
-      minRadius: 60,
-      maxRadius: 90,
-      positionJitterX: 80,
-      damageRate: 0.04,
-      shakeIntensity: 0.8,
-    },
-    freezeZone: {
-      count: 3,
-      warningDuration: 120,
     },
   },
 
@@ -244,13 +213,6 @@ const GAME_CONFIG = {
       repulsionForce: 0.8,
       spawnInterval: 1500,
       spawnThreshold: 1000,
-    },
-    shieldGenerator: {
-      // Config for event-spawned shield generator
-      radius: 15,
-      shieldRadius: 80,
-      chargeTime: 60,
-      activeTime: 180,
     },
     freezeZone: {
       // Config for event-spawned freeze zones
@@ -272,7 +234,6 @@ const GAME_CONFIG = {
       fieldCount: 4,
       baseStrength: 0.5,
       fieldRadius: 100,
-      radiusVariation: 80,
       rampDuration: 60,
       playerAffectMultiplier: 0.3,
       objectAffectMultiplier: 0.5,
@@ -280,10 +241,8 @@ const GAME_CONFIG = {
       chargeColor: "#88ddff",
       attractColor: "#00ff88",
       repelColor: "#ff4444",
-      arcColor: "#88ddff",
       lethalTargetRange: 300,
       lethalHitTolerance: 10,
-      arcFadeSpeed: 0.1,
       arcSpawnChance: 0.1,
       fieldRotationSpeed: 0.02,
       lethalJitter: 40,
@@ -297,40 +256,14 @@ const GAME_CONFIG = {
       lifetime: 600,
       lightningInterval: 120,
       lightningJitter: 60,
-      speedBoostMultiplier: 0.8,
       gateCount: 2,
       gatePlacementRange: 200,
-      gateRadius: 40,
       gateChargeTime: 120,
       chargeColor: "#88ddff",
       boltColor: "#88ddff",
       particleSpawnChance: 0.3,
       boltFadeSpeed: 0.1,
       hitRadius: 25,
-    },
-    plasmaField: {
-      // Config for event-spawned plasma fields
-      radius: 80,
-      lifetime: 400,
-      damageRate: 0.02,
-      color: "#ff6b35",
-      particleCount: 15,
-      pushForce: 0.2,
-      rotationSpeed: 0.02,
-      particleMinDist: 20,
-      particleMinSpeed: 0.02,
-      particleMaxSpeed: 0.03,
-      distancePulseAmount: 0.5,
-      pushRadiusMultiplier: 1.5,
-      fragmentPushMultiplier: 1.6,
-      asteroidPushMultiplier: 1.2,
-    },
-    decoyPowerUp: {
-      // Config for event-spawned decoy power-ups
-      size: 10,
-      lifetime: 500,
-      triggerRadius: 45,
-      asteroidSpeed: 3,
     },
   },
 

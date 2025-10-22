@@ -9,6 +9,7 @@ class GameStateManager {
     this.previousState = null;
     this.stateData = {}; // Stores data passed between states
     this.registerDefaultStates();
+    this.gameOverTimeoutId = null; // Để lưu trữ ID của timeout
   }
 
   registerState(name, stateClass) {
@@ -21,6 +22,12 @@ class GameStateManager {
       return false;
     }
 
+    // Xóa timeout game over nếu có khi chuyển trạng thái
+    if (this.gameOverTimeoutId) {
+      clearTimeout(this.gameOverTimeoutId);
+      this.gameOverTimeoutId = null;
+    }
+
     if (this.currentState) {
       this.currentState.exit();
       this.previousState = this.currentState;
@@ -30,7 +37,20 @@ class GameStateManager {
     // Store data BEFORE initializing state, so state can access it
     this.stateData = data;
     this.currentState = new StateClass(this, data);
-    this.currentState.enter();
+
+    // Xử lý đặc biệt cho trạng thái Game Over để thêm độ trễ
+    if (stateName === "gameOver") {
+      // Thực hiện các hành động tức thời (âm thanh, hiệu ứng)
+      this.currentState.enterImmediateEffects();
+      // Đặt timeout để hiển thị UI sau độ trễ
+      this.gameOverTimeoutId = setTimeout(() => {
+        this.currentState.enterDelayedUI();
+        this.gameOverTimeoutId = null; // Xóa ID sau khi thực thi
+      }, GAME_CONFIG.ui.gameOverDelay || 0); // Sử dụng giá trị từ config, mặc định là 0
+    } else {
+      // Đối với các trạng thái khác, gọi enter bình thường
+      this.currentState.enter();
+    }
 
     return true;
   }
@@ -161,7 +181,8 @@ class PausedState extends GameState {
 }
 
 class GameOverState extends GameState {
-  enter() {
+  // YÊU CẦU 2: Tách enter thành 2 phần: hiệu ứng tức thời và UI có độ trễ
+  enterImmediateEffects() {
     document.body.className = "game-over";
     isGameRunning = false; // Ensure game is stopped
     uiElements.pauseButton.style.display = "none";
@@ -177,8 +198,10 @@ class GameOverState extends GameState {
     if (typeof playSound === "function") playSound("explosion");
 
     this.createDeathExplosion();
+  }
 
-    // Show game over screen elements immediately after explosion/sound
+  enterDelayedUI() {
+    // Hàm này sẽ được gọi sau độ trễ
     this.showGameOverScreen(); // Show score, time, death cause first
     this.checkHighScore(); // Update high score message visibility
 
@@ -191,16 +214,14 @@ class GameOverState extends GameState {
           ? window.userIdentification.getUserId()
           : null;
 
-      // Render the leaderboard snippet into the game over screen container
-      // SỬA ĐỔI: Sử dụng hàm mới `renderLeaderboardSnippet` hoặc đảm bảo `renderCurrentLeaderboardData` xử lý đúng
       if (typeof renderLeaderboardSnippet === "function") {
         renderLeaderboardSnippet({
           targetElementId: "game-over-leaderboard-container",
           highlightUserId: userId,
           highlightRank: submitResult ? submitResult.rank : null,
+          forceRefresh: true, // Yêu cầu tải lại dữ liệu mới nhất
         });
       } else if (typeof renderCurrentLeaderboardData === "function") {
-        // Fallback if only the old function exists (ensure it handles targetElementId)
         console.warn(
           "renderLeaderboardSnippet not found, attempting renderCurrentLeaderboardData."
         );
@@ -208,9 +229,9 @@ class GameOverState extends GameState {
           targetElementId: "game-over-leaderboard-container",
           highlightUserId: userId,
           highlightRank: submitResult ? submitResult.rank : null,
+          forceRefresh: true, // Yêu cầu tải lại dữ liệu mới nhất
         });
       } else {
-        // Fallback if neither rendering function not found
         console.error(
           "Leaderboard rendering function not found for game over screen."
         );
@@ -219,7 +240,7 @@ class GameOverState extends GameState {
         );
         if (lbContainer) {
           lbContainer.innerHTML =
-            '<div class="no-data">Không thể tải bảng xếp hạng.</div>'; // Could not load leaderboard.
+            '<div class="no-data">Không thể tải bảng xếp hạng.</div>';
         }
       }
     });
@@ -307,7 +328,6 @@ class GameOverState extends GameState {
       deathCauseEl.textContent = translatedReason;
     }
 
-    // Ensure the game over screen element exists and is displayed
     if (uiElements.gameOverScreen) {
       uiElements.gameOverScreen.style.display = "flex";
     } else {
@@ -329,12 +349,11 @@ class GameOverState extends GameState {
       };
 
       let submitResult = null;
-      // SỬA ĐỔI: Luôn đặt trạng thái loading ban đầu cho container game over
       const lbContainer = document.getElementById(
         "game-over-leaderboard-container"
       );
       if (lbContainer) {
-        lbContainer.innerHTML = '<div class="loading">Loading...</div>'; // Loading leaderboard...
+        lbContainer.innerHTML = '<div class="loading">Loading...</div>';
       }
 
       if (
@@ -359,11 +378,9 @@ class GameOverState extends GameState {
           console.log("Score submission result:", submitResult);
         } catch (error) {
           console.error("Failed to send data to backend:", error);
-          // Attempt to render local leaderboard snippet on backend failure
           if (lbContainer) {
             lbContainer.innerHTML =
-              '<div class="no-data">Lỗi kết nối. Hiển thị điểm cục bộ.</div>'; // Connection error. Showing local scores.
-            // Optionally call a function here to render local scores if needed
+              '<div class="no-data">Lỗi kết nối. Hiển thị điểm cục bộ.</div>';
             if (typeof showOfflineLeaderboard === "function") {
               showOfflineLeaderboard("game-over-leaderboard-container");
             }
@@ -371,18 +388,15 @@ class GameOverState extends GameState {
         }
       } else {
         console.log("Backend not available, game over data logged locally");
-        // Render local leaderboard snippet if backend is disabled
         if (lbContainer) {
           lbContainer.innerHTML =
-            '<div class="no-data">Chế độ ngoại tuyến. Hiển thị điểm cục bộ.</div>'; // Offline mode. Showing local scores.
-          // Optionally call a function here to render local scores if needed
+            '<div class="no-data">Chế độ ngoại tuyến. Hiển thị điểm cục bộ.</div>';
           if (typeof showOfflineLeaderboard === "function") {
             showOfflineLeaderboard("game-over-leaderboard-container");
           }
         }
       }
 
-      // Update local history regardless
       try {
         const localGameHistory = JSON.parse(
           localStorage.getItem("gameHistory") || "[]"
@@ -396,17 +410,15 @@ class GameOverState extends GameState {
         console.error("Error saving game history to localStorage:", e);
       }
 
-      return submitResult; // Return backend result (contains rank if successful)
+      return submitResult;
     } catch (error) {
       console.error("Error in sendGameOverData:", error);
-      // Attempt to render local leaderboard snippet on general error
       const lbContainer = document.getElementById(
         "game-over-leaderboard-container"
       );
       if (lbContainer) {
         lbContainer.innerHTML =
-          '<div class="no-data">Đã xảy ra lỗi. Hiển thị điểm cục bộ.</div>'; // An error occurred. Showing local scores.
-        // Optionally call a function here to render local scores if needed
+          '<div class="no-data">Đã xảy ra lỗi. Hiển thị điểm cục bộ.</div>';
         if (typeof showOfflineLeaderboard === "function") {
           showOfflineLeaderboard("game-over-leaderboard-container");
         }
@@ -417,45 +429,39 @@ class GameOverState extends GameState {
 
   exit() {
     uiElements.gameOverScreen.style.display = "none";
-    // Clear the leaderboard snippet when leaving game over screen
     const lbContainer = document.getElementById(
       "game-over-leaderboard-container"
     );
     if (lbContainer) {
       lbContainer.innerHTML =
-        '<div class="loading">Đang tải bảng xếp hạng...</div>'; // Reset to loading state
+        '<div class="loading">Đang tải bảng xếp hạng...</div>';
     }
   }
 }
 
 class LeaderboardState extends GameState {
   enter() {
-    document.body.className = "menu-active"; // Keep menu background style
+    document.body.className = "menu-active";
     uiElements.startScreen.style.display = "none";
     uiElements.howToPlayScreen.style.display = "none";
-    uiElements.gameOverScreen.style.display = "none"; // Ensure game over is hidden
-    uiElements.pauseMenu.style.display = "none"; // Ensure pause is hidden
-    uiElements.leaderboardScreen.style.display = "flex"; // Show leaderboard
+    uiElements.gameOverScreen.style.display = "none";
+    uiElements.pauseMenu.style.display = "none";
+    uiElements.leaderboardScreen.style.display = "flex";
 
-    // Pass data received IF navigating from GameOverState
-    // If navigating directly (e.g., from main menu), these will be undefined
     const userId = this.data.currentUserId;
     const userRank = this.data.currentUserRank;
 
-    // Trigger leaderboard rendering, passing the current user info for highlighting
     if (typeof renderCurrentLeaderboardData === "function") {
-      // Target the main leaderboard container
       renderCurrentLeaderboardData({
-        targetElementId: "global-leaderboard-list", // SỬA ĐỔI: Đảm bảo nhắm đúng mục tiêu container chính
+        targetElementId: "global-leaderboard-list",
         highlightUserId: userId,
         highlightRank: userRank,
-        forceRefresh: true, // SỬA ĐỔI: Thêm cờ để buộc làm mới nếu cần
+        forceRefresh: true,
       });
     } else {
       console.warn("renderCurrentLeaderboardData function not found.");
     }
 
-    // Select the 'Top Players' tab by default when entering this state
     const globalTab = document.querySelector('[data-tab="global-leaderboard"]');
     const globalContent = document.getElementById("global-leaderboard-content");
     const tabs = document.querySelectorAll(".dashboard-tab");
@@ -466,14 +472,12 @@ class LeaderboardState extends GameState {
       contents.forEach((c) => c.classList.remove("active"));
       globalTab.classList.add("active");
       globalContent.classList.add("active");
-      // Scroll container to top
       const listContainer = globalContent.querySelector(
         ".leaderboard-container"
       );
       if (listContainer) listContainer.scrollTop = 0;
     }
 
-    // SỬA ĐỔI: Tải dữ liệu quốc gia và cập nhật tab thống kê khi vào màn hình leaderboard
     if (typeof loadCountryData === "function") {
       loadCountryData();
     }
@@ -489,7 +493,7 @@ class LeaderboardState extends GameState {
 
 class HowToPlayState extends GameState {
   enter() {
-    document.body.className = "menu-active"; // Keep menu background style
+    document.body.className = "menu-active";
     uiElements.howToPlayScreen.style.display = "flex";
     uiElements.startScreen.style.display = "none";
     uiElements.leaderboardScreen.style.display = "none";

@@ -676,6 +676,7 @@ async function renderLeaderboardSnippet(options) {
     targetElementId,
     highlightUserId = null,
     highlightRank = null,
+    forceRefresh = false, // Thêm tùy chọn để buộc làm mới
   } = options;
   const container = document.getElementById(targetElementId);
   if (!container) {
@@ -689,7 +690,7 @@ async function renderLeaderboardSnippet(options) {
     let leaderboardData = globalLeaderboard; // Try using existing data first
 
     // Fetch fresh data if existing data is empty or potentially stale for the snippet
-    if (!leaderboardData || leaderboardData.length === 0) {
+    if (forceRefresh || !leaderboardData || leaderboardData.length === 0) {
       console.log("Snippet: No global data, fetching fresh...");
       const fetchedData = await BackendAPI.fetchLeaderboard(10); // Fetch top 10 for snippet
       if (fetchedData && fetchedData.leaderboard) {
@@ -723,12 +724,12 @@ async function renderLeaderboardSnippet(options) {
 
     // If user is not in top 10 but we have their rank (from submitScore)
     if (userIndex === -1 && highlightRank !== null && highlightUserId) {
-      // Try to find the user data in local history maybe? Or just display rank
-      // This part is tricky without fetching the user's specific score record
-      // For simplicity, we'll add a placeholder if rank is known but not in top 10
+      // Lấy tên người chơi hiện tại từ UI để đảm bảo tên mới nhất được hiển thị
+      const currentUsername = window.playerNameUI?.getPlayerName() || "Bạn"; // "Bạn" = You
+
       userEntry = {
         userId: highlightUserId,
-        username: window.playerNameUI?.getPlayerName() || "Bạn", // You
+        username: currentUsername,
         score: typeof score !== "undefined" ? score : 0, // Current game score
         rank: highlightRank,
         isCurrentUser: true, // Flag for potential styling

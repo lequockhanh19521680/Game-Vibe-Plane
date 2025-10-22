@@ -117,9 +117,9 @@ function resetEventSystem() {
 function triggerRandomEvent() {
   console.log("--- triggerRandomEvent FUNCTION CALLED ---");
 
-  // YÊU CẦU 2: Check event cooldown (10 seconds)
+  // YÊU CẦU 3: Kiểm tra thời gian chờ giữa các sự kiện (10 giây)
   const now = Date.now();
-  const cooldown = 10000; // 10 seconds in milliseconds
+  const cooldown = 10000; // 10 giây tính bằng mili giây
   if (now - lastEventTriggerTime < cooldown) {
     console.log(
       `-> Event cooldown active. Time remaining: ${(
@@ -127,20 +127,34 @@ function triggerRandomEvent() {
         1000
       ).toFixed(1)}s`
     );
-    return; // Still in cooldown, do not trigger a new event
+    return; // Vẫn đang trong thời gian chờ, không kích hoạt sự kiện mới
   }
 
-  const baseEventWeights = [
-    { type: "asteroidShower", weight: 30 }, // Slightly reduced weight
-    { type: "instantMissiles", weight: 25 },
-    { type: "giantBlackHole", weight: 15 }, // Added giant black hole event
-    // Add other events back here with their weights as needed
-  ];
+  // YÊU CẦU 3: Đảm bảo các sự kiện được chọn ngẫu nhiên dựa trên trọng số
+  // Lấy danh sách các sự kiện có sẵn và trọng số của chúng từ config
+  const baseEventWeights = Object.entries(
+    GAME_CONFIG.events.unlockThresholds || {}
+  )
+    .map(([type, scoreThreshold]) => ({
+      type,
+      // Gán trọng số mặc định nếu không có trong danh sách trọng số cơ bản cũ (có thể tinh chỉnh)
+      weight:
+        {
+          asteroidShower: 30,
+          instantMissiles: 25,
+          giantBlackHole: 15,
+          // ... thêm các sự kiện khác với trọng số nếu cần ...
+        }[type] || 10, // Trọng số mặc định là 10
+      scoreThreshold,
+    }))
+    // Lọc ra các sự kiện chưa xác định (nếu có)
+    .filter((event) => event.type && event.weight > 0);
 
   const unlockThresholds = GAME_CONFIG.events.unlockThresholds || {};
 
   console.log(`-> Current score for event check: ${score}`);
 
+  // Lọc các sự kiện có thể kích hoạt dựa trên điểm số hiện tại
   const availableEvents = baseEventWeights.filter((event) => {
     const threshold = unlockThresholds[event.type] || 0;
     const isAvailable = score >= threshold;
@@ -151,6 +165,7 @@ function triggerRandomEvent() {
     console.log(
       "-> No events available for current score. Checking default..."
     );
+    // Nếu không có sự kiện nào phù hợp, thử dùng sự kiện mặc định nếu điểm số đủ
     const defaultEvent =
       baseEventWeights.find((e) => e.type === "asteroidShower") ||
       baseEventWeights[0];
@@ -165,17 +180,24 @@ function triggerRandomEvent() {
 
   console.log(
     `-> Available events (${availableEvents.length}):`,
-    availableEvents.map((e) => e.type)
+    availableEvents.map((e) => `${e.type} (w:${e.weight})`)
   );
 
+  // Tính tổng trọng số của các sự kiện có sẵn
   const totalWeight = availableEvents.reduce(
     (sum, event) => sum + event.weight,
     0
   );
   console.log(`-> Total weight: ${totalWeight}`);
 
+  if (totalWeight <= 0) {
+    console.log("-> Total weight is zero, cannot select event. Exiting.");
+    return;
+  }
+
+  // Chọn ngẫu nhiên một sự kiện dựa trên trọng số
   let random = Math.random() * totalWeight;
-  let selectedEvent = availableEvents[0].type;
+  let selectedEvent = availableEvents[0].type; // Mặc định là sự kiện đầu tiên
 
   console.log(`-> Random value (0 - ${totalWeight}): ${random}`);
 
@@ -183,31 +205,37 @@ function triggerRandomEvent() {
     console.log(
       `   - Checking ${event.type} (weight ${event.weight})... Current random: ${random}`
     );
-    random -= event.weight;
-    if (random <= 0) {
+    if (random < event.weight) {
       selectedEvent = event.type;
       console.log(`   --> Selected: ${selectedEvent}`);
       break;
     }
+    random -= event.weight;
   }
 
   const randomEventType = selectedEvent;
   console.log(`-> FINAL SELECTED EVENT: ${randomEventType}`);
 
-  // Record the time this event is triggered BEFORE starting the event logic
+  // Ghi lại thời gian sự kiện này được kích hoạt TRƯỚC khi bắt đầu logic sự kiện
   lastEventTriggerTime = Date.now();
 
+  // Đặt thời gian kết thúc hiệu lực của sự kiện (có thể không dùng đến)
   eventActive.endTime =
     timers.difficulty + Math.floor(GAME_CONFIG.events.duration * 0.75);
 
+  // Kích hoạt logic cho sự kiện đã chọn
   switch (randomEventType) {
     case "asteroidShower":
       eventActive.type = "asteroidShower";
       showEventText(safeT("event.asteroidShower", "Asteroid Shower!"));
-      // YÊU CẦU 1: Reduce number of asteroids
-      const totalAsteroids = 15; // Reduced from 25
-      const waves = 3;
+      // YÊU CẦU 1: Điều chỉnh số lượng tiểu hành tinh trong sự kiện
+      const showerConfig = GAME_CONFIG.events.asteroidShower || {};
+      const totalAsteroids = showerConfig.asteroidCount || 15; // Lấy từ config hoặc mặc định 15
+      const waves = showerConfig.waveCount || 3;
+      const waveDelay = showerConfig.waveDelay || 1200;
+      const spawnDelayInWave = showerConfig.spawnDelayInWave || 100;
       const asteroidsPerWave = Math.floor(totalAsteroids / waves);
+
       for (let wave = 0; wave < waves; wave++) {
         setTimeout(() => {
           if (isGameRunning) {
@@ -219,26 +247,25 @@ function triggerRandomEvent() {
                 if (isGameRunning) {
                   asteroids.push(createMiniShowerAsteroid(direction));
                 }
-              }, i * 100); // Slightly increased spawn delay within wave
+              }, i * spawnDelayInWave);
             }
           }
-        }, wave * 1200); // Slightly increased delay between waves
+        }, wave * waveDelay);
       }
       break;
 
     case "instantMissiles":
-      // ... (logic remains the same) ...
       eventActive.type = "instantMissiles";
       showEventText(safeT("event.missileIncoming", "Missile Incoming!"));
       const instantSides = ["left", "right", "top", "bottom"];
-      const missileCount = 2;
+      const missileCount = 2; // Số lượng tên lửa xuất hiện
       for (let i = 0; i < missileCount; i++) {
         const side =
           instantSides[Math.floor(Math.random() * instantSides.length)];
         let warningX, warningY, warningAngle, spawnX, spawnY, missileAngle;
         const warningOffset = 50;
         const spawnOffset = 30;
-        // ... (switch case for side setup remains the same) ...
+
         switch (side) {
           case "left":
             warningX = warningOffset;
@@ -289,27 +316,27 @@ function triggerRandomEvent() {
               missiles.push(new Missile(spawnX, spawnY, missileAngle));
             });
           }
-        }, i * GAME_CONFIG.entities.missiles.warningDuration * (1000 / 60)); // Delay between missiles
+          // Độ trễ giữa các tên lửa (sử dụng duration của warning)
+        }, i * GAME_CONFIG.entities.missiles.warningDuration * (1000 / 60));
       }
       break;
 
-    // YÊU CẦU 3: Add giant black hole case
     case "giantBlackHole":
       eventActive.type = "giantBlackHole";
-      showEventText(safeT("event.giantBlackHole", "Giant Black Hole!")); // Add translation key if needed
+      showEventText(safeT("event.giantBlackHole", "Giant Black Hole!"));
 
       const eventConf = GAME_CONFIG.events.giantBlackHole;
       const baseConf = GAME_CONFIG.entities.blackHoles;
       const { level: currentLevel } = getLevelInfo(score);
       const difficultyLevel = currentLevel - 1;
 
-      // Spawn near the center but with some variation
+      // Xuất hiện gần giữa màn hình với một chút biến thể
       const bhX = width / 2 + (Math.random() - 0.5) * (width * 0.2);
       const bhY = height / 2 + (Math.random() - 0.5) * (height * 0.2);
 
-      // Calculate giant black hole parameters using multipliers
+      // Tính toán các thông số cho lỗ đen khổng lồ dựa trên hệ số nhân
       const giantOptions = {
-        isTemporary: true, // Make it temporary
+        isTemporary: true, // Đặt là tạm thời
         lifetime: eventConf.lifetime,
         baseRadius: eventConf.baseRadius,
         maxRadius:
@@ -328,23 +355,24 @@ function triggerRandomEvent() {
           (baseConf.baseGrowthRate +
             difficultyLevel * baseConf.growthRateIncreasePerLevel) *
           eventConf.growthRateMultiplier,
-        // color: eventConf.color // If you modify BlackHole class to accept color
+        // color: eventConf.color // Nếu lớp BlackHole hỗ trợ màu tùy chỉnh
       };
 
       const warningSystem = spawnWithWarning("blackhole", bhX, bhY, {
         duration: eventConf.warningTime,
-        // You could add specific options here if WarningSystem/Warning class supports custom visuals
-        // warningType: 'giantBlackHole' // Example, requires changes in Warning class
+        // warningType: 'giantBlackHole' // Ví dụ, yêu cầu thay đổi trong lớp Warning
       });
       warningSystem.spawn(() => {
-        // Pass the giantOptions to the BlackHole constructor
+        // Truyền giantOptions vào constructor của BlackHole
         blackHoles.push(new BlackHole(bhX, bhY, giantOptions));
-        playSound("blackhole"); // Consider a deeper/more intense sound
+        playSound("blackhole"); // Cân nhắc âm thanh sâu hơn/mạnh hơn
       });
       break;
 
     default:
       console.warn("Unknown event type selected:", randomEventType);
+      // Đặt lại thời gian kích hoạt cuối cùng nếu sự kiện không xác định để tránh bị kẹt cooldown
+      lastEventTriggerTime = 0;
       break;
   }
 }
