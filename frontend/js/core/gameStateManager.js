@@ -2,6 +2,117 @@
 // GAME STATE MANAGER - Centralized state management for better organization
 // =============================================================================
 
+// --- Placeholder Ad Functions ---
+// These would be replaced by actual calls to your Ad SDK (e.g., AdMob)
+let isRewardedAdReady = false; // Simulate ad availability
+let adLoadingTimeout;
+
+// Simulate loading a rewarded ad
+function loadRewardedAd() {
+  console.log("Attempting to load rewarded ad...");
+  isRewardedAdReady = false; // Reset status
+  const watchAdButton = document.getElementById("watch-ad-button");
+  if (watchAdButton) {
+    watchAdButton.disabled = true;
+    watchAdButton.style.display = "flex"; // Show the button but disabled
+    watchAdButton.innerHTML = "✨ Loading Ad... ✨"; // Update text
+  }
+
+  // Clear previous loading timeout if any
+  if (adLoadingTimeout) clearTimeout(adLoadingTimeout);
+
+  // Simulate ad loading delay (replace with SDK's load call)
+  adLoadingTimeout = setTimeout(() => {
+    // Simulate success or failure
+    const success = Math.random() > 0.3; // 70% chance of success
+    if (success) {
+      console.log("Rewarded ad loaded successfully (simulated).");
+      isRewardedAdReady = true;
+      if (watchAdButton) {
+        watchAdButton.disabled = false;
+        watchAdButton.innerHTML = "✨ Watch Ad to Continue ✨"; // Restore text
+      }
+    } else {
+      console.log("Failed to load rewarded ad (simulated).");
+      isRewardedAdReady = false;
+      if (watchAdButton) {
+        watchAdButton.innerHTML = "Ad Unavailable"; // Indicate failure
+        // Optional: Hide button after a delay if ad fails to load
+        // setTimeout(() => { watchAdButton.style.display = 'none'; }, 2000);
+      }
+    }
+    adLoadingTimeout = null;
+  }, 2000 + Math.random() * 3000); // Simulate 2-5 second load time
+}
+
+// Simulate showing a rewarded ad
+function showRewardedAd(onRewarded, onAdClosed) {
+  console.log("Attempting to show rewarded ad...");
+  if (!isRewardedAdReady) {
+    console.log("Rewarded ad is not ready to show.");
+    if (onAdClosed) onAdClosed(); // Call close callback immediately if not ready
+    return;
+  }
+
+  console.log("Showing rewarded ad (simulated)...");
+  // --- IMPORTANT: Pause Game Logic Here ---
+  // If your game loop is running, you need to pause it.
+  // Example: isPaused = true; cancelAnimationFrame(animationFrameId); stopBackgroundMusic();
+  pauseGameForAd(); // Call helper function
+
+  isRewardedAdReady = false; // Ad needs to be reloaded after showing
+  const watchAdButton = document.getElementById("watch-ad-button");
+  if (watchAdButton) watchAdButton.style.display = "none"; // Hide button while ad shows
+
+  // Simulate ad display time and reward outcome
+  setTimeout(() => {
+    const gotReward = Math.random() > 0.1; // 90% chance user finishes ad
+    console.log(`Ad finished (simulated). Rewarded: ${gotReward}`);
+    if (gotReward && onRewarded) {
+      onRewarded(); // Call the reward callback
+    }
+    // --- IMPORTANT: Resume Game Logic Here (or handle state change) ---
+    // Example: isPaused = false; animate(); resumeBackgroundMusic();
+    resumeGameAfterAd(); // Call helper function
+    if (onAdClosed) onAdClosed(); // Call the close callback after resuming
+  }, 3000); // Simulate 3 second ad duration
+}
+
+// Helper function to pause game elements for ads
+function pauseGameForAd() {
+  console.log("Pausing game for ad...");
+  isPaused = true; // Use the existing pause flag
+  if (typeof animationFrameId !== "undefined" && animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  if (typeof pauseBackgroundMusic === "function") pauseBackgroundMusic();
+  // Disable player input listeners if necessary
+}
+
+// Helper function to resume game elements after ads
+function resumeGameAfterAd() {
+  console.log("Resuming game after ad...");
+  // Only resume if the current state *should* be playing
+  if (gameStateManager.getCurrentStateName() === "playing") {
+    isPaused = false;
+    if (typeof animate === "function") animate();
+    if (typeof resumeBackgroundMusic === "function") resumeBackgroundMusic();
+    // Re-enable player input listeners if they were disabled
+  } else {
+    console.log(
+      "Not resuming animation/music as game state is not 'playing'. State:",
+      gameStateManager.getCurrentStateName()
+    );
+    // If state changed (e.g., user went back to menu), ensure isPaused is handled correctly by that state
+    if (gameStateManager.getCurrentStateName() !== "paused") {
+      isPaused = false; // Ensure pause is off if not explicitly paused state
+    }
+  }
+}
+
+// --- End Placeholder Ad Functions ---
+
 class GameStateManager {
   constructor() {
     this.states = new Map();
@@ -10,6 +121,7 @@ class GameStateManager {
     this.stateData = {}; // Stores data passed between states
     this.registerDefaultStates();
     this.gameOverTimeoutId = null; // To store the timeout ID
+    this.watchAdButtonListener = null; // Store listener reference
   }
 
   registerState(name, stateClass) {
@@ -26,6 +138,13 @@ class GameStateManager {
     if (this.gameOverTimeoutId) {
       clearTimeout(this.gameOverTimeoutId);
       this.gameOverTimeoutId = null;
+    }
+
+    // Clear ad loading timeout if changing state
+    if (adLoadingTimeout) {
+      clearTimeout(adLoadingTimeout);
+      adLoadingTimeout = null;
+      console.log("Cleared pending ad load due to state change.");
     }
 
     if (this.currentState) {
@@ -79,6 +198,16 @@ class GameStateManager {
     return null; // Should not happen if state is registered
   }
 
+  // Helper to remove the ad button listener
+  removeWatchAdListener() {
+    const watchAdButton = document.getElementById("watch-ad-button");
+    if (watchAdButton && this.watchAdButtonListener) {
+      watchAdButton.removeEventListener("click", this.watchAdButtonListener);
+      this.watchAdButtonListener = null;
+      console.log("Removed Watch Ad button listener.");
+    }
+  }
+
   registerDefaultStates() {
     this.registerState("menu", MenuState);
     this.registerState("playing", PlayingState);
@@ -109,6 +238,9 @@ class MenuState extends GameState {
     uiElements.pauseMenu.style.display = "none";
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
     uiElements.pauseButton.style.display = "none";
+    // Hide ad button if it was visible
+    const watchAdButton = document.getElementById("watch-ad-button");
+    if (watchAdButton) watchAdButton.style.display = "none";
     this.drawBackground();
   }
 
@@ -142,6 +274,9 @@ class PlayingState extends GameState {
     uiElements.pauseMenu.style.display = "none";
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarOpacity;
     uiElements.pauseButton.style.display = "block";
+    // Hide ad button if it was visible
+    const watchAdButton = document.getElementById("watch-ad-button");
+    if (watchAdButton) watchAdButton.style.display = "none";
 
     // If restarting or starting for the first time
     if (this.data.restart || !isGameRunning) {
@@ -153,10 +288,10 @@ class PlayingState extends GameState {
       if (typeof startBackgroundMusic === "function") startBackgroundMusic();
       if (typeof initAudioSystem === "function") initAudioSystem();
     } else {
-      // Resuming from pause
+      // Resuming from pause or ad
       isPaused = false;
       // isGameRunning should already be true
-      if (typeof animate === "function") animate();
+      if (typeof animate === "function") animate(); // Restart animation loop
       if (typeof resumeBackgroundMusic === "function") resumeBackgroundMusic();
     }
   }
@@ -167,6 +302,7 @@ class PlayingState extends GameState {
       cancelAnimationFrame(animationFrameId);
       animationFrameId = null; // Reset ID
     }
+    // Don't set isPaused here, let the target state handle it
   }
 }
 
@@ -177,6 +313,9 @@ class PausedState extends GameState {
     isPaused = true;
     // Cancel animation frame already handled by PlayingState.exit()
     if (typeof pauseBackgroundMusic === "function") pauseBackgroundMusic();
+    // Hide ad button if it was visible
+    const watchAdButton = document.getElementById("watch-ad-button");
+    if (watchAdButton) watchAdButton.style.display = "none";
   }
 
   exit() {
@@ -188,12 +327,15 @@ class PausedState extends GameState {
 }
 
 class GameOverState extends GameState {
-  // YÊU CẦU 2: Tách enter thành 2 phần: hiệu ứng tức thời và UI có độ trễ
   enterImmediateEffects() {
     document.body.className = "game-over";
     isGameRunning = false; // Ensure game is stopped
+    isPaused = false; // Ensure not paused
     uiElements.pauseButton.style.display = "none";
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
+    // Hide ad button initially
+    const watchAdButton = document.getElementById("watch-ad-button");
+    if (watchAdButton) watchAdButton.style.display = "none";
 
     // Stop animation
     if (typeof animationFrameId !== "undefined" && animationFrameId) {
@@ -212,33 +354,70 @@ class GameOverState extends GameState {
     this.showGameOverScreen(); // Show score, time, death cause first
     this.checkHighScore(); // Update high score message visibility
 
+    // --- Rewarded Ad Logic ---
+    const watchAdButton = document.getElementById("watch-ad-button");
+    if (watchAdButton) {
+      // Remove previous listener if it exists
+      this.manager.removeWatchAdListener();
+
+      // Define the new listener function
+      this.manager.watchAdButtonListener = () => {
+        console.log("Watch Ad button clicked.");
+        playSound("buttonHover"); // Play click sound
+
+        // Disable button immediately to prevent multiple clicks
+        watchAdButton.disabled = true;
+        watchAdButton.innerHTML = "Showing Ad...";
+
+        showRewardedAd(
+          () => {
+            // onRewarded callback
+            console.log("Ad reward received! Continuing game...");
+            // Reward: For example, reset player state slightly and restart 'playing'
+            // You might give them a shield, remove nearby hazards, etc.
+            // For simplicity, we'll just restart the 'playing' state without a full 'init'
+            player.activateShield(); // Give a shield as reward
+            this.manager.changeState("playing", { restart: false }); // Resume playing state
+          },
+          () => {
+            // onAdClosed callback (called whether rewarded or not)
+            console.log("Ad closed.");
+            // Re-enable or hide the button, depending on whether the ad was rewarded/ready
+            // If not rewarded, the button might stay hidden or show 'Ad Unavailable'
+            // If rewarded, the state changes, so button isn't needed
+            if (this.manager.getCurrentStateName() === "gameOver") {
+              // Check if we are still on game over screen
+              // Ad was closed without reward or failed to show
+              watchAdButton.style.display = "none"; // Hide the button
+            }
+          }
+        );
+      };
+
+      // Add the new listener
+      watchAdButton.addEventListener(
+        "click",
+        this.manager.watchAdButtonListener
+      );
+
+      // Load the ad (this will show the button in a loading/ready state)
+      loadRewardedAd();
+    }
+    // --- End Rewarded Ad Logic ---
+
     // Send data to backend and then render leaderboard snippet
     this.sendGameOverData().then((submitResult) => {
-      // YÊU CẦU 2: Store the rank from the submit result in the manager's stateData
-      if (submitResult && submitResult.rank !== null) {
-        this.manager.stateData.lastRank = submitResult.rank; // Store for later use by snippet
-        // Also update the global lastKnownRank in dashboard.js directly
-        if (typeof window.lastKnownRank !== "undefined") {
-          window.lastKnownRank = submitResult.rank;
-        }
-        console.log(`[GameOver] Stored lastRank: ${submitResult.rank}`);
-      } else {
-        // If submission failed or didn't return rank, clear lastRank
-        this.manager.stateData.lastRank = null;
-        if (typeof window.lastKnownRank !== "undefined") {
-          window.lastKnownRank = null;
-        }
-        console.log(
-          "[GameOver] No rank received from submission, cleared lastRank."
-        );
+      // Store rank if received
+      this.manager.stateData.lastRank =
+        submitResult && submitResult.rank !== null ? submitResult.rank : null;
+      if (typeof window.lastKnownRank !== "undefined") {
+        window.lastKnownRank = this.manager.stateData.lastRank;
       }
+      console.log(
+        `[GameOver] Stored lastRank: ${this.manager.stateData.lastRank}`
+      );
 
-      // Get current user ID for highlighting
-      const userId =
-        window.userIdentification &&
-        typeof window.userIdentification.getUserId === "function"
-          ? window.userIdentification.getUserId()
-          : null;
+      const userId = window.userIdentification?.getUserId();
 
       if (typeof renderLeaderboardSnippet === "function") {
         console.log(
@@ -247,25 +426,23 @@ class GameOverState extends GameState {
         renderLeaderboardSnippet({
           targetElementId: "game-over-leaderboard-container",
           highlightUserId: userId,
-          highlightRank: this.manager.stateData.lastRank, // Use the stored rank
-          forceRefresh: true, // Force fetching fresh data for game over
+          highlightRank: this.manager.stateData.lastRank,
+          forceRefresh: true,
         });
       } else {
-        console.error(
-          "Leaderboard rendering function not found for game over screen."
-        );
+        console.error("Leaderboard rendering function not found.");
         const lbContainer = document.getElementById(
           "game-over-leaderboard-container"
         );
-        if (lbContainer) {
+        if (lbContainer)
           lbContainer.innerHTML =
             '<div class="no-data">Cannot load leaderboard.</div>';
-        }
       }
     });
   }
 
   createDeathExplosion() {
+    // ... (explosion logic remains the same)
     if (typeof player !== "undefined" && player) {
       if (typeof triggerScreenShake === "function") {
         triggerScreenShake(GAME_CONFIG.visual.screenShake.explosionIntensity);
@@ -304,6 +481,7 @@ class GameOverState extends GameState {
   }
 
   checkHighScore() {
+    // ... (high score logic remains the same)
     const currentScore = typeof score !== "undefined" ? ~~score : 0;
     const currentHighScore = typeof highScore !== "undefined" ? highScore : 0;
 
@@ -317,6 +495,7 @@ class GameOverState extends GameState {
   }
 
   showGameOverScreen() {
+    // ... (showing score, time, death cause remains the same)
     const finalScoreValue = typeof score !== "undefined" ? ~~score : 0;
     const finalTimeValue =
       typeof survivalTime !== "undefined" ? survivalTime : 0;
@@ -355,6 +534,7 @@ class GameOverState extends GameState {
   }
 
   async sendGameOverData() {
+    // ... (sending data logic remains the same)
     try {
       const finalScoreValue = typeof score !== "undefined" ? ~~score : 0;
       const finalTimeValue =
@@ -541,15 +721,17 @@ class GameOverState extends GameState {
     const lbContainer = document.getElementById(
       "game-over-leaderboard-container"
     );
-    // Reset leaderboard content when exiting
-    if (lbContainer) {
+    if (lbContainer)
       lbContainer.innerHTML = '<div class="loading">Loading...</div>';
-    }
-    // YÊU CẦU 2: Clear last known rank when exiting game over
     this.manager.stateData.lastRank = null;
     if (typeof window.lastKnownRank !== "undefined") {
       window.lastKnownRank = null;
     }
+    // Remove the ad button listener when leaving the game over state
+    this.manager.removeWatchAdListener();
+    // Hide ad button
+    const watchAdButton = document.getElementById("watch-ad-button");
+    if (watchAdButton) watchAdButton.style.display = "none";
   }
 }
 
@@ -561,8 +743,11 @@ class LeaderboardState extends GameState {
     uiElements.gameOverScreen.style.display = "none";
     uiElements.pauseMenu.style.display = "none";
     uiElements.leaderboardScreen.style.display = "flex";
+    // Hide ad button if it was visible
+    const watchAdButton = document.getElementById("watch-ad-button");
+    if (watchAdButton) watchAdButton.style.display = "none";
 
-    // Use rank from state data if available (passed from game over)
+    // Use rank from state data if available
     const userId = window.userIdentification?.getUserId();
     const userRank = this.data.lastRank || null; // Use stored rank
 
@@ -574,13 +759,14 @@ class LeaderboardState extends GameState {
         targetElementId: "global-leaderboard-list",
         highlightUserId: userId,
         highlightRank: userRank,
-        forceRefresh: true, // Always refresh when entering leaderboard state
+        forceRefresh: true,
       });
     } else {
       console.warn("renderCurrentLeaderboardData function not found.");
     }
 
-    // Ensure the correct tab is active (usually Global by default)
+    // Ensure the correct tab is active
+    // ... (tab logic remains the same)
     const globalTab = document.querySelector('[data-tab="global-leaderboard"]');
     const globalContent = document.getElementById("global-leaderboard-content");
     const tabs = document.querySelectorAll(".dashboard-tab");
@@ -597,13 +783,9 @@ class LeaderboardState extends GameState {
       if (listContainer) listContainer.scrollTop = 0; // Scroll to top
     }
 
-    // Refresh other tabs as well (loadCountryData already checks connection)
-    if (typeof loadCountryData === "function") {
-      loadCountryData();
-    }
-    if (typeof updatePlayerStats === "function") {
-      updatePlayerStats();
-    }
+    // Refresh other tabs
+    if (typeof loadCountryData === "function") loadCountryData();
+    if (typeof updatePlayerStats === "function") updatePlayerStats();
   }
 
   exit() {
@@ -619,6 +801,9 @@ class HowToPlayState extends GameState {
     uiElements.leaderboardScreen.style.display = "none";
     uiElements.gameOverScreen.style.display = "none";
     uiElements.pauseMenu.style.display = "none";
+    // Hide ad button if it was visible
+    const watchAdButton = document.getElementById("watch-ad-button");
+    if (watchAdButton) watchAdButton.style.display = "none";
   }
 
   exit() {
