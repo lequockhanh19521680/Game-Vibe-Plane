@@ -17,7 +17,7 @@ class EndpointManager {
     try {
       // Direct endpoint data from your 'prod' deployment
       this.endpoints.api =
-        "https://x0awoh4lx1.execute-api.ap-southeast-1.amazonaws.com/prod";
+        "https://m7uj7jddd8.execute-api.ap-southeast-1.amazonaws.com/prod";
       // WebSocket endpoint, trailing slash removed.
       this.endpoints.ws =
         "wss://t3he3fvk4c.execute-api.ap-southeast-1.amazonaws.com/prod";
