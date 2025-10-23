@@ -47,24 +47,23 @@
     <meta name="twitter:image" content="assets/images/game_banner.jpg" />
 
     <script>
-      // Disable all console logs
-      // (function () {
-      //   const noop = function () {};
-      //   if (typeof console !== "undefined") {
-      //     console.log = noop;
-      //     console.info = noop;
-      //     console.warn = noop;
-      //     console.error = noop;
-      //     console.debug = noop;
-      //     console.table = noop;
-      //     console.trace = noop;
-      //     console.assert = noop;
-      //     console.group = noop;
-      //     console.groupEnd = noop;
-      //     console.time = noop;
-      //     console.timeEnd = noop;
-      //   }
-      // })();
+      (function () {
+        const noop = function () {};
+        if (typeof console !== "undefined") {
+          console.log = noop;
+          console.info = noop;
+          console.warn = noop;
+          console.error = noop;
+          console.debug = noop;
+          console.table = noop;
+          console.trace = noop;
+          console.assert = noop;
+          console.group = noop;
+          console.groupEnd = noop;
+          console.time = noop;
+          console.timeEnd = noop;
+        }
+      })();
     </script>
     <!-- Google Analytics -->
     <script
