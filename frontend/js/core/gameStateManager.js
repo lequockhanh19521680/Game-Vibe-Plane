@@ -35,8 +35,8 @@ class GameStateManager {
 
     const StateClass = this.states.get(stateName);
     // Store data BEFORE initializing state, so state can access it
-    this.stateData = data;
-    this.currentState = new StateClass(this, data);
+    this.stateData = { ...this.stateData, ...data }; // Merge data
+    this.currentState = new StateClass(this, this.stateData); // Pass merged data
 
     // Special handling for GameOverState with delay
     if (stateName === "gameOver") {
@@ -214,6 +214,25 @@ class GameOverState extends GameState {
 
     // Send data to backend and then render leaderboard snippet
     this.sendGameOverData().then((submitResult) => {
+      // YÊU CẦU 2: Store the rank from the submit result in the manager's stateData
+      if (submitResult && submitResult.rank !== null) {
+        this.manager.stateData.lastRank = submitResult.rank; // Store for later use by snippet
+        // Also update the global lastKnownRank in dashboard.js directly
+        if (typeof window.lastKnownRank !== "undefined") {
+          window.lastKnownRank = submitResult.rank;
+        }
+        console.log(`[GameOver] Stored lastRank: ${submitResult.rank}`);
+      } else {
+        // If submission failed or didn't return rank, clear lastRank
+        this.manager.stateData.lastRank = null;
+        if (typeof window.lastKnownRank !== "undefined") {
+          window.lastKnownRank = null;
+        }
+        console.log(
+          "[GameOver] No rank received from submission, cleared lastRank."
+        );
+      }
+
       // Get current user ID for highlighting
       const userId =
         window.userIdentification &&
@@ -222,21 +241,13 @@ class GameOverState extends GameState {
           : null;
 
       if (typeof renderLeaderboardSnippet === "function") {
+        console.log(
+          `[GameOver] Rendering snippet. UserID: ${userId}, Rank: ${this.manager.stateData.lastRank}`
+        );
         renderLeaderboardSnippet({
           targetElementId: "game-over-leaderboard-container",
           highlightUserId: userId,
-          highlightRank: submitResult ? submitResult.rank : null,
-          forceRefresh: true, // Force fetching fresh data for game over
-        });
-      } else if (typeof renderCurrentLeaderboardData === "function") {
-        console.warn(
-          "renderLeaderboardSnippet not found, attempting renderCurrentLeaderboardData."
-        );
-        // Fallback, ensure it also forces refresh
-        renderCurrentLeaderboardData({
-          targetElementId: "game-over-leaderboard-container",
-          highlightUserId: userId,
-          highlightRank: submitResult ? submitResult.rank : null,
+          highlightRank: this.manager.stateData.lastRank, // Use the stored rank
           forceRefresh: true, // Force fetching fresh data for game over
         });
       } else {
@@ -452,7 +463,9 @@ class GameOverState extends GameState {
       if (
         window.BackendAPI &&
         typeof BACKEND_CONFIG !== "undefined" &&
-        BACKEND_CONFIG.USE_BACKEND
+        BACKEND_CONFIG.USE_BACKEND &&
+        typeof window.isConnected !== "undefined" &&
+        window.isConnected // Check if connected
       ) {
         try {
           submitResult = await BackendAPI.submitScore(
@@ -478,13 +491,15 @@ class GameOverState extends GameState {
           }
         }
       } else {
-        console.log("Backend not available, game over data logged locally");
+        console.log(
+          "Backend not available or disconnected, game over data logged locally"
+        );
         if (lbContainer) {
-          lbContainer.innerHTML =
-            '<div class="no-data">Offline mode. Showing local scores.</div>';
-          if (typeof showOfflineLeaderboard === "function") {
-            showOfflineLeaderboard("game-over-leaderboard-container");
-          }
+          // YÊU CẦU 1: Show appropriate message if offline vs disabled
+          const offlineMsg = !BACKEND_CONFIG.USE_BACKEND
+            ? "Backend disabled. Showing local scores."
+            : "Offline mode. Showing local scores.";
+          showOfflineLeaderboard("game-over-leaderboard-container", offlineMsg);
         }
       }
 
@@ -511,11 +526,11 @@ class GameOverState extends GameState {
         "game-over-leaderboard-container"
       );
       if (lbContainer) {
-        lbContainer.innerHTML =
-          '<div class="no-data">An error occurred. Showing local scores.</div>';
-        if (typeof showOfflineLeaderboard === "function") {
-          showOfflineLeaderboard("game-over-leaderboard-container");
-        }
+        // YÊU CẦU 1: Show appropriate message on error
+        const errorMsg = isConnected
+          ? "An error occurred. Showing local scores."
+          : "Disconnected. Showing local scores.";
+        showOfflineLeaderboard("game-over-leaderboard-container", errorMsg);
       }
       return null;
     }
@@ -530,6 +545,11 @@ class GameOverState extends GameState {
     if (lbContainer) {
       lbContainer.innerHTML = '<div class="loading">Loading...</div>';
     }
+    // YÊU CẦU 2: Clear last known rank when exiting game over
+    this.manager.stateData.lastRank = null;
+    if (typeof window.lastKnownRank !== "undefined") {
+      window.lastKnownRank = null;
+    }
   }
 }
 
@@ -542,10 +562,14 @@ class LeaderboardState extends GameState {
     uiElements.pauseMenu.style.display = "none";
     uiElements.leaderboardScreen.style.display = "flex";
 
-    const userId = this.data.currentUserId;
-    const userRank = this.data.currentUserRank;
+    // Use rank from state data if available (passed from game over)
+    const userId = window.userIdentification?.getUserId();
+    const userRank = this.data.lastRank || null; // Use stored rank
 
     if (typeof renderCurrentLeaderboardData === "function") {
+      console.log(
+        `[LeaderboardState] Entering. UserID: ${userId}, Rank: ${userRank}`
+      );
       renderCurrentLeaderboardData({
         targetElementId: "global-leaderboard-list",
         highlightUserId: userId,
@@ -573,7 +597,7 @@ class LeaderboardState extends GameState {
       if (listContainer) listContainer.scrollTop = 0; // Scroll to top
     }
 
-    // Refresh other tabs as well
+    // Refresh other tabs as well (loadCountryData already checks connection)
     if (typeof loadCountryData === "function") {
       loadCountryData();
     }

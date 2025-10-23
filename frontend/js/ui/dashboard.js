@@ -7,6 +7,7 @@ let isConnected = false;
 let heartbeatInterval = null;
 let prevGlobalLeaderboardIds = [];
 let prevCountryLeaderboardIds = [];
+let lastKnownRank = null; // Store the last known rank for game over screen
 
 // Initialize dashboard functionality
 function initializeDashboard() {
@@ -57,7 +58,13 @@ function connectWebSocket() {
   const wsUrl = window.BackendAPI ? window.BackendAPI.getWsUrl() : null;
 
   if (!BACKEND_CONFIG.USE_BACKEND || !wsUrl) {
-    updateConnectionStatus("offline", "Offline");
+    updateConnectionStatus("offline", "Offline"); // Show Offline
+    disableLeaderboardTabs(true); // Disable tabs
+    showOfflineMessage("global-leaderboard-list"); // Show offline message in global list
+    showOfflineMessage(
+      "country-leaderboard-list",
+      "Country data unavailable offline."
+    ); // Show offline message in country list
     console.log(
       "WebSocket connection skipped: Backend is disabled or URL is missing."
     );
@@ -66,18 +73,19 @@ function connectWebSocket() {
 
   try {
     console.log(`Attempting to connect to WebSocket at: ${wsUrl}`);
-    updateConnectionStatus("connecting", "Connecting...");
+    updateConnectionStatus("connecting", "Connecting..."); // Connecting...
+    disableLeaderboardTabs(true); // Disable tabs while connecting
 
     websocket = new WebSocket(wsUrl);
 
     websocket.onopen = () => {
       console.log("WebSocket connection established successfully.");
       isConnected = true;
-      updateConnectionStatus("connected", "Live");
+      updateConnectionStatus("connected", "Live"); // Live
       websocket.send(JSON.stringify({ action: "subscribe" }));
       startHeartbeat();
-      // SỬA ĐỔI: Tải dữ liệu mới nhất sau khi kết nối thành công
-      loadInitialData();
+      // Tải dữ liệu mới nhất sau khi kết nối thành công
+      loadInitialData(); // Will enable tabs upon success
     };
 
     websocket.onmessage = (event) => {
@@ -95,41 +103,59 @@ function connectWebSocket() {
         `WebSocket disconnected. Code: ${event.code}, Reason: ${event.reason}`
       );
       isConnected = false;
-      updateConnectionStatus("disconnected", "Disconnected");
+      updateConnectionStatus("disconnected", "Disconnected"); // Show Disconnected
       stopHeartbeat();
-      // SỬA ĐỔI: Hủy kích hoạt các tab leaderboard khi mất kết nối
+      // Hủy kích hoạt các tab leaderboard khi mất kết nối
       disableLeaderboardTabs(true);
+      showOfflineMessage("global-leaderboard-list"); // Show offline message
+      showOfflineMessage(
+        "country-leaderboard-list",
+        "Country data unavailable offline."
+      ); // Show offline message
       // Attempt to reconnect
       setTimeout(connectWebSocket, 5000);
     };
 
     websocket.onerror = (error) => {
       console.error("WebSocket error occurred:", error);
-      updateConnectionStatus("error", "Connection Error");
-      // SỬA ĐỔI: Hủy kích hoạt các tab leaderboard khi có lỗi
+      isConnected = false; // Ensure isConnected is false on error
+      updateConnectionStatus("error", "Connection Error"); // Show Connection Error
+      // Hủy kích hoạt các tab leaderboard khi có lỗi
       disableLeaderboardTabs(true);
+      showOfflineMessage("global-leaderboard-list"); // Show offline message
+      showOfflineMessage(
+        "country-leaderboard-list",
+        "Could not load country data."
+      ); // Show error message
     };
   } catch (error) {
     console.error("Failed to create WebSocket instance:", error);
-    updateConnectionStatus("error", "Setup Failed");
+    updateConnectionStatus("error", "Setup Failed"); // Show Setup Failed
     disableLeaderboardTabs(true);
+    showOfflineMessage("global-leaderboard-list");
+    showOfflineMessage(
+      "country-leaderboard-list",
+      "Could not load country data."
+    );
   }
 }
 
-// SỬA ĐỔI: Hàm để kích hoạt/hủy kích hoạt các tab leaderboard
+// Hàm để kích hoạt/hủy kích hoạt các tab leaderboard
 function disableLeaderboardTabs(disabled) {
   const globalTab = document.querySelector('[data-tab="global-leaderboard"]');
   const countryTab = document.querySelector('[data-tab="country-leaderboard"]');
   if (globalTab) globalTab.disabled = disabled;
   if (countryTab) countryTab.disabled = disabled;
+}
 
-  // Hiển thị thông báo offline nếu bị hủy kích hoạt
-  if (disabled) {
-    showOfflineLeaderboard("global-leaderboard-list");
-    const countryList = document.getElementById("country-leaderboard-list");
-    if (countryList)
-      countryList.innerHTML =
-        '<div class="no-data">Offline. Cannot load country data.</div>'; // Offline. Cannot load country data.
+// NEW: Hàm hiển thị thông báo offline/disconnected
+function showOfflineMessage(
+  elementId,
+  message = "Disconnected. Cannot load live data."
+) {
+  const container = document.getElementById(elementId);
+  if (container) {
+    container.innerHTML = `<div class="no-data">${message}</div>`; // Disconnected. Cannot load live data. / Country data unavailable offline.
   }
 }
 
@@ -147,8 +173,36 @@ function handleWebSocketMessage(message) {
           "userId"
         );
         globalLeaderboard = newLeaderboard; // Update global data
-        updateGlobalLeaderboardUI(changedEntries); // Update the main dashboard UI
+
+        // Update main dashboard UI only if it's the active tab
+        const globalTab = document.querySelector(
+          '[data-tab="global-leaderboard"]'
+        );
+        if (globalTab && globalTab.classList.contains("active")) {
+          updateGlobalLeaderboardUI(changedEntries);
+        }
         prevGlobalLeaderboardIds = globalLeaderboard.map((e) => e.userId);
+
+        // YÊU CẦU 2: Update game over snippet if active
+        if (
+          window.gameStateManager &&
+          window.gameStateManager.getCurrentStateName() === "gameOver"
+        ) {
+          const userId = window.userIdentification?.getUserId();
+          // Try to find the user in the new data to get the latest rank
+          const userEntry = globalLeaderboard.find((e) => e.userId === userId);
+          const currentRank = userEntry ? userEntry.rank : lastKnownRank; // Use last known rank as fallback
+
+          console.log(
+            `[WS Update] Re-rendering game over snippet. UserID: ${userId}, Rank: ${currentRank}`
+          );
+          renderLeaderboardSnippet({
+            targetElementId: "game-over-leaderboard-container",
+            highlightUserId: userId,
+            highlightRank: currentRank,
+            forceRefresh: false, // Use the updated globalLeaderboard data
+          });
+        }
       }
       break;
 
@@ -163,7 +217,14 @@ function handleWebSocketMessage(message) {
           "country"
         );
         countryLeaderboard = newLeaderboard; // Update global data
-        updateCountryLeaderboardUI(changedEntries); // Update the main dashboard UI
+
+        // Update main dashboard UI only if it's the active tab
+        const countryTab = document.querySelector(
+          '[data-tab="country-leaderboard"]'
+        );
+        if (countryTab && countryTab.classList.contains("active")) {
+          updateCountryLeaderboardUI(changedEntries);
+        }
         prevCountryLeaderboardIds = countryLeaderboard.map((c) => c.country);
       }
       break;
@@ -174,8 +235,10 @@ function handleWebSocketMessage(message) {
 
     case "subscribed":
       console.log("Successfully subscribed to real-time updates");
-      // SỬA ĐỔI: Kích hoạt lại các tab khi đăng ký thành công
+      // Kích hoạt lại các tab khi đăng ký thành công
       disableLeaderboardTabs(false);
+      // Optional: Trigger a data load if needed after subscribing
+      // loadInitialData(); // Be careful not to cause loops if connection drops/reconnects
       break;
 
     default:
@@ -183,7 +246,7 @@ function handleWebSocketMessage(message) {
   }
 }
 
-// SỬA ĐỔI: Tách riêng hàm tải dữ liệu ban đầu
+// Tách riêng hàm tải dữ liệu ban đầu
 async function loadInitialData() {
   // Set loading states
   const globalList = document.getElementById("global-leaderboard-list");
@@ -197,6 +260,20 @@ async function loadInitialData() {
   // Disable tabs while loading
   disableLeaderboardTabs(true);
 
+  // YÊU CẦU 1: Check connection before fetching
+  if (!isConnected || !BACKEND_CONFIG.USE_BACKEND) {
+    console.log(
+      "[loadInitialData] Not connected or backend disabled. Showing offline."
+    );
+    showOfflineMessage("global-leaderboard-list");
+    showOfflineMessage(
+      "country-leaderboard-list",
+      "Country data unavailable offline."
+    );
+    // Keep tabs disabled
+    return;
+  }
+
   try {
     const [globalData, countryData] = await Promise.all([
       BackendAPI.fetchLeaderboard(10),
@@ -208,6 +285,10 @@ async function loadInitialData() {
       prevGlobalLeaderboardIds = globalLeaderboard.map((e) => e.userId);
     } else {
       globalLeaderboard = []; // Ensure it's an array on failure
+      showOfflineMessage(
+        "global-leaderboard-list",
+        "Failed to load leaderboard."
+      ); // Failed to load leaderboard.
     }
 
     if (countryData && countryData.countries) {
@@ -215,31 +296,46 @@ async function loadInitialData() {
       prevCountryLeaderboardIds = countryLeaderboard.map((c) => c.country);
     } else {
       countryLeaderboard = []; // Ensure it's an array on failure
+      showOfflineMessage(
+        "country-leaderboard-list",
+        "Failed to load country data."
+      ); // Failed to load country data.
     }
 
-    // Update UI with fetched data
+    // Update UI with fetched data (renderLeaderboardInternal handles empty data)
     updateGlobalLeaderboardUI();
     updateCountryLeaderboardUI();
-    // Enable tabs after loading if connected
-    if (isConnected) {
-      disableLeaderboardTabs(false);
-    }
+    // Enable tabs after loading successfully
+    disableLeaderboardTabs(false);
   } catch (error) {
     console.error("Error loading initial leaderboard data:", error);
-    showOfflineLeaderboard("global-leaderboard-list"); // Show local scores on error
-    if (countryList)
-      countryList.innerHTML =
-        '<div class="no-data">Error loading country data.</div>'; // Error loading country data.
+    // YÊU CẦU 1: Show disconnected message on error
+    showOfflineMessage("global-leaderboard-list");
+    showOfflineMessage(
+      "country-leaderboard-list",
+      "Could not load country data."
+    );
     // Keep tabs disabled on error
+    disableLeaderboardTabs(true);
   }
 }
 
-// SỬA ĐỔI: Tách riêng hàm tải dữ liệu quốc gia (có thể gọi lại khi cần)
+// Tách riêng hàm tải dữ liệu quốc gia (có thể gọi lại khi cần)
 async function loadCountryData() {
   const countryList = document.getElementById("country-leaderboard-list");
   if (!countryList) return;
   countryList.innerHTML =
     '<div class="loading">Loading country rankings...</div>'; // Loading country rankings...
+
+  // YÊU CẦU 1: Check connection
+  if (!isConnected || !BACKEND_CONFIG.USE_BACKEND) {
+    showOfflineMessage(
+      "country-leaderboard-list",
+      "Country data unavailable offline."
+    );
+    return;
+  }
+
   try {
     const countryData = await BackendAPI.fetchLeaderboardByCountry(null, 10);
     if (countryData && countryData.countries) {
@@ -252,12 +348,14 @@ async function loadCountryData() {
     }
   } catch (error) {
     console.error("Error loading country data:", error);
-    countryList.innerHTML =
-      '<div class="no-data">Error loading country data.</div>'; // Error loading country data.
+    showOfflineMessage(
+      "country-leaderboard-list",
+      "Could not load country data."
+    ); // Show error
   }
 }
 
-// SỬA ĐỔI: Đổi tên thành updateGlobalLeaderboardUI để phân biệt với hàm cập nhật dữ liệu
+// Đổi tên thành updateGlobalLeaderboardUI để phân biệt với hàm cập nhật dữ liệu
 function updateGlobalLeaderboardUI(changedEntries = new Map()) {
   renderLeaderboardInternal(
     "global-leaderboard-list",
@@ -268,7 +366,7 @@ function updateGlobalLeaderboardUI(changedEntries = new Map()) {
   );
 }
 
-// SỬA ĐỔI: Đổi tên thành updateCountryLeaderboardUI
+// Đổi tên thành updateCountryLeaderboardUI
 function updateCountryLeaderboardUI(changedEntries = new Map()) {
   renderLeaderboardInternal(
     "country-leaderboard-list",
@@ -279,7 +377,7 @@ function updateCountryLeaderboardUI(changedEntries = new Map()) {
   );
 }
 
-// SỬA ĐỔI: Hàm render nội bộ chung
+// Hàm render nội bộ chung
 function renderLeaderboardInternal(
   elementId,
   data,
@@ -290,17 +388,28 @@ function renderLeaderboardInternal(
   const leaderboardList = document.getElementById(elementId);
   if (!leaderboardList) return;
 
-  if (!isConnected && elementId === "global-leaderboard-list") {
-    leaderboardList.innerHTML =
-      '<div class="no-data">Offline. Showing local scores.</div>';
-    showOfflineLeaderboard(elementId);
+  // YÊU CẦU 1: Hiển thị thông báo khi offline thay vì local scores
+  if (!isConnected && BACKEND_CONFIG.USE_BACKEND) {
+    showOfflineMessage(elementId);
     return;
   }
 
+  // Handle case where backend is disabled entirely
+  if (!BACKEND_CONFIG.USE_BACKEND) {
+    if (elementId === "global-leaderboard-list") {
+      showOfflineLeaderboard(
+        elementId,
+        "Backend disabled. Showing local scores."
+      ); // Backend disabled. Showing local scores.
+    } else {
+      showOfflineMessage(elementId, "Backend disabled."); // Backend disabled.
+    }
+    return;
+  }
+
+  // Handle empty data after connection checks
   if (!data || data.length === 0) {
-    leaderboardList.innerHTML = `<div class="no-data">${
-      isConnected ? "No data yet." : "Offline. Showing local scores."
-    }</div>`; // No data yet. / Offline. Showing local scores.
+    leaderboardList.innerHTML = `<div class="no-data">No data yet.</div>`; // No data yet.
     return;
   }
 
@@ -313,7 +422,7 @@ function renderLeaderboardInternal(
   // Basic check for changes: if first ID changes or lengths differ or changes exist
   if (
     currentFirstId !== newFirstId ||
-    leaderboardList.children.length !== data.length + 1 ||
+    leaderboardList.children.length !== data.length || // Adjusted check
     changedEntries.size > 0 ||
     leaderboardList.querySelector(".loading") ||
     leaderboardList.querySelector(".no-data")
@@ -326,7 +435,11 @@ function renderLeaderboardInternal(
 
     // Apply animations after updating innerHTML
     changedEntries.forEach((changeType, id) => {
-      const entryElement = leaderboardList.querySelector(`[data-id="${id}"]`);
+      // Escape special characters in ID for querySelector if necessary (e.g., country names)
+      const safeId = CSS.escape(id);
+      const entryElement = leaderboardList.querySelector(
+        `[data-id="${safeId}"]`
+      );
       if (entryElement) {
         entryElement.classList.add(
           changeType === "up" ? "rank-change-up" : "rank-change-down"
@@ -340,13 +453,13 @@ function renderLeaderboardInternal(
   }
 }
 
-// SỬA ĐỔI: Hàm định dạng cho global entry
+// Hàm định dạng cho global entry
 function formatGlobalEntry(entry, index, changeType) {
   const rankClass = index < 3 ? `rank-${index + 1}` : "";
-  // SỬA ĐỔI: Thêm data-id để tìm kiếm animation
+  // Thêm data-id để tìm kiếm animation
   // Remove initial animation class, apply after render
   const timeFormatted = formatTime(entry.survivalTime || 0);
-  const countryFlag = getCountryFlag(entry.countryCode);
+  const countryFlag = getCountryFlag(entry.countryCode || entry.country); // Improved fallback
   const usernameSafe = escapeHtml(entry.username);
   const countrySafe = escapeHtml(entry.country || "Unknown");
   const userIdSafe = escapeHtml(entry.userId); // Add data-id attribute
@@ -371,10 +484,10 @@ function formatGlobalEntry(entry, index, changeType) {
   `;
 }
 
-// SỬA ĐỔI: Hàm định dạng cho country entry
+// Hàm định dạng cho country entry
 function formatCountryEntry(entry, index, changeType) {
   const rankClass = index < 3 ? `rank-${index + 1}` : "";
-  // SỬA ĐỔI: Thêm data-id để tìm kiếm animation
+  // Thêm data-id để tìm kiếm animation
   // Remove initial animation class, apply after render
   const countryFlag = getCountryFlag(entry.countryCode || entry.country);
   const topScore = entry.top10PercentScore || entry.totalScore || 0;
@@ -404,8 +517,11 @@ function formatCountryEntry(entry, index, changeType) {
   `;
 }
 
-// SỬA ĐỔI: Cho phép hiển thị offline leaderboard vào container cụ thể
-function showOfflineLeaderboard(targetElementId = "global-leaderboard-list") {
+// Cho phép hiển thị offline leaderboard vào container cụ thể
+function showOfflineLeaderboard(
+  targetElementId = "global-leaderboard-list",
+  message = "Offline. Showing local scores."
+) {
   const leaderboardList = document.getElementById(targetElementId);
   if (!leaderboardList) return;
 
@@ -414,28 +530,33 @@ function showOfflineLeaderboard(targetElementId = "global-leaderboard-list") {
     .sort((a, b) => b.score - a.score)
     .slice(0, 10);
 
+  let headerHtml = `<div class="no-data">${message}</div>`; // Offline. Showing local scores.
+
   if (sortedHistory.length === 0) {
     leaderboardList.innerHTML =
+      headerHtml +
       '<div class="no-data">No local scores yet. Play a game!</div>'; // No local scores yet. Play a game!
     return;
   }
 
-  leaderboardList.innerHTML = sortedHistory
-    .map((entry, index) => {
-      const timeFormatted = formatTime(entry.time || 0);
-      return `
+  leaderboardList.innerHTML =
+    headerHtml +
+    sortedHistory
+      .map((entry, index) => {
+        const timeFormatted = formatTime(entry.time || 0);
+        return `
       <div class="leaderboard-entry offline">
         <div class="rank">#${index + 1}</div>
         <div class="player-info">
-          <div class="username">You (Offline)</div>
-          <div class="country">Local Game</div>
+          <div class="username">You (Local)</div>
+          <div class="country">Offline Game</div>
         </div>
         <div class="score">${entry.score.toLocaleString()}</div>
         <div class="time">${timeFormatted}</div>
       </div>
     `;
-    })
-    .join("");
+      })
+      .join("");
 }
 
 // Update player statistics
@@ -514,11 +635,11 @@ function updatePlayerStats() {
 // Update connection status indicator
 function updateConnectionStatus(status, text) {
   const indicators = [
-    document.getElementById("connection-indicator"), // Assuming one exists in header maybe?
+    // document.getElementById("connection-indicator"), // Assuming one exists in header maybe?
     document.getElementById("connection-indicator-footer"),
   ];
   const statusTexts = [
-    document.getElementById("connection-text"), // Assuming one exists in header maybe?
+    // document.getElementById("connection-text"), // Assuming one exists in header maybe?
     document.getElementById("connection-text-footer"),
   ];
 
@@ -529,7 +650,7 @@ function updateConnectionStatus(status, text) {
     error: { icon: "🔴", text: text || "Connection Error" }, // Connection Error
     offline: { icon: "⚫", text: text || "Offline" }, // Offline
   };
-  const config = statusConfig[status] || statusConfig["offline"];
+  const config = statusConfig[status] || statusConfig["disconnected"]; // Default to disconnected if unknown
 
   indicators.forEach((el) => {
     if (el) el.textContent = config.icon;
@@ -557,7 +678,7 @@ function getChangedEntries(prevIds, newList, idKey) {
       changes.set(id, newIndex < oldIndex ? "up" : "down");
     } else if (oldIndex === undefined) {
       // Potentially a new entry, could mark as 'new' or 'up'
-      // changes.set(id, 'new');
+      changes.set(id, "up"); // Treat new entries as moving up
     }
   });
   return changes;
@@ -586,7 +707,7 @@ function getRankMedal(rank) {
   return medals[rank - 1] || `#${rank}`;
 }
 
-// SỬA ĐỔI: Cập nhật danh sách mã quốc gia
+// Cập nhật danh sách mã quốc gia
 function getCountryFlag(countryIdentifier) {
   // Map common full names to codes
   const countryCodeMap = {
@@ -683,11 +804,29 @@ async function renderLeaderboardSnippet(options) {
     targetElementId,
     highlightUserId = null,
     highlightRank = null,
-    forceRefresh = false, // Added forceRefresh option
+    forceRefresh = false,
   } = options;
   const container = document.getElementById(targetElementId);
   if (!container) {
     console.error(`Target element "${targetElementId}" not found for snippet.`);
+    return;
+  }
+
+  // Store the latest known rank
+  if (highlightRank !== null) {
+    lastKnownRank = highlightRank;
+  }
+
+  // YÊU CẦU 1: Check connection status first
+  if (!isConnected && BACKEND_CONFIG.USE_BACKEND) {
+    showOfflineMessage(targetElementId);
+    return;
+  }
+  if (!BACKEND_CONFIG.USE_BACKEND) {
+    showOfflineLeaderboard(
+      targetElementId,
+      "Backend disabled. Showing local scores."
+    );
     return;
   }
 
@@ -696,39 +835,31 @@ async function renderLeaderboardSnippet(options) {
   try {
     let leaderboardData = globalLeaderboard; // Try using existing data first
 
-    // Fetch fresh data if forced, or if existing data is empty/unavailable
-    if (
-      forceRefresh ||
-      !leaderboardData ||
-      leaderboardData.length === 0 ||
-      !isConnected
-    ) {
-      if (isConnected && BACKEND_CONFIG.USE_BACKEND) {
-        console.log(
-          "Snippet: Force refresh or no global data, fetching fresh..."
-        );
-        const fetchedData = await BackendAPI.fetchLeaderboard(10); // Fetch top 10 for snippet
-        if (fetchedData && fetchedData.leaderboard) {
-          leaderboardData = fetchedData.leaderboard;
-        } else {
-          // Keep existing leaderboardData if fetch fails but we had some old data
-          if (!leaderboardData || leaderboardData.length === 0) {
-            throw new Error(
-              "Failed to fetch leaderboard for snippet and no cached data."
-            );
-          }
-          console.warn(
-            "Failed to fetch fresh snippet data, using cached global data."
+    // Fetch fresh data if forced, or if existing data is empty
+    if (forceRefresh || !leaderboardData || leaderboardData.length === 0) {
+      console.log(
+        `Snippet: Fetching fresh data (forceRefresh=${forceRefresh}, isEmpty=${
+          !leaderboardData || leaderboardData.length === 0
+        })`
+      );
+      const fetchedData = await BackendAPI.fetchLeaderboard(10); // Fetch top 10 for snippet
+      if (fetchedData && fetchedData.leaderboard) {
+        leaderboardData = fetchedData.leaderboard;
+        // Update global leaderboard as well if we fetched fresh data
+        globalLeaderboard = leaderboardData;
+        prevGlobalLeaderboardIds = globalLeaderboard.map((e) => e.userId);
+      } else {
+        if (!leaderboardData || leaderboardData.length === 0) {
+          throw new Error(
+            "Failed to fetch leaderboard for snippet and no cached data."
           );
         }
-      } else {
-        // If not connected or backend disabled, use local scores
-        console.log(
-          "Snippet: Not connected or backend disabled. Showing local scores."
+        console.warn(
+          "Failed to fetch fresh snippet data, using cached global data."
         );
-        showOfflineLeaderboard(targetElementId);
-        return; // Stop further processing for online data
       }
+    } else {
+      console.log("Snippet: Using existing globalLeaderboard data.");
     }
 
     if (!leaderboardData || leaderboardData.length === 0) {
@@ -740,34 +871,49 @@ async function renderLeaderboardSnippet(options) {
     // --- Highlighting Logic ---
     let userEntry = null;
     let userIndex = -1;
+    let rankToUse = highlightRank !== null ? highlightRank : lastKnownRank; // Use provided rank or last known
 
     if (highlightUserId) {
       userIndex = leaderboardData.findIndex(
         (entry) => entry.userId === highlightUserId
       );
       if (userIndex !== -1) {
-        // Create a copy and add the rank explicitly for formatting
+        // User is in the top 10 data we have
         userEntry = {
           ...leaderboardData[userIndex],
-          rank: userIndex + 1,
+          // Use the rank from the *current* data
+          rank: leaderboardData[userIndex].rank || userIndex + 1,
           isCurrentUser: true,
         };
+        // Update lastKnownRank if found in top 10
+        lastKnownRank = userEntry.rank;
+        console.log(`[Snippet] User found in top 10 at rank ${lastKnownRank}.`);
       }
     }
 
-    // If user is not in top 10 but we have their rank (from submitScore response)
-    if (userIndex === -1 && highlightRank !== null && highlightUserId) {
+    // If user is not in top 10 but we have their rank (from submitScore response or lastKnownRank)
+    if (userIndex === -1 && rankToUse !== null && highlightUserId) {
+      console.log(`[Snippet] User not in top 10, using rank ${rankToUse}.`);
       // Fetch the latest username from the UI component
       const currentUsername = window.playerNameUI?.getPlayerName() || "You"; // "Bạn" = You
 
       userEntry = {
         userId: highlightUserId,
         username: currentUsername, // Use the latest name
-        score: typeof score !== "undefined" ? score : 0, // Current game score if available
-        survivalTime: typeof survivalTime !== "undefined" ? survivalTime : 0, // Add survivalTime
+        // Use current game score/time if available (they might be slightly different from DB)
+        score:
+          typeof score !== "undefined"
+            ? Math.floor(score)
+            : leaderboardData.find((e) => e.userId === highlightUserId)
+                ?.score || 0,
+        survivalTime:
+          typeof survivalTime !== "undefined"
+            ? Math.floor(survivalTime)
+            : leaderboardData.find((e) => e.userId === highlightUserId)
+                ?.survivalTime || 0,
         country: "Your Location", // Placeholder or fetch if possible
         countryCode: "XX", // Placeholder
-        rank: highlightRank,
+        rank: rankToUse,
         isCurrentUser: true, // Flag for styling
       };
     }
@@ -779,30 +925,28 @@ async function renderLeaderboardSnippet(options) {
     // Render entries
     container.innerHTML = displayData
       .map((entry, index) => {
-        // Check if this entry is the current user (could be in top 10)
+        // Ensure rank is correctly assigned based on index for top 10 display
+        const entryRank = entry.rank || index + 1;
+        // Check if this entry is the current user
         const isCurrentUserEntry = entry.userId === highlightUserId;
-        // Use the explicitly created userEntry if it matches this entry's ID, otherwise use the entry from the list
-        const entryToFormat =
-          isCurrentUserEntry && userEntry
-            ? userEntry
-            : { ...entry, rank: index + 1 }; // Add rank for formatter
+        const entryToFormat = {
+          ...entry,
+          rank: entryRank,
+          // Only set isCurrentUser if the IDs match
+          isCurrentUser: isCurrentUserEntry,
+        };
 
-        const entryHtml = formatGlobalEntry(entryToFormat, index); // Use formatter, pass index for rank display if needed
-
-        // Add current-user class if needed
-        return isCurrentUserEntry
-          ? entryHtml.replace(
-              'class="leaderboard-entry',
-              'class="leaderboard-entry current-user'
-            )
-          : entryHtml;
+        return formatGlobalEntry(entryToFormat, index); // Pass index for medal/rank display
       })
       .join("");
 
     // Add user's entry if they are outside top 10 but rank is known
     if (userEntry && userIndex === -1 && userEntry.rank > 10) {
+      console.log(
+        `[Snippet] Adding user entry below top 10 (Rank: ${userEntry.rank}).`
+      );
       container.innerHTML += '<div class="leaderboard-ellipsis">...</div>';
-      // Ensure the correct rank is passed to the formatter
+      // Use the rank from userEntry, pass rank-1 as index for formatter context
       const userEntryHtml = formatGlobalEntry(userEntry, userEntry.rank - 1);
       // Add current-user class correctly
       container.innerHTML += userEntryHtml.replace(
@@ -821,10 +965,8 @@ async function renderLeaderboardSnippet(options) {
     }
   } catch (error) {
     console.error("Error rendering leaderboard snippet:", error);
-    container.innerHTML =
-      '<div class="no-data">Error loading LB. Showing local scores.</div>'; // Error loading LB. Showing local scores.
-    // Optionally show local scores as fallback
-    showOfflineLeaderboard(targetElementId);
+    // YÊU CẦU 1: Show disconnected message on error
+    showOfflineMessage(targetElementId, "Error loading leaderboard."); // Error loading leaderboard.
   }
 }
 
@@ -837,29 +979,62 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
-// SỬA ĐỔI: Thay đổi cách gọi renderCurrentLeaderboardData
+// Thay đổi cách gọi renderCurrentLeaderboardData
 // Nó sẽ dùng dữ liệu đã lưu trữ trừ khi có cờ forceRefresh
 function renderCurrentLeaderboardData(options = {}) {
   const { forceRefresh = false, ...renderOptions } = options;
   const targetId = renderOptions.targetElementId || "global-leaderboard-list"; // Default target
 
-  if (targetId === "global-leaderboard-list") {
-    if (forceRefresh || globalLeaderboard.length === 0) {
+  console.log(
+    `[renderCurrentLeaderboardData] Target: ${targetId}, ForceRefresh: ${forceRefresh}`
+  );
+
+  // Only refresh main dashboard if necessary
+  if (
+    targetId === "global-leaderboard-list" ||
+    targetId === "country-leaderboard-list"
+  ) {
+    if (
+      forceRefresh ||
+      (isConnected &&
+        (globalLeaderboard.length === 0 || countryLeaderboard.length === 0))
+    ) {
+      console.log(
+        "[renderCurrentLeaderboardData] Forcing refresh or data empty, calling loadInitialData."
+      );
       loadInitialData(); // Reload all data for main dashboard view
     } else {
-      updateGlobalLeaderboardUI(new Map(), renderOptions); // Render existing data
+      console.log(
+        "[renderCurrentLeaderboardData] Using cached data for main dashboard."
+      );
+      // Render existing data for the specifically requested tab if needed
+      if (targetId === "global-leaderboard-list")
+        updateGlobalLeaderboardUI(new Map());
+      if (targetId === "country-leaderboard-list")
+        updateCountryLeaderboardUI(new Map());
     }
   } else if (targetId === "game-over-leaderboard-container") {
+    console.log("[renderCurrentLeaderboardData] Rendering game over snippet.");
     // Game over now uses its own dedicated function
     renderLeaderboardSnippet({ ...renderOptions, forceRefresh: forceRefresh });
   } else {
-    // Handle other potential targets or just update global if unknown
-    updateGlobalLeaderboardUI(new Map(), renderOptions);
+    console.warn(
+      `[renderCurrentLeaderboardData] Unknown targetElementId: ${targetId}`
+    );
+    // Fallback to update global if target is unknown? Or do nothing?
+    // updateGlobalLeaderboardUI(new Map());
   }
 
-  // Update other parts if necessary (country, stats) - could be conditional
-  updateCountryLeaderboardUI();
-  updatePlayerStats();
+  // Update stats if that tab is active or requested
+  if (
+    targetId === "my-stats-content" ||
+    document
+      .querySelector('[data-tab="my-stats"]')
+      ?.classList.contains("active")
+  ) {
+    console.log("[renderCurrentLeaderboardData] Updating player stats.");
+    updatePlayerStats();
+  }
 }
 
 // Make functions globally available
