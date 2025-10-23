@@ -146,11 +146,23 @@ class ShieldCrystal {
     ctx.rotate(this.rotation);
 
     const alpha = Math.max(0, 1 - this.age / this.lifetime); // Fade out over lifetime
-    ctx.globalAlpha = alpha;
 
     // Pulsing effect
     const pulse = Math.sin(this.age * 0.08 + this.pulsePhase) * 0.2 + 1; // Faster pulse
     const currentSize = this.size * pulse;
+
+    // *** NEW: Outer pulsating ring to indicate collectible ***
+    const ringRadius = currentSize * 1.5;
+    const ringAlpha =
+      alpha * (Math.sin(this.age * 0.1 + this.pulsePhase) * 0.3 + 0.4); // Pulsating alpha
+    ctx.beginPath();
+    ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255, 255, 255, ${ringAlpha})`; // White pulsating ring
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // *** END NEW RING ***
+
+    ctx.globalAlpha = alpha; // Set alpha for the main shield icon
 
     // Outer glow effect
     const glowRadius = currentSize * 1.8;
@@ -164,15 +176,19 @@ class ShieldCrystal {
     ctx.fillStyle = glowGradient;
     ctx.fill();
 
-    // Shield Icon Shape (Simplified)
-    // Draw a simple shield shape or icon here
+    // Shield Icon Shape (from Player class)
     ctx.beginPath();
-    // Simple shield shape
-    ctx.moveTo(0, -currentSize * 0.8);
-    ctx.lineTo(currentSize * 0.7, -currentSize * 0.3);
-    ctx.lineTo(currentSize * 0.7, currentSize * 0.5);
-    ctx.arc(0, currentSize * 0.5, currentSize * 0.7, 0, Math.PI, false); // Bottom curve
-    ctx.lineTo(-currentSize * 0.7, -currentSize * 0.3);
+    ctx.moveTo(0, -currentSize); // Top point
+    ctx.lineTo(currentSize * 0.8, -currentSize * 0.3); // Top right
+    ctx.lineTo(currentSize * 0.8, currentSize * 0.6); // Bottom right
+    ctx.arcTo(
+      0,
+      currentSize,
+      -currentSize * 0.8,
+      currentSize * 0.6,
+      currentSize * 0.5
+    ); // Bottom curve
+    ctx.lineTo(-currentSize * 0.8, -currentSize * 0.3); // Top left
     ctx.closePath();
 
     ctx.fillStyle = this.color;
@@ -296,7 +312,7 @@ class ShieldGenerator {
       playSound("shield");
 
       if (typeof showEventText === "function") {
-        showEventText("Shield Generator Active!");
+        showEventText("Shield Generator Active!"); // Kích hoạt máy tạo khiên!
       }
     }
 
@@ -305,6 +321,7 @@ class ShieldGenerator {
 
       // Shield deflects incoming missiles
       missiles.forEach((missile) => {
+        if (missile.isDead) return; // Skip dead missiles
         const dist = Math.hypot(this.x - missile.x, this.y - missile.y);
         if (dist < this.shieldRadius && dist > this.radius) {
           // Deflect missile away
@@ -351,8 +368,11 @@ class ShieldGenerator {
             Math.sin(bounceAngle) *
             Math.hypot(asteroid.velocity.x, asteroid.velocity.y) *
             0.8;
+          asteroid.isActive = false; // Destroy asteroid on shield impact
+          playSound("collision", 0.5); // Add sound on impact
         }
       });
+      asteroids = asteroids.filter((a) => a.isActive); // Filter inactive asteroids
 
       // Check collision with player for protection
       const playerDist = Math.hypot(this.x - player.x, this.y - player.y);
@@ -365,7 +385,7 @@ class ShieldGenerator {
 
       if (this.age >= this.activeTime) {
         if (typeof showEventText === "function") {
-          showEventText("Shield Generator Depleted");
+          showEventText("Shield Generator Depleted"); // Máy tạo khiên đã hết năng lượng
         }
         return false; // Remove generator
       }
@@ -376,9 +396,9 @@ class ShieldGenerator {
   }
 }
 
+// CrystalCluster remains largely the same, no visual change requested
 class CrystalCluster {
   constructor(x, y) {
-    // SỬA LỖI: Sử dụng đường dẫn config chính xác
     this.config = GAME_CONFIG.entities.crystalClusters;
     this.x = x;
     this.y = y;
@@ -387,8 +407,7 @@ class CrystalCluster {
     this.maxChargeTime = this.config.lifetime;
     this.state = "charging";
     this.dischargeRadius = 0;
-    // YÊU CẦU 1: Giảm vận tốc mở rộng, mở rộng từ từ
-    this.dischargeSpeed = 1.5; // Giảm từ 5 xuống 1.5
+    this.dischargeSpeed = 1.5;
     this.alpha = 0;
 
     this.maxDischargeRadius = canvas ? Math.min(width, height) * 0.3 : 300;
@@ -405,11 +424,9 @@ class CrystalCluster {
     ctx.save();
     ctx.translate(this.x, this.y);
 
-    // Chỉ vẽ lõi và các tinh thể quay quanh nếu chúng còn hiển thị
     if (this.alpha > 0) {
       ctx.globalAlpha = this.alpha;
 
-      // Vẽ các tinh thể quay quanh
       this.crystals.forEach((c) => {
         ctx.save();
         ctx.rotate(c.angle);
@@ -422,7 +439,6 @@ class CrystalCluster {
         ctx.restore();
       });
 
-      // Vẽ lõi trung tâm
       ctx.beginPath();
       ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
       ctx.fillStyle = "white";
@@ -430,7 +446,6 @@ class CrystalCluster {
       ctx.shadowBlur = 20;
       ctx.fill();
 
-      // Vẽ hào quang khi đang sạc
       if (this.state === "charging") {
         const chargeProgress = this.timer / this.maxChargeTime;
         const chargeAuraRadius = this.radius + chargeProgress * 30;
@@ -442,13 +457,11 @@ class CrystalCluster {
       }
     }
 
-    // Vẽ sóng xả năng lượng một cách riêng biệt
     if (this.state === "discharging") {
       const fadeAlpha = 1 - this.dischargeRadius / this.maxDischargeRadius;
       if (fadeAlpha > 0) {
         ctx.globalAlpha = Math.max(0, fadeAlpha);
 
-        // Hào quang bên ngoài
         ctx.beginPath();
         ctx.arc(0, 0, this.dischargeRadius, 0, Math.PI * 2);
         ctx.strokeStyle = `rgba(64, 196, 255, ${Math.max(0, fadeAlpha) * 0.5})`;
@@ -457,7 +470,6 @@ class CrystalCluster {
         ctx.shadowBlur = 20;
         ctx.stroke();
 
-        // Đường sắc nét bên trong
         ctx.beginPath();
         ctx.arc(0, 0, this.dischargeRadius, 0, Math.PI * 2);
         ctx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, fadeAlpha)})`;
@@ -470,30 +482,26 @@ class CrystalCluster {
     ctx.restore();
   }
   update() {
-    // Tăng độ mờ khi đang sạc
     if (this.alpha < 1 && this.state === "charging") {
       this.alpha += 0.02;
     }
 
-    // Luôn xoay các tinh thể
     this.crystals.forEach((c) => (c.angle += this.config.rotationSpeed));
     this.timer++;
 
     if (this.state === "charging" && this.timer > this.maxChargeTime) {
       this.state = "discharging";
-      this.timer = 0; // Đặt lại timer cho giai đoạn xả
+      this.timer = 0;
       triggerScreenShake(0.3);
-      playSound("crystalDischarge"); // Chơi âm thanh khi xả
+      playSound("crystalDischarge");
     }
 
     if (this.state === "discharging") {
       this.dischargeRadius += this.dischargeSpeed;
-      // Làm mờ lõi trung tâm
       this.alpha -= 0.02;
 
-      // YÊU CẦU 2: Đẩy các vật thể khác ra khi chạm
-      const waveWidth = 20; // Độ rộng của sóng va chạm
-      const repulsionForce = 0.5; // Lực đẩy
+      const waveWidth = 20;
+      const repulsionForce = 0.5;
       const objectsToRepel = [
         player,
         ...asteroids,
@@ -504,19 +512,17 @@ class CrystalCluster {
       ];
 
       objectsToRepel.forEach((obj) => {
-        if (!obj || !obj.velocity || !obj.isActive) return; // Check isActive
+        if (!obj || !obj.velocity || !obj.isActive) return;
 
         const dist = Math.hypot(obj.x - this.x, obj.y - this.y);
         const objectRadius = obj.radius || obj.size / 2 || 10;
 
-        // Kiểm tra va chạm với sóng năng lượng
         if (
           Math.abs(dist - this.dischargeRadius) <
           objectRadius + waveWidth / 2
         ) {
           const angle = Math.atan2(obj.y - this.y, obj.x - this.x);
 
-          // Đẩy vật thể ra ngoài
           obj.velocity.x += Math.cos(angle) * repulsionForce;
           obj.velocity.y += Math.sin(angle) * repulsionForce;
         }

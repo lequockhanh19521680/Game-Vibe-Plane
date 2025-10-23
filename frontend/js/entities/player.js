@@ -19,14 +19,18 @@ class Player extends ColoredEntity {
     this.thunderTimer = 0;
   }
   draw() {
+    // Draw Trail
     this.trail.forEach((part) => {
       ctx.beginPath();
       ctx.arc(part.x, part.y, part.radius, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(0, 255, 255, ${part.alpha})`;
       ctx.fill();
     });
+
     ctx.save();
     ctx.translate(this.x, this.y);
+
+    // Draw Ship
     ctx.beginPath();
     ctx.moveTo(0, -this.radius);
     ctx.lineTo(this.radius * 0.8, this.radius * 0.8);
@@ -51,8 +55,9 @@ class Player extends ColoredEntity {
         shieldAlpha *= Math.sin(Date.now() * flashSpeed) * 0.4 + 0.6;
       }
 
-      ctx.globalAlpha = shieldAlpha * 0.7;
+      ctx.globalAlpha = shieldAlpha * 0.7; // Keep original alpha logic
 
+      // *** REVERTED SHIELD VISUAL (Outer Rings/Glow) ***
       // Outer shield ring
       ctx.beginPath();
       ctx.arc(0, 0, this.radius * 2.5, 0, Math.PI * 2);
@@ -69,6 +74,8 @@ class Player extends ColoredEntity {
       shieldGradient.addColorStop(1, "rgba(0, 255, 255, 0.8)");
       ctx.strokeStyle = shieldGradient;
       ctx.lineWidth = 3;
+      ctx.shadowColor = "#00ffff"; // Add shadow back
+      ctx.shadowBlur = 10;
       ctx.stroke();
 
       // Inner shield glow
@@ -77,11 +84,12 @@ class Player extends ColoredEntity {
       ctx.strokeStyle = "#00ffff";
       ctx.lineWidth = 1;
       ctx.stroke();
+      // *** END REVERTED SHIELD VISUAL ***
 
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = 1; // Reset global alpha
     }
 
-    // Draw thunder shield if active
+    // Draw thunder shield if active (visuals remain mostly the same for distinction)
     if (this.thunderShieldActive) {
       let thunderAlpha = Math.min(1, this.thunderShieldTimer / 60);
 
@@ -207,8 +215,18 @@ class Player extends ColoredEntity {
 
       if (this.thunderShieldTimer <= 0) {
         this.thunderShieldActive = false;
+        // Restore global speed when thunder shield expires
+        globalSpeedMultiplier /= 0.8; // Reverse the multiplier applied in activateThunderShield
       }
     }
+  }
+
+  // Add method to get shield percentage
+  getShieldPercentage() {
+    if (!this.shieldActive) {
+      return 0;
+    }
+    return Math.max(0, (this.shieldTimer / this.shieldDuration) * 100);
   }
 
   afterUpdate() {
@@ -222,7 +240,7 @@ class Player extends ColoredEntity {
 
     // Show shield activation message
     if (typeof showEventText === "function") {
-      showEventText("Shield Activated!");
+      showEventText("Shield Activated!"); // Khiên đã được kích hoạt!
     }
   }
 
@@ -255,7 +273,7 @@ class Player extends ColoredEntity {
 
     // Show thunder shield activation message
     if (typeof showEventText === "function") {
-      showEventText("⚡ Thunder Shield Active ⚡");
+      showEventText("⚡ Thunder Shield Active ⚡"); // Khiên sấm sét đang hoạt động
     }
   }
 
@@ -265,6 +283,7 @@ class Player extends ColoredEntity {
     // Check asteroids
     for (let i = asteroids.length - 1; i >= 0; i--) {
       const ast = asteroids[i];
+      if (!ast.isActive) continue; // Skip inactive asteroids
       const dist = Math.hypot(ast.x - this.x, ast.y - this.y);
 
       if (dist < this.thunderShieldRadius + ast.radius) {
@@ -286,15 +305,18 @@ class Player extends ColoredEntity {
         }
 
         // Remove asteroid and add score
-        asteroids.splice(i, 1);
+        asteroids[i].isActive = false; // Mark for removal instead of splicing immediately
         score += 15;
         playSound("explosion", 0.4);
       }
     }
+    // Filter inactive asteroids after checking all
+    asteroids = asteroids.filter((a) => a.isActive);
 
     // Check missiles
     for (let i = missiles.length - 1; i >= 0; i--) {
       const missile = missiles[i];
+      if (missile.isDead) continue; // Skip dead missiles
       const dist = Math.hypot(missile.x - this.x, missile.y - this.y);
 
       if (dist < this.thunderShieldRadius + missile.radius) {
@@ -302,10 +324,11 @@ class Player extends ColoredEntity {
         this.createLightningStrike(missile.x, missile.y);
 
         // Make the missile explode
-        missile.explode(true);
+        missile.explode(true); // explode marks missile as isDead
         score += 25;
       }
     }
+    // Missiles are filtered in the main game loop based on isDead
   }
 
   createLightningStrike(targetX, targetY) {

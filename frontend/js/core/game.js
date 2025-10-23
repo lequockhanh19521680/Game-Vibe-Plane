@@ -141,7 +141,7 @@ function init() {
     .fill(null)
     .map(() => createNebula());
   highScore = localStorage.getItem(GAME_CONFIG.core.localStorageKey) || 0;
-  uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`;
+  uiElements.highscoreDisplay.innerText = `High Score: ${highScore}`; // High Score: {highScore}
 }
 
 function animate() {
@@ -180,13 +180,28 @@ function animate() {
   uiElements.scoreDisplay.innerText = `${~~score}`;
 
   if (uiElements.levelDisplay) {
-    uiElements.levelDisplay.innerText = `Level ${currentLevel}`;
+    uiElements.levelDisplay.innerText = `Level ${currentLevel}`; // Level {currentLevel}
   }
 
   const levelProgressBar = document.getElementById("level-progress-bar");
   if (levelProgressBar) {
     levelProgressBar.style.width = `${Math.min(100, progressPercentage)}%`;
   }
+
+  // --- NEW: Update Shield Bar ---
+  const shieldBarContainer = document.getElementById("shield-bar-container");
+  const shieldBar = document.getElementById("shield-bar");
+  if (shieldBarContainer && shieldBar && player) {
+    const shieldPercentage = player.getShieldPercentage();
+    if (shieldPercentage > 0) {
+      shieldBarContainer.style.display = "block";
+      shieldBar.style.width = `${shieldPercentage}%`;
+    } else {
+      shieldBarContainer.style.display = "none";
+      shieldBar.style.width = "0%"; // Reset width when hidden
+    }
+  }
+  // --- END: Update Shield Bar ---
 
   // Update all active entities
   [
@@ -287,7 +302,7 @@ function animate() {
       const levelUpText = window.safeT
         ? window.safeT(
             "level.levelUp",
-            `LEVEL ${currentLevel} REACHED!\n🔥 Difficulty Up!`
+            `LEVEL ${currentLevel} REACHED!\n🔥 Difficulty Up!` // LEVEL {currentLevel} REACHED!\n🔥 Difficulty Up!
           )
         : `LEVEL ${currentLevel} REACHED!\n🔥 Difficulty Up!`;
       showEventText(levelUpText);
@@ -565,12 +580,12 @@ function animate() {
     // Check collision with Asteroids
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const ast = asteroids[j];
+      if (!ast.isActive) continue; // Skip inactive asteroids
       if (
         Math.hypot(frag.x - ast.x, frag.y - ast.y) <
         frag.radius + ast.radius
       ) {
         asteroids[j].isActive = false; // Mark asteroid for removal
-        asteroids.splice(j, 1); // Remove asteroid immediately
         fragmentHit = true;
         score += 5; // Optional score bonus
         playSound("collision", 0.2); // Smaller collision sound
@@ -580,7 +595,6 @@ function animate() {
 
     if (fragmentHit) {
       frag.isActive = false; // Mark fragment for removal
-      // fragments.splice(i, 1); // Remove fragment immediately
       continue; // Move to the next fragment
     }
 
@@ -602,7 +616,6 @@ function animate() {
 
     if (fragmentHit) {
       frag.isActive = false; // Mark fragment for removal
-      // fragments.splice(i, 1); // Remove fragment immediately
     }
   }
   // Filter inactive fragments (done later in the filtering section)
@@ -628,9 +641,8 @@ function animate() {
         const distance = Math.max(Math.hypot(dx, dy), 1);
         ast.velocity.x += (dx / distance) * 3;
         ast.velocity.y += (dy / distance) * 3;
-        // Optionally remove asteroid on shield impact or create particles
-        // asteroids.splice(i, 1); // Asteroid removal now handled by fragment collision or going off-screen
-        // playSound('collision');
+        ast.isActive = false; // Destroy asteroid on shield impact
+        playSound("collision");
       }
     }
   }
@@ -674,7 +686,6 @@ function animate() {
       ) {
         missile.explode(true); // Missile explodes on impact
         asteroids[j].isActive = false; // Mark asteroid for removal
-        asteroids.splice(j, 1); // Remove asteroid immediately
         score += 10; // Optional score bonus
         playSound("explosion", 0.3); // Optional sound effect
         break; // Missile can only hit one asteroid
@@ -785,7 +796,6 @@ function animate() {
       if (!ast.isActive) continue;
       if (Math.hypot(ast.x - bh.x, ast.y - bh.y) < bh.radius) {
         asteroids[j].isActive = false; // Mark for removal
-        asteroids.splice(j, 1);
       }
     }
     for (let j = missiles.length - 1; j >= 0; j--) {

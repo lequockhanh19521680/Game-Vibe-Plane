@@ -109,6 +109,9 @@ class MenuState extends GameState {
     uiElements.pauseMenu.style.display = "none";
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
     uiElements.pauseButton.style.display = "none";
+    // Hide shield bar in menu
+    const shieldBarContainer = document.getElementById("shield-bar-container");
+    if (shieldBarContainer) shieldBarContainer.style.display = "none";
     this.drawBackground();
   }
 
@@ -159,6 +162,11 @@ class PlayingState extends GameState {
       if (typeof animate === "function") animate();
       if (typeof resumeBackgroundMusic === "function") resumeBackgroundMusic();
     }
+    // Handle shield bar visibility on resume/start
+    const shieldBarContainer = document.getElementById("shield-bar-container");
+    if (shieldBarContainer) {
+      // Visibility is handled within the game loop based on player.shieldActive
+    }
   }
 
   exit() {
@@ -177,6 +185,9 @@ class PausedState extends GameState {
     isPaused = true;
     // Cancel animation frame already handled by PlayingState.exit()
     if (typeof pauseBackgroundMusic === "function") pauseBackgroundMusic();
+    // Hide shield bar when paused
+    const shieldBarContainer = document.getElementById("shield-bar-container");
+    if (shieldBarContainer) shieldBarContainer.style.display = "none";
   }
 
   exit() {
@@ -188,12 +199,14 @@ class PausedState extends GameState {
 }
 
 class GameOverState extends GameState {
-  // YÊU CẦU 2: Tách enter thành 2 phần: hiệu ứng tức thời và UI có độ trễ
   enterImmediateEffects() {
     document.body.className = "game-over";
     isGameRunning = false; // Ensure game is stopped
     uiElements.pauseButton.style.display = "none";
     uiElements.topBar.style.opacity = GAME_CONFIG.ui.topBarHiddenOpacity;
+    // Hide shield bar on game over
+    const shieldBarContainer = document.getElementById("shield-bar-container");
+    if (shieldBarContainer) shieldBarContainer.style.display = "none";
 
     // Stop animation
     if (typeof animationFrameId !== "undefined" && animationFrameId) {
@@ -214,7 +227,7 @@ class GameOverState extends GameState {
 
     // Send data to backend and then render leaderboard snippet
     this.sendGameOverData().then((submitResult) => {
-      // YÊU CẦU 2: Store the rank from the submit result in the manager's stateData
+      // Store the rank from the submit result in the manager's stateData
       if (submitResult && submitResult.rank !== null) {
         this.manager.stateData.lastRank = submitResult.rank; // Store for later use by snippet
         // Also update the global lastKnownRank in dashboard.js directly
@@ -259,7 +272,7 @@ class GameOverState extends GameState {
         );
         if (lbContainer) {
           lbContainer.innerHTML =
-            '<div class="no-data">Cannot load leaderboard.</div>';
+            '<div class="no-data">Cannot load leaderboard.</div>'; // Can't load leaderboard.
         }
       }
     });
@@ -372,7 +385,7 @@ class GameOverState extends GameState {
         "game-over-leaderboard-container"
       );
       if (lbContainer) {
-        lbContainer.innerHTML = '<div class="loading">Sending score...</div>'; // Update loading text
+        lbContainer.innerHTML = '<div class="loading">Sending score...</div>'; // Update loading text - Gửi điểm...
       }
 
       // --- START: Player Name Retrieval and Validation ---
@@ -460,12 +473,11 @@ class GameOverState extends GameState {
       );
       // --- END: Player Name Retrieval and Validation ---
 
+      // FIX: Removed window.isConnected check - submitScore uses HTTP, not WebSocket.
       if (
         window.BackendAPI &&
         typeof BACKEND_CONFIG !== "undefined" &&
-        BACKEND_CONFIG.USE_BACKEND &&
-        typeof window.isConnected !== "undefined" &&
-        window.isConnected // Check if connected
+        BACKEND_CONFIG.USE_BACKEND
       ) {
         try {
           submitResult = await BackendAPI.submitScore(
@@ -478,13 +490,13 @@ class GameOverState extends GameState {
           if (lbContainer) {
             // Clear sending message after successful submission attempt
             lbContainer.innerHTML =
-              '<div class="loading">Loading leaderboard...</div>';
+              '<div class="loading">Loading leaderboard...</div>'; // Loading leaderboard...
           }
         } catch (error) {
           console.error("Failed to send data to backend:", error);
           if (lbContainer) {
             lbContainer.innerHTML =
-              '<div class="no-data">Connection error. Showing local scores.</div>';
+              '<div class="no-data">Connection error. Showing local scores.</div>'; // Connection error. Showing local scores.
             if (typeof showOfflineLeaderboard === "function") {
               showOfflineLeaderboard("game-over-leaderboard-container");
             }
@@ -492,13 +504,12 @@ class GameOverState extends GameState {
         }
       } else {
         console.log(
-          "Backend not available or disconnected, game over data logged locally"
+          "Backend not available or disabled, game over data logged locally"
         );
         if (lbContainer) {
-          // YÊU CẦU 1: Show appropriate message if offline vs disabled
           const offlineMsg = !BACKEND_CONFIG.USE_BACKEND
-            ? "Backend disabled. Showing local scores."
-            : "Offline mode. Showing local scores.";
+            ? "Backend disabled. Showing local scores." // Backend disabled. Showing local scores.
+            : "Offline mode. Showing local scores."; // Offline mode. Showing local scores.
           showOfflineLeaderboard("game-over-leaderboard-container", offlineMsg);
         }
       }
@@ -526,10 +537,10 @@ class GameOverState extends GameState {
         "game-over-leaderboard-container"
       );
       if (lbContainer) {
-        // YÊU CẦU 1: Show appropriate message on error
-        const errorMsg = isConnected
-          ? "An error occurred. Showing local scores."
-          : "Disconnected. Showing local scores.";
+        // Show appropriate message on error
+        const errorMsg = BACKEND_CONFIG.USE_BACKEND
+          ? "An error occurred. Showing local scores." // An error occurred. Showing local scores.
+          : "Backend disabled. Showing local scores."; // Backend disabled. Showing local scores.
         showOfflineLeaderboard("game-over-leaderboard-container", errorMsg);
       }
       return null;
@@ -543,9 +554,9 @@ class GameOverState extends GameState {
     );
     // Reset leaderboard content when exiting
     if (lbContainer) {
-      lbContainer.innerHTML = '<div class="loading">Loading...</div>';
+      lbContainer.innerHTML = '<div class="loading">Loading...</div>'; // Loading...
     }
-    // YÊU CẦU 2: Clear last known rank when exiting game over
+    // Clear last known rank when exiting game over
     this.manager.stateData.lastRank = null;
     if (typeof window.lastKnownRank !== "undefined") {
       window.lastKnownRank = null;
@@ -561,6 +572,9 @@ class LeaderboardState extends GameState {
     uiElements.gameOverScreen.style.display = "none";
     uiElements.pauseMenu.style.display = "none";
     uiElements.leaderboardScreen.style.display = "flex";
+    // Hide shield bar in leaderboard
+    const shieldBarContainer = document.getElementById("shield-bar-container");
+    if (shieldBarContainer) shieldBarContainer.style.display = "none";
 
     // Use rank from state data if available (passed from game over)
     const userId = window.userIdentification?.getUserId();
@@ -619,6 +633,9 @@ class HowToPlayState extends GameState {
     uiElements.leaderboardScreen.style.display = "none";
     uiElements.gameOverScreen.style.display = "none";
     uiElements.pauseMenu.style.display = "none";
+    // Hide shield bar in how-to-play
+    const shieldBarContainer = document.getElementById("shield-bar-container");
+    if (shieldBarContainer) shieldBarContainer.style.display = "none";
   }
 
   exit() {
