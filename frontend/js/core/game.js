@@ -243,7 +243,7 @@ function animate() {
     particles.splice(0, particles.length - GAME_CONFIG.core.maxParticles);
   }
 
-  missiles = missiles.filter((m) => !m.isDead);
+  missiles = missiles.filter((m) => m.update() !== false); // Use update return value
   asteroids = asteroids.filter(
     (a) =>
       a.x > -50 &&
@@ -252,7 +252,7 @@ function animate() {
       a.y < height + 50 &&
       a.isActive // Also check isActive
   );
-  blackHoles = blackHoles.filter((bh) => bh.alpha > 0);
+  blackHoles = blackHoles.filter((bh) => bh.update() !== false); // Use update return value
   crystalClusters = crystalClusters.filter((cc) =>
     cc.update ? cc.update() : false
   );
@@ -265,6 +265,7 @@ function animate() {
   magneticStorms = magneticStorms.filter((m) => m.update() !== false);
   lightningStorms = lightningStorms.filter((l) => l.update() !== false);
   decoyPowerUps = decoyPowerUps.filter((d) => d.update() !== false);
+  laserMines = laserMines.filter((lm) => lm.alpha > 0); // Filter fading mines
 
   // --- Trigger Events ---
   const eventConfig = GAME_CONFIG.events;
@@ -581,9 +582,10 @@ function animate() {
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const ast = asteroids[j];
       if (!ast.isActive) continue; // Skip inactive asteroids
+      // CHANGE 1: Use asteroid's collisionRadius
       if (
         Math.hypot(frag.x - ast.x, frag.y - ast.y) <
-        frag.radius + ast.radius
+        frag.radius + ast.collisionRadius
       ) {
         asteroids[j].isActive = false; // Mark asteroid for removal
         fragmentHit = true;
@@ -625,24 +627,43 @@ function animate() {
   for (let i = asteroids.length - 1; i >= 0; i--) {
     const ast = asteroids[i];
     if (!ast.isActive) continue; // Skip already marked for removal
+
+    // CHANGE 1: Use asteroid's collisionRadius
+    const collisionDist = ast.collisionRadius + player.radius;
     if (
-      Math.hypot(player.x - ast.x, player.y - ast.y) -
-        ast.radius -
-        player.radius <
+      Math.hypot(player.x - ast.x, player.y - ast.y) - collisionDist <
       GAME_CONFIG.core.collisionPrecision
     ) {
-      if (!player.shieldActive && !player.thunderShieldActive) {
-        endGame("asteroid collision");
-        return;
-      } else {
-        // Shield push effect
+      // Check if player has the normal shield (shieldActive)
+      if (player.shieldActive) {
+        // CHANGE 3: Push asteroid instead of destroying
+        const dx = ast.x - player.x;
+        const dy = ast.y - player.y;
+        const distance = Math.max(Math.hypot(dx, dy), 1); // Avoid division by zero
+        const pushForce = GAME_CONFIG.entities.asteroids.shieldPushForce || 3;
+        // Apply force directly away from the player
+        ast.velocity.x += (dx / distance) * pushForce;
+        ast.velocity.y += (dy / distance) * pushForce;
+        // Optional: Apply a small counter-force to the player
+        // player.velocity.x -= (dx / distance) * pushForce * 0.1;
+        // player.velocity.y -= (dy / distance) * pushForce * 0.1;
+        playSound("collision", 0.6); // Slightly louder push sound
+      }
+      // Check if player has the thunder shield (destroys asteroid)
+      else if (player.thunderShieldActive) {
+        // Thunder shield push effect (or destroy as before)
         const dx = ast.x - player.x;
         const dy = ast.y - player.y;
         const distance = Math.max(Math.hypot(dx, dy), 1);
-        ast.velocity.x += (dx / distance) * 3;
+        ast.velocity.x += (dx / distance) * 3; // Keep original push force for thunder
         ast.velocity.y += (dy / distance) * 3;
-        ast.isActive = false; // Destroy asteroid on shield impact
-        playSound("collision");
+        ast.isActive = false; // Destroy asteroid on thunder shield impact
+        playSound("collision"); // Original collision sound
+      }
+      // If no shield is active
+      else {
+        endGame("asteroid collision");
+        return;
       }
     }
   }
@@ -680,9 +701,10 @@ function animate() {
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const asteroid = asteroids[j];
       if (!asteroid.isActive) continue; // Skip inactive asteroids
+      // CHANGE 1: Use asteroid's collisionRadius
       if (
         Math.hypot(missile.x - asteroid.x, missile.y - asteroid.y) <
-        missile.radius + asteroid.radius
+        missile.radius + asteroid.collisionRadius
       ) {
         missile.explode(true); // Missile explodes on impact
         asteroids[j].isActive = false; // Mark asteroid for removal
@@ -718,9 +740,11 @@ function animate() {
   // Check Laser Mine-Player Collision
   for (let i = laserMines.length - 1; i >= 0; i--) {
     const mine = laserMines[i];
-    if (mine.state === "fading") {
-      laserMines.splice(i, 1);
-    } else if (mine.state === "firing") {
+    // Use the update return value now for filtering
+    // if (mine.state === "fading") {
+    //   laserMines.splice(i, 1);
+    // }
+    if (mine.state === "firing") {
       const angles = mine.getFireAngles();
       let hitDetected = false;
 
@@ -794,13 +818,22 @@ function animate() {
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const ast = asteroids[j];
       if (!ast.isActive) continue;
-      if (Math.hypot(ast.x - bh.x, ast.y - bh.y) < bh.radius) {
+      // CHANGE 1: Use asteroid's collisionRadius for BH interaction too
+      if (
+        Math.hypot(ast.x - bh.x, ast.y - bh.y) <
+        bh.radius + ast.collisionRadius * 0.5
+      ) {
+        // Smaller interaction radius
         asteroids[j].isActive = false; // Mark for removal
       }
     }
     for (let j = missiles.length - 1; j >= 0; j--) {
       if (missiles[j].isDead) continue;
-      if (Math.hypot(missiles[j].x - bh.x, missiles[j].y - bh.y) < bh.radius)
+      if (
+        Math.hypot(missiles[j].x - bh.x, missiles[j].y - bh.y) <
+        bh.radius + missiles[j].radius
+      )
+        // Keep missile radius
         missiles[j].isDead = true; // Mark missile for removal
     }
   }

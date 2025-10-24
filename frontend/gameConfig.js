@@ -44,6 +44,7 @@ const GAME_CONFIG = {
     asteroids: {
       minRadius: 12,
       maxRadius: 40,
+      hitboxScale: 0.8, // Scale factor for the collision radius (0.8 = 80% of visual radius)
       baseSpeed: 1.0,
       speedVariation: 1.0, // Randomness added to base speed
       speedIncreasePerLevel: 0.4, // Speed increase per difficulty level
@@ -56,6 +57,7 @@ const GAME_CONFIG = {
         slightAngle: 0.2,
         diagonal: 0.1,
       },
+      shieldPushForce: 3, // How strongly the shield pushes asteroids
     },
     blackHoles: {
       spawnScore: 3000, // Score needed for black holes to start spawning
@@ -83,9 +85,9 @@ const GAME_CONFIG = {
       warningDuration: 120,
       radius: 5,
       baseSpeed: 0.15,
-      speedIncreasePerLevel: 0.03,
+      speedIncreasePerLevel: 0.02,
       baseTurnSpeed: 0.015,
-      turnSpeedIncreasePerLevel: 0.025,
+      turnSpeedIncreasePerLevel: 0.015,
       speedUpTime: 350, // Frames before missile speeds up
       speedUpMultiplier: 1.9, // Speed multiplier after speedUpTime
       turnSpeedUpMultiplier: 1.6, // Turn speed multiplier after speedUpTime
@@ -180,8 +182,9 @@ const GAME_CONFIG = {
       warningTime: 180,
       lifetime: 800,
       baseRadius: 15,
-      maxRadiusMultiplier: 2.5,
-      gravityRadiusMultiplier: 2.0, // Thêm nếu thiếu
+      // CHANGE 2: Reduce the giant black hole size multiplier
+      maxRadiusMultiplier: 1.8, // Reduced from 2.5
+      gravityRadiusMultiplier: 1.5, // Optionally reduce gravity range too
       strengthMultiplier: 2.2,
       growthRateMultiplier: 1.5, // Thêm nếu thiếu
       color: "#6a0dad",
@@ -309,6 +312,15 @@ const GAME_CONFIG = {
       activeTime: 400,
       spawnInterval: 1800, // Example spawn interval if spawned regularly
       spawnThreshold: 8000, // Example spawn threshold
+    },
+    shieldCrystal: {
+      // New config section for shield crystal power-up
+      size: 15,
+      driftSpeed: 0.5,
+      lifetime: 1200,
+      color: "#40c4ff",
+      spawnThreshold: 2000,
+      spawnInterval: 1200,
     },
   },
 

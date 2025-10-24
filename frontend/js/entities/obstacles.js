@@ -5,6 +5,9 @@ class Asteroid {
     this.x = x;
     this.y = y;
     this.radius = radius;
+    // CHANGE 1: Use hitboxScale from config to determine collisionRadius
+    this.collisionRadius =
+      this.radius * (GAME_CONFIG.entities.asteroids.hitboxScale || 0.8);
     this.color = color;
     this.velocity = velocity;
     this.shapePoints = this.createShape();
@@ -27,7 +30,8 @@ class Asteroid {
     const s = 7 + ~~(Math.random() * 5);
     for (let i = 0; i < s; i++) {
       const a = (i / s) * Math.PI * 2;
-      const r = this.radius * (0.7 + Math.random() * 0.3);
+      // Make shape slightly smaller than visual radius to better fit collision radius
+      const r = this.radius * (0.6 + Math.random() * 0.25);
       p.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
     }
     return p;
@@ -49,6 +53,14 @@ class Asteroid {
     ctx.strokeStyle = this.color;
     ctx.lineWidth = 3;
     ctx.stroke();
+
+    // Optional: Draw collision radius for debugging
+    // ctx.beginPath();
+    // ctx.arc(0, 0, this.collisionRadius, 0, Math.PI * 2);
+    // ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    // ctx.lineWidth = 1;
+    // ctx.stroke();
+
     ctx.restore();
   }
 
@@ -76,7 +88,7 @@ class Asteroid {
   }
 }
 
-// ... (Rest of the classes: Laser, BlackHole, Missile, LaserMine) ...
+// ... (Rest of the classes: Laser, BlackHole, Missile, LaserMine remain the same) ...
 class Laser {
   // ... existing code ...
   constructor(targetPlayer = false) {
@@ -250,8 +262,10 @@ class BlackHole {
         this.radius += this.growthRate;
         this.gravityRadius += this.growthRate * 2; // Gravity radius grows with the core
       } else {
-        // If it reaches max radius (temporary or not), start fading
-        this.state = "fading";
+        // If it reaches max radius (temporary or not), start fading if temporary
+        if (this.isTemporary) {
+          this.state = "fading";
+        }
       }
     } else if (this.state === "fading") {
       this.alpha -= 0.02;
@@ -288,6 +302,8 @@ class BlackHole {
       }
     });
     this.draw();
+    // Return false only if it's temporary and completely faded
+    return !this.isTemporary || this.alpha > 0;
   }
 }
 class Missile {
@@ -341,6 +357,8 @@ class Missile {
   }
 
   update() {
+    if (this.isDead) return false; // Return false if dead
+
     this.lifeTimer++;
     if (
       !this.hasSpedUp &&
@@ -353,7 +371,7 @@ class Missile {
     }
     if (this.lifeTimer > GAME_CONFIG.entities.missiles.lifetime) {
       this.explode();
-      return;
+      return false; // Return false when exploding due to lifetime
     }
 
     const targetAngle = Math.atan2(player.y - this.y, player.x - this.x);
@@ -375,6 +393,7 @@ class Missile {
     });
     this.trail = this.trail.filter((p) => p.a > 0);
     this.draw();
+    return true; // Return true if still active
   }
 
   explode(isImpact = false) {
@@ -515,7 +534,9 @@ class LaserMine {
     }
     if (this.state === "fading") {
       this.alpha -= 0.02;
+      if (this.alpha <= 0) return false; // Indicate removal when faded
     }
     this.draw();
+    return true; // Still active
   }
 }
