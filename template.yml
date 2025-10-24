@@ -1,8 +1,9 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >-
-  Creates a full CI/CD pipeline for a static frontend application with separate Staging (S3 Public Website)
-  and Production (S3 Private + CloudFront) environments. Triggered from a GitHub push.
+  Cost-optimized CI/CD pipeline for a static frontend application (Staging/Production).
+  Builds/minifies HTML/CSS/JS, includes idle resource scheduling via EventBridge.
+  NOTE: WAF for CloudFront must be created separately in us-east-1 and associated manually.
 
 Parameters:
   GitHubOwner:
@@ -76,6 +77,13 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldArtifacts
+            Status: Enabled
+            ExpirationInDays: 30
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 7
 
   # --- CloudFront for Production ---
 
@@ -132,6 +140,8 @@ Resources:
           DefaultTTL: 86400
           MinTTL: 0
           MaxTTL: 31536000
+        # === REMOVED WAF ASSOCIATION ===
+        # WebACLId: !GetAtt WebACL.Arn
 
   # --- IAM Roles ---
 
@@ -236,13 +246,72 @@ Resources:
         BuildSpec: |
           version: 0.2
           phases:
+            install:
+              runtime-versions:
+                nodejs: 18
+              commands:
+                - echo "Installing minification tools..."
+                - npm install -g terser csso-cli html-minifier
             build:
               commands:
-                - echo "Static site. No build commands needed. Preparing artifacts..."
+                - echo "Starting build process for static files..."
+                - mkdir build_output
+                - echo "Copying assets..."
+                - |
+                  if [ -d "frontend/assets" ]; then
+                    cp -r frontend/assets build_output/assets
+                    echo "Assets copied."
+                  else
+                    echo "No assets directory found in frontend/."
+                  fi
+                - echo "Minifying CSS..."
+                - |
+                  if [ -d "frontend/css" ]; then
+                    mkdir -p build_output/css
+                    find frontend/css -name '*.css' -exec sh -c 'csso "$1" -o "build_output/css/$(basename "$1")"' sh {} \;
+                    echo "CSS minification complete."
+                  else
+                    echo "No css directory found in frontend/."
+                  fi
+                - echo "Minifying JavaScript..."
+                - |
+                  if [ -d "frontend/js" ]; then
+                    find frontend/js -type d -exec sh -c 'mkdir -p "build_output/$(echo "$1" | sed "s|^frontend/||")"' sh {} \;
+                    find frontend/js -name '*.js' -exec sh -c 'terser "$1" -o "build_output/$(echo "$1" | sed "s|^frontend/||")" -c -m --source-map "content=inline"' sh {} \;
+                    echo "Core JavaScript minification complete."
+                  else
+                    echo "No js directory found in frontend/."
+                  fi
+                - echo "Minifying gameConfig.js..."
+                - |
+                  if [ -f "frontend/gameConfig.js" ]; then
+                    terser frontend/gameConfig.js -o build_output/gameConfig.js -c -m --source-map "content=inline"
+                    echo "gameConfig.js minified."
+                  else
+                    echo "gameConfig.js not found in frontend/."
+                  fi
+                - echo "Minifying HTML..."
+                - |
+                  if [ -f "frontend/index.html" ]; then
+                    html-minifier frontend/index.html \
+                      --collapse-whitespace \
+                      --remove-comments \
+                      --remove-optional-tags \
+                      --remove-redundant-attributes \
+                      --remove-script-type-attributes \
+                      --remove-tag-whitespace \
+                      --use-short-doctype \
+                      --minify-css true \
+                      --minify-js true \
+                      -o build_output/index.html
+                    echo "index.html minified."
+                  else
+                    echo "index.html not found in frontend/. Cannot minify HTML."
+                  fi
           artifacts:
             files:
               - '**/*'
-            base-directory: 'frontend'
+            base-directory: 'build_output'
 
   InvalidateCacheProject:
     Type: AWS::CodeBuild::Project
@@ -273,6 +342,8 @@ Resources:
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
+      # === REMOVED Name PROPERTY ===
+      # Name: !Sub "${AWS::StackName}-FrontendPipeline" # Example name, REMOVE THIS LINE
       RoleArn: !GetAtt CodePipelineRole.Arn
       ArtifactStore:
         Type: S3
@@ -294,9 +365,9 @@ Resources:
               OutputArtifacts:
                 - Name: SourceOutput
               RunOrder: 1
-        - Name: Prepare_Artifacts
+        - Name: Build_And_Optimize
           Actions:
-            - Name: PrepareStaticFiles
+            - Name: BuildAndMinifyStaticFiles
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -358,6 +429,128 @@ Resources:
                 - Name: BuildOutput
               RunOrder: 2
 
+  # === START: EventBridge Schedules and Lambda for Idle Resources ===
+
+  SchedulerLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaBasicExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*:*"
+        - PolicyName: StopStartResourcePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:StartInstances
+                  - ec2:StopInstances
+                  - ec2:DescribeInstances
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - rds:StartDBInstance
+                  - rds:StopDBInstance
+                  - rds:DescribeDBInstances
+                Resource: "*"
+
+  StopIdleResourcesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-StopIdleResources"
+      Description: "Lambda function triggered by EventBridge to stop idle resources."
+      Role: !GetAtt SchedulerLambdaRole.Arn
+      Runtime: nodejs18.x
+      Handler: scheduler/stopResources.handler
+      Timeout: 60
+      MemorySize: 128
+      InlineCode: |
+        console.log('Loading function');
+        exports.handler = async (event, context) => {
+          console.log('StopIdleResourcesFunction invoked:', JSON.stringify(event, null, 2));
+          console.log('--- Placeholder: Implement logic to stop specific resources ---');
+          return { statusCode: 200, body: JSON.stringify('Stop function executed.') };
+        };
+
+  StartIdleResourcesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-StartIdleResources"
+      Description: "Lambda function triggered by EventBridge to start idle resources."
+      Role: !GetAtt SchedulerLambdaRole.Arn
+      Runtime: nodejs18.x
+      Handler: scheduler/startResources.handler
+      Timeout: 60
+      MemorySize: 128
+      InlineCode: |
+        console.log('Loading function');
+        exports.handler = async (event, context) => {
+          console.log('StartIdleResourcesFunction invoked:', JSON.stringify(event, null, 2));
+          console.log('--- Placeholder: Implement logic to start specific resources ---');
+          return { statusCode: 200, body: JSON.stringify('Start function executed.') };
+        };
+
+  StopResourcesSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub "${AWS::StackName}-StopIdleResourcesSchedule"
+      Description: "Stops idle resources daily at 1 AM Vietnam time (18:00 UTC previous day)."
+      ScheduleExpression: "cron(0 18 * * ? *)"
+      FlexibleTimeWindow: { Mode: "OFF" }
+      State: "ENABLED"
+      Target:
+        Arn: !GetAtt StopIdleResourcesFunction.Arn
+        RoleArn: !GetAtt SchedulerInvokeLambdaRole.Arn
+
+  StartResourcesSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub "${AWS::StackName}-StartIdleResourcesSchedule"
+      Description: "Starts idle resources daily at 8 AM Vietnam time (01:00 UTC)."
+      ScheduleExpression: "cron(0 1 * * ? *)"
+      FlexibleTimeWindow: { Mode: "OFF" }
+      State: "ENABLED"
+      Target:
+        Arn: !GetAtt StartIdleResourcesFunction.Arn
+        RoleArn: !GetAtt SchedulerInvokeLambdaRole.Arn
+
+  SchedulerInvokeLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: scheduler.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeLambdaPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: "lambda:InvokeFunction"
+                Resource:
+                  - !GetAtt StopIdleResourcesFunction.Arn
+                  - !GetAtt StartIdleResourcesFunction.Arn
+
+  # === END: EventBridge Schedules and Lambda ===
+
 Outputs:
   StagingWebsiteURL:
     Description: "Clickable URL for the STAGING environment (S3 public website)"
@@ -372,4 +565,5 @@ Outputs:
 
   PipelineConsoleUrl:
     Description: "URL to view the CodePipeline in the AWS Console"
-    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/codesuite/codepipeline/pipelines?region=${AWS::Region}"
+    # Use !Ref Pipeline because we don't explicitly set the name anymore
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${Pipeline}/view?region=${AWS::Region}"
