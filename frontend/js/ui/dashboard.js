@@ -192,6 +192,15 @@ function handleWebSocketMessage(message) {
           // Try to find the user in the new data to get the latest rank
           const userEntry = globalLeaderboard.find((e) => e.userId === userId);
           const currentRank = userEntry ? userEntry.rank : lastKnownRank; // Use last known rank as fallback
+          // **CHANGE 2: Get country info from userEntry or gameStateManager**
+          const userCountry =
+            userEntry?.country ||
+            gameStateManager.stateData.lastCountry ||
+            null;
+          const userCountryCode =
+            userEntry?.countryCode ||
+            gameStateManager.stateData.lastCountryCode ||
+            null;
 
           console.log(
             `[WS Update] Re-rendering game over snippet. UserID: ${userId}, Rank: ${currentRank}`
@@ -200,6 +209,9 @@ function handleWebSocketMessage(message) {
             targetElementId: "game-over-leaderboard-container",
             highlightUserId: userId,
             highlightRank: currentRank,
+            // **CHANGE 2: Pass country info**
+            highlightUserCountry: userCountry,
+            highlightUserCountryCode: userCountryCode,
             forceRefresh: false, // Use the updated globalLeaderboard data
           });
         }
@@ -797,6 +809,8 @@ function stopHeartbeat() {
  * @param {string} options.targetElementId - The ID of the container element.
  * @param {string|null} [options.highlightUserId=null] - User ID to highlight.
  * @param {number|null} [options.highlightRank=null] - User rank to highlight.
+ * @param {string|null} [options.highlightUserCountry=null] - User country name.  // **CHANGE 2: Add parameter**
+ * @param {string|null} [options.highlightUserCountryCode=null] - User country code. // **CHANGE 2: Add parameter**
  * @param {boolean} [options.forceRefresh=false] - Force fetching new data.
  */
 async function renderLeaderboardSnippet(options) {
@@ -804,6 +818,9 @@ async function renderLeaderboardSnippet(options) {
     targetElementId,
     highlightUserId = null,
     highlightRank = null,
+    // **CHANGE 2: Destructure new parameters with defaults**
+    highlightUserCountry = null,
+    highlightUserCountryCode = null,
     forceRefresh = false,
   } = options;
   const container = document.getElementById(targetElementId);
@@ -911,8 +928,9 @@ async function renderLeaderboardSnippet(options) {
             ? Math.floor(survivalTime)
             : leaderboardData.find((e) => e.userId === highlightUserId)
                 ?.survivalTime || 0,
-        country: "Your Location", // Placeholder or fetch if possible
-        countryCode: "XX", // Placeholder
+        // **CHANGE 2: Use passed country info or fallback**
+        country: highlightUserCountry || "Your Location", // Use the provided country name
+        countryCode: highlightUserCountryCode || "XX", // Use the provided country code
         rank: rankToUse,
         isCurrentUser: true, // Flag for styling
       };
@@ -1043,3 +1061,5 @@ window.updatePlayerStats = updatePlayerStats;
 window.renderCurrentLeaderboardData = renderCurrentLeaderboardData;
 window.renderLeaderboardSnippet = renderLeaderboardSnippet; // Export new function
 window.loadCountryData = loadCountryData; // Export country data loader
+// Make lastKnownRank accessible globally (e.g., for gameStateManager)
+window.lastKnownRank = lastKnownRank;

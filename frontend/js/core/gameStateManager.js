@@ -227,22 +227,47 @@ class GameOverState extends GameState {
 
     // Send data to backend and then render leaderboard snippet
     this.sendGameOverData().then((submitResult) => {
-      // Store the rank from the submit result in the manager's stateData
-      if (submitResult && submitResult.rank !== null) {
-        this.manager.stateData.lastRank = submitResult.rank; // Store for later use by snippet
-        // Also update the global lastKnownRank in dashboard.js directly
-        if (typeof window.lastKnownRank !== "undefined") {
-          window.lastKnownRank = submitResult.rank;
+      // Store the rank and country info from the submit result in the manager's stateData
+      if (submitResult) {
+        if (submitResult.rank !== null) {
+          this.manager.stateData.lastRank = submitResult.rank; // Store for later use by snippet
+          // Also update the global lastKnownRank in dashboard.js directly
+          if (typeof window.lastKnownRank !== "undefined") {
+            window.lastKnownRank = submitResult.rank;
+          }
+          console.log(`[GameOver] Stored lastRank: ${submitResult.rank}`);
+        } else {
+          // If submission failed or didn't return rank, clear lastRank
+          this.manager.stateData.lastRank = null;
+          if (typeof window.lastKnownRank !== "undefined") {
+            window.lastKnownRank = null;
+          }
+          console.log(
+            "[GameOver] No rank received from submission, cleared lastRank."
+          );
         }
-        console.log(`[GameOver] Stored lastRank: ${submitResult.rank}`);
+        // **CHANGE 2: Store country info**
+        if (submitResult.country) {
+          this.manager.stateData.lastCountry = submitResult.country;
+          this.manager.stateData.lastCountryCode = submitResult.countryCode;
+          console.log(
+            `[GameOver] Stored country: ${submitResult.country} (${submitResult.countryCode})`
+          );
+        } else {
+          this.manager.stateData.lastCountry = null;
+          this.manager.stateData.lastCountryCode = null;
+          console.log("[GameOver] No country info received from submission.");
+        }
       } else {
-        // If submission failed or didn't return rank, clear lastRank
+        // Clear rank and country if submission failed entirely
         this.manager.stateData.lastRank = null;
+        this.manager.stateData.lastCountry = null;
+        this.manager.stateData.lastCountryCode = null;
         if (typeof window.lastKnownRank !== "undefined") {
           window.lastKnownRank = null;
         }
         console.log(
-          "[GameOver] No rank received from submission, cleared lastRank."
+          "[GameOver] Submission failed entirely, cleared state data."
         );
       }
 
@@ -255,12 +280,15 @@ class GameOverState extends GameState {
 
       if (typeof renderLeaderboardSnippet === "function") {
         console.log(
-          `[GameOver] Rendering snippet. UserID: ${userId}, Rank: ${this.manager.stateData.lastRank}`
+          `[GameOver] Rendering snippet. UserID: ${userId}, Rank: ${this.manager.stateData.lastRank}, Country: ${this.manager.stateData.lastCountry}`
         );
         renderLeaderboardSnippet({
           targetElementId: "game-over-leaderboard-container",
           highlightUserId: userId,
           highlightRank: this.manager.stateData.lastRank, // Use the stored rank
+          // **CHANGE 2: Pass country info to snippet renderer**
+          highlightUserCountry: this.manager.stateData.lastCountry,
+          highlightUserCountryCode: this.manager.stateData.lastCountryCode,
           forceRefresh: true, // Force fetching fresh data for game over
         });
       } else {
@@ -556,8 +584,10 @@ class GameOverState extends GameState {
     if (lbContainer) {
       lbContainer.innerHTML = '<div class="loading">Loading...</div>'; // Loading...
     }
-    // Clear last known rank when exiting game over
+    // Clear last known rank and country when exiting game over
     this.manager.stateData.lastRank = null;
+    this.manager.stateData.lastCountry = null; // **CHANGE 2: Clear country info**
+    this.manager.stateData.lastCountryCode = null; // **CHANGE 2: Clear country info**
     if (typeof window.lastKnownRank !== "undefined") {
       window.lastKnownRank = null;
     }
@@ -579,6 +609,9 @@ class LeaderboardState extends GameState {
     // Use rank from state data if available (passed from game over)
     const userId = window.userIdentification?.getUserId();
     const userRank = this.data.lastRank || null; // Use stored rank
+    // **CHANGE 2: Get country info from state data**
+    const userCountry = this.data.lastCountry || null;
+    const userCountryCode = this.data.lastCountryCode || null;
 
     if (typeof renderCurrentLeaderboardData === "function") {
       console.log(
@@ -588,6 +621,9 @@ class LeaderboardState extends GameState {
         targetElementId: "global-leaderboard-list",
         highlightUserId: userId,
         highlightRank: userRank,
+        // **CHANGE 2: Pass country info**
+        highlightUserCountry: userCountry,
+        highlightUserCountryCode: userCountryCode,
         forceRefresh: true, // Always refresh when entering leaderboard state
       });
     } else {
