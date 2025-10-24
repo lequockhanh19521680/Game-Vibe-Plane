@@ -84,15 +84,15 @@ const GAME_CONFIG = {
       intervalDecreasePerLevel: 60,
       warningDuration: 120,
       radius: 5,
-      baseSpeed: 0.15,
+      baseSpeed: 0.05,
       speedIncreasePerLevel: 0.02,
       baseTurnSpeed: 0.015,
       turnSpeedIncreasePerLevel: 0.015,
-      speedUpTime: 350, // Frames before missile speeds up
-      speedUpMultiplier: 1.9, // Speed multiplier after speedUpTime
-      turnSpeedUpMultiplier: 1.6, // Turn speed multiplier after speedUpTime
-      lifetime: 450, // Max frames missile exists before exploding
-      fragmentCount: 8, // Fragments on timeout explosion
+      speedUpTime: 350,
+      speedUpMultiplier: 1.9,
+      turnSpeedUpMultiplier: 1.6,
+      lifetime: 450,
+      fragmentCount: 8,
       fragmentCountOnImpact: 5, // Fragments on hitting shield/asteroid
       velocity: {
         friction: 0.92, // Damping factor for missile movement
