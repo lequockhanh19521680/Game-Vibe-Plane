@@ -80,19 +80,19 @@ const GAME_CONFIG = {
     missiles: {
       spawnScore: 500,
       spawnInterval: 700,
-      minSpawnInterval: 120,
+      minSpawnInterval: 240,
       intervalDecreasePerLevel: 60,
       warningDuration: 120,
       radius: 5,
       baseSpeed: 0.05,
       speedIncreasePerLevel: 0.02,
-      baseTurnSpeed: 0.015,
+      baseTurnSpeed: 0.01,
       turnSpeedIncreasePerLevel: 0.015,
       speedUpTime: 350,
-      speedUpMultiplier: 1.9,
-      turnSpeedUpMultiplier: 1.6,
+      speedUpMultiplier: 1.5,
+      turnSpeedUpMultiplier: 1.4,
       lifetime: 450,
-      fragmentCount: 8,
+      fragmentCount: 12,
       fragmentCountOnImpact: 5, // Fragments on hitting shield/asteroid
       velocity: {
         friction: 0.92, // Damping factor for missile movement
