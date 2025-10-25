@@ -1,7 +1,7 @@
 const { putItem, getItem, updateItem } = require("../utils/dynamodb");
 const { getCountryFromIP, extractIPFromEvent } = require("../utils/geoip");
 const { sanitizeInput, validateScore } = require("../utils/security");
-const { getCorsHeaders } = require("../utils/cors"); // Import CORS utility
+const { getCorsHeaders } = require("../utils/cors");
 
 /**
  * Calculate player's global rank (approximate)
@@ -138,7 +138,7 @@ exports.handler = async (event) => {
           ? existingScoreItem.createdAt
           : isoTimestamp,
         updatedAt: isoTimestamp,
-        leaderboard: "global", // For GSI querying
+        gameType: "default", // For GSI querying
       };
 
       // Use putItem to overwrite with the new high score + metadata

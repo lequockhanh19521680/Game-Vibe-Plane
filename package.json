@@ -1,0 +1,41 @@
+{
+  "name": "game-vibe-plane",
+  "version": "2.0.0",
+  "description": "Game Vibe Plane - Well-Architected Real-time Leaderboard System",
+  "main": "index.js",
+  "scripts": {
+    "install-deps": "cd backend && npm install",
+    "build": "sam build",
+    "deploy:dev": "npm run build && sam deploy --config-env dev --no-confirm-changeset",
+    "deploy:prod": "npm run build && sam deploy --config-env prod --no-confirm-changeset",
+    "deploy-frontend:dev": "node scripts/deploy-frontend.js dev",
+    "deploy-frontend:prod": "node scripts/deploy-frontend.js prod",
+    "deploy:dev:full": "npm run deploy:dev && npm run deploy-frontend:dev",
+    "deploy:prod:full": "npm run deploy:prod && npm run deploy-frontend:prod",
+    "test": "cd backend && npm test",
+    "lint": "cd backend && npm run lint",
+    "local": "sam local start-api --port 3000",
+    "logs:dev": "sam logs --stack-name game-vibe-plane-dev --tail",
+    "logs:prod": "sam logs --stack-name game-vibe-plane-prod --tail",
+    "destroy:dev": "sam delete --stack-name game-vibe-plane-dev --no-prompts",
+    "destroy:prod": "sam delete --stack-name game-vibe-plane-prod --no-prompts"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.1490.0",
+    "mime-types": "^2.1.35"
+  },
+  "keywords": [
+    "game",
+    "leaderboard",
+    "real-time",
+    "aws",
+    "serverless",
+    "websocket",
+    "well-architected"
+  ],
+  "author": "Game Vibe Plane Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
