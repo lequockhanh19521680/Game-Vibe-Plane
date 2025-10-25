@@ -1,0 +1,344 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Monitoring and alerting infrastructure for Game Vibe Plane
+  Cost-optimized CloudWatch setup with essential metrics and alarms
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment name (dev, staging, prod)
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+  
+  ServiceName:
+    Type: String
+    Description: Service name
+    Default: game-vibe-plane
+  
+  NotificationEmail:
+    Type: String
+    Description: Email address for alerts
+    Default: ""
+  
+  EnableDetailedMonitoring:
+    Type: String
+    Description: Enable detailed monitoring (costs more)
+    Default: "false"
+    AllowedValues: ["true", "false"]
+
+Conditions:
+  HasNotificationEmail: !Not [!Equals [!Ref NotificationEmail, ""]]
+  IsProduction: !Equals [!Ref Environment, "prod"]
+  EnableDetailed: !Equals [!Ref EnableDetailedMonitoring, "true"]
+
+Resources:
+  # SNS Topic for Alerts
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Condition: HasNotificationEmail
+    Properties:
+      TopicName: !Sub "${ServiceName}-alerts-${Environment}"
+      DisplayName: !Sub "Game Vibe Plane Alerts - ${Environment}"
+
+  # SNS Subscription
+  AlertSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasNotificationEmail
+    Properties:
+      Protocol: email
+      TopicArn: !Ref AlertTopic
+      Endpoint: !Ref NotificationEmail
+
+  # CloudWatch Dashboard
+  GameVibePlaneMonitoringDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${ServiceName}-${Environment}-dashboard"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Duration", "FunctionName", "${ServiceName}-${Environment}-endGameSession" ],
+                  [ ".", "Errors", ".", "." ],
+                  [ ".", "Invocations", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Game Session Lambda Metrics"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "${ServiceName}-game-sessions-${Environment}" ],
+                  [ ".", "ConsumedWriteCapacityUnits", ".", "." ],
+                  [ ".", "UserErrors", ".", "." ],
+                  [ ".", "SystemErrors", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "DynamoDB Metrics"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/ApiGateway", "Count", "ApiName", "${ServiceName}-api-${Environment}" ],
+                  [ ".", "Latency", ".", "." ],
+                  [ ".", "4XXError", ".", "." ],
+                  [ ".", "5XXError", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "API Gateway Metrics"
+              }
+            },
+            {
+              "type": "log",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "query": "SOURCE '/aws/lambda/${ServiceName}-${Environment}-endGameSession'\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 20",
+                "region": "${AWS::Region}",
+                "title": "Recent Errors",
+                "view": "table"
+              }
+            }
+          ]
+        }
+
+  # Lambda Function Error Rate Alarm
+  LambdaErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ServiceName}-${Environment}-lambda-error-rate"
+      AlarmDescription: "High error rate in Lambda functions"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${ServiceName}-${Environment}-endGameSession"
+      AlarmActions: !If
+        - HasNotificationEmail
+        - [!Ref AlertTopic]
+        - []
+      TreatMissingData: notBreaching
+
+  # Lambda Function Duration Alarm
+  LambdaDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ServiceName}-${Environment}-lambda-duration"
+      AlarmDescription: "High duration in Lambda functions"
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 10000  # 10 seconds
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${ServiceName}-${Environment}-endGameSession"
+      AlarmActions: !If
+        - HasNotificationEmail
+        - [!Ref AlertTopic]
+        - []
+      TreatMissingData: notBreaching
+
+  # DynamoDB Throttling Alarm
+  DynamoDBThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ServiceName}-${Environment}-dynamodb-throttles"
+      AlarmDescription: "DynamoDB throttling detected"
+      MetricName: UserErrors
+      Namespace: AWS/DynamoDB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TableName
+          Value: !Sub "${ServiceName}-game-sessions-${Environment}"
+      AlarmActions: !If
+        - HasNotificationEmail
+        - [!Ref AlertTopic]
+        - []
+      TreatMissingData: notBreaching
+
+  # API Gateway 5XX Error Alarm
+  ApiGateway5XXAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ServiceName}-${Environment}-api-5xx-errors"
+      AlarmDescription: "High 5XX error rate in API Gateway"
+      MetricName: 5XXError
+      Namespace: AWS/ApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${ServiceName}-api-${Environment}"
+      AlarmActions: !If
+        - HasNotificationEmail
+        - [!Ref AlertTopic]
+        - []
+      TreatMissingData: notBreaching
+
+  # API Gateway Latency Alarm
+  ApiGatewayLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ServiceName}-${Environment}-api-latency"
+      AlarmDescription: "High latency in API Gateway"
+      MetricName: Latency
+      Namespace: AWS/ApiGateway
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 5000  # 5 seconds
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${ServiceName}-api-${Environment}"
+      AlarmActions: !If
+        - HasNotificationEmail
+        - [!Ref AlertTopic]
+        - []
+      TreatMissingData: notBreaching
+
+  # Cost Anomaly Detection (Production only)
+  CostAnomalyDetector:
+    Type: AWS::CE::AnomalyDetector
+    Condition: IsProduction
+    Properties:
+      AnomalyDetectorName: !Sub "${ServiceName}-${Environment}-cost-anomaly"
+      MonitorType: DIMENSIONAL
+      MonitorSpecification: !Sub |
+        {
+          "Dimension": "SERVICE",
+          "Key": "SERVICE",
+          "Values": ["Amazon DynamoDB", "AWS Lambda", "Amazon API Gateway", "Amazon CloudFront", "Amazon S3"],
+          "MatchOptions": ["EQUALS"]
+        }
+
+  # Cost Anomaly Subscription (Production only)
+  CostAnomalySubscription:
+    Type: AWS::CE::AnomalySubscription
+    Condition: IsProduction
+    Properties:
+      SubscriptionName: !Sub "${ServiceName}-${Environment}-cost-alerts"
+      MonitorArnList:
+        - !GetAtt CostAnomalyDetector.AnomalyDetectorArn
+      Subscribers:
+        - Type: EMAIL
+          Address: !If
+            - HasNotificationEmail
+            - !Ref NotificationEmail
+            - "admin@example.com"
+      Frequency: DAILY
+      Threshold: 50  # Alert if anomaly > $50
+
+  # Custom Metric for Game Sessions
+  GameSessionsMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ServiceName}-${Environment}-endGameSession"
+      FilterPattern: "[timestamp, requestId, level=\"INFO\", message=\"Game session ended successfully\"]"
+      MetricTransformations:
+        - MetricNamespace: !Sub "${ServiceName}/${Environment}"
+          MetricName: GameSessionsCompleted
+          MetricValue: "1"
+          DefaultValue: 0
+
+  # Custom Metric for High Scores
+  HighScoreMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ServiceName}-${Environment}-endGameSession"
+      FilterPattern: "[timestamp, requestId, level=\"INFO\", message=\"Game session ended successfully\", ..., score>10000]"
+      MetricTransformations:
+        - MetricNamespace: !Sub "${ServiceName}/${Environment}"
+          MetricName: HighScoreAchievements
+          MetricValue: "1"
+          DefaultValue: 0
+
+  # Custom Metric for WebSocket Connections
+  WebSocketConnectionsMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ServiceName}-${Environment}-websocketConnect"
+      FilterPattern: "[timestamp, requestId, level=\"INFO\", message=\"WebSocket connection established successfully\"]"
+      MetricTransformations:
+        - MetricNamespace: !Sub "${ServiceName}/${Environment}"
+          MetricName: WebSocketConnections
+          MetricValue: "1"
+          DefaultValue: 0
+
+  # Composite Alarm for Overall Health
+  OverallHealthAlarm:
+    Type: AWS::CloudWatch::CompositeAlarm
+    Condition: HasNotificationEmail
+    Properties:
+      AlarmName: !Sub "${ServiceName}-${Environment}-overall-health"
+      AlarmDescription: "Overall system health check"
+      AlarmRule: !Sub |
+        ALARM(${LambdaErrorRateAlarm}) OR 
+        ALARM(${DynamoDBThrottleAlarm}) OR 
+        ALARM(${ApiGateway5XXAlarm})
+      AlarmActions:
+        - !Ref AlertTopic
+      OKActions:
+        - !Ref AlertTopic
+
+Outputs:
+  DashboardURL:
+    Description: CloudWatch Dashboard URL
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ServiceName}-${Environment}-dashboard"
+    Export:
+      Name: !Sub "${AWS::StackName}-DashboardURL"
+
+  AlertTopicArn:
+    Condition: HasNotificationEmail
+    Description: SNS Topic ARN for alerts
+    Value: !Ref AlertTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-AlertTopicArn"
+
+  MonitoringNamespace:
+    Description: CloudWatch custom metrics namespace
+    Value: !Sub "${ServiceName}/${Environment}"
+    Export:
+      Name: !Sub "${AWS::StackName}-MonitoringNamespace"

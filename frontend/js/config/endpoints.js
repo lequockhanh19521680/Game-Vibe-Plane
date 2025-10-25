@@ -1,118 +1,203 @@
-// Endpoint Configuration with Security
-// This file contains endpoint configurations
+/**
+ * Backend API Configuration
+ * Update these endpoints after deploying the backend infrastructure
+ */
 
-class EndpointManager {
-  constructor() {
-    this.initialized = false;
-    this.endpoints = {};
-    this.wsEndpoint = null; // Storing wsEndpoint separately might be redundant
+const BACKEND_CONFIG = {
+  // API Gateway REST endpoint (update after deployment)
+  API_BASE_URL: "https://your-api-gateway-url.execute-api.ap-southeast-1.amazonaws.com/dev",
+  
+  // WebSocket endpoint (update after deployment)
+  WEBSOCKET_URL: "wss://your-websocket-url.execute-api.ap-southeast-1.amazonaws.com/dev",
+  
+  // Feature flags
+  USE_BACKEND: true,
+  FALLBACK_TO_LOCAL: true,
+  
+  // API endpoints
+  ENDPOINTS: {
+    // Game session management
+    CREATE_SESSION: "/game/session",
+    END_SESSION: "/game/session/{sessionId}/end",
+    
+    // Leaderboards
+    GLOBAL_LEADERBOARD: "/leaderboard/global",
+    COUNTRY_LEADERBOARD: "/leaderboard/country/{countryCode}",
+    
+    // System
+    HEALTH_CHECK: "/health",
+  },
+  
+  // Request configuration
+  REQUEST_TIMEOUT: 30000, // 30 seconds
+  RETRY_ATTEMPTS: 3,
+  
+  // WebSocket configuration
+  WEBSOCKET_CONFIG: {
+    RECONNECT_INTERVAL: 5000, // 5 seconds
+    MAX_RECONNECT_ATTEMPTS: 5,
+    HEARTBEAT_INTERVAL: 30000, // 30 seconds
+  },
+};
+
+// Environment-specific overrides
+const ENVIRONMENT_CONFIGS = {
+  development: {
+    API_BASE_URL: "http://localhost:3000/dev",
+    WEBSOCKET_URL: "ws://localhost:3001",
+    USE_BACKEND: false,
+    FALLBACK_TO_LOCAL: true,
+  },
+  
+  staging: {
+    API_BASE_URL: "https://your-staging-api.execute-api.ap-southeast-1.amazonaws.com/staging",
+    WEBSOCKET_URL: "wss://your-staging-ws.execute-api.ap-southeast-1.amazonaws.com/staging",
+  },
+  
+  production: {
+    API_BASE_URL: "https://your-prod-api.execute-api.ap-southeast-1.amazonaws.com/prod",
+    WEBSOCKET_URL: "wss://your-prod-ws.execute-api.ap-southeast-1.amazonaws.com/prod",
+    FALLBACK_TO_LOCAL: false,
+  },
+};
+
+// Detect environment (you can also set this via build process)
+const CURRENT_ENVIRONMENT = (() => {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'development';
   }
+  
+  if (window.location.hostname.includes('staging') || window.location.hostname.includes('dev')) {
+    return 'staging';
+  }
+  
+  return 'production';
+})();
+
+// Merge configurations
+const FINAL_CONFIG = {
+  ...BACKEND_CONFIG,
+  ...(ENVIRONMENT_CONFIGS[CURRENT_ENVIRONMENT] || {}),
+  ENVIRONMENT: CURRENT_ENVIRONMENT,
+};
+
+// Helper functions
+const API_HELPERS = {
+  /**
+   * Build full API URL
+   * @param {string} endpoint - Endpoint path
+   * @param {Object} params - URL parameters to replace
+   * @returns {string} Full URL
+   */
+  buildUrl(endpoint, params = {}) {
+    let url = FINAL_CONFIG.API_BASE_URL + endpoint;
+    
+    // Replace path parameters
+    Object.entries(params).forEach(([key, value]) => {
+      url = url.replace(`{${key}}`, encodeURIComponent(value));
+    });
+    
+    return url;
+  },
 
   /**
-   * Initialize endpoints
+   * Build WebSocket URL
+   * @param {Object} queryParams - Query parameters
+   * @returns {string} WebSocket URL
    */
-  async initialize() {
-    if (this.initialized) return;
-
-    try {
-      // Direct endpoint data from your 'prod' deployment
-      this.endpoints.api =
-        "https://m7uj7jddd8.execute-api.ap-southeast-1.amazonaws.com/prod";
-      // WebSocket endpoint, trailing slash removed.
-      this.endpoints.ws =
-        "wss://t3he3fvk4c.execute-api.ap-southeast-1.amazonaws.com/prod";
-      this.endpoints.token = "stellar_drift_secure_token_v1";
-
-      // Add timestamp for potential future validation/rotation
-      this.endpoints.timestamp = Date.now();
-
-      this.initialized = true;
-      console.log("Endpoints initialized");
-    } catch (error) {
-      console.error("Failed to initialize endpoints:", error);
-      // Fallback to environment detection if direct assignment fails
-      this.initializeFallback();
-    }
-  }
+  buildWebSocketUrl(queryParams = {}) {
+    const url = new URL(FINAL_CONFIG.WEBSOCKET_URL);
+    
+    Object.entries(queryParams).forEach(([key, value]) => {
+      url.searchParams.append(key, value);
+    });
+    
+    return url.toString();
+  },
 
   /**
-   * Fallback initialization (primarily for development)
+   * Get request headers
+   * @returns {Object} Request headers
    */
-  initializeFallback() {
-    // Check if we're in development
-    const isDevelopment =
-      window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1";
-
-    if (isDevelopment) {
-      this.endpoints.api = "http://localhost:3000";
-      this.endpoints.ws = "ws://localhost:3001";
-    } else {
-      // Production fallback if direct init fails (should ideally not happen)
-      console.error(
-        "Production endpoint initialization failed, falling back to null."
-      );
-      this.endpoints.api = null;
-      this.endpoints.ws = null;
-    }
-
-    this.initialized = true;
-  }
+  getHeaders() {
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+  },
 
   /**
-   * Get API endpoint
+   * Handle API response
+   * @param {Response} response - Fetch response
+   * @returns {Promise<Object>} Parsed response
    */
-  getApiEndpoint() {
-    if (!this.initialized) {
-      console.error("Endpoints not initialized");
-      return null;
+  async handleResponse(response) {
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP ${response.status}`);
     }
-    // Simple timestamp validation example (e.g., re-initialize if older than 1 hour)
-    // if (Date.now() - this.endpoints.timestamp > 3600000) {
-    //   console.warn("Endpoints potentially stale, consider reinitializing...");
-    //   // Optionally re-initialize:
-    //   // this.initialized = false;
-    //   // this.initialize();
-    //   // return null; // or return the stale endpoint
-    // }
-    return this.endpoints.api;
-  }
+    
+    return data;
+  },
 
   /**
-   * Get WebSocket endpoint
+   * Make API request with retry logic
+   * @param {string} url - Request URL
+   * @param {Object} options - Fetch options
+   * @returns {Promise<Object>} Response data
    */
-  getWsEndpoint() {
-    if (!this.initialized) {
-      console.error("Endpoints not initialized");
-      return null;
+  async request(url, options = {}) {
+    const config = {
+      headers: this.getHeaders(),
+      ...options,
+    };
+
+    let lastError;
+    
+    for (let attempt = 1; attempt <= FINAL_CONFIG.RETRY_ATTEMPTS; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(
+          () => controller.abort(),
+          FINAL_CONFIG.REQUEST_TIMEOUT
+        );
+
+        const response = await fetch(url, {
+          ...config,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+        return await this.handleResponse(response);
+        
+      } catch (error) {
+        lastError = error;
+        
+        if (attempt < FINAL_CONFIG.RETRY_ATTEMPTS) {
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => 
+            setTimeout(resolve, Math.pow(2, attempt) * 1000)
+          );
+        }
+      }
     }
-    return this.endpoints.ws;
-  }
+    
+    throw lastError;
+  },
+};
 
-  /**
-   * Get security token
-   */
-  getToken() {
-    if (!this.initialized) {
-      console.error("Endpoints not initialized");
-      return null;
-    }
-    return this.endpoints.token;
-  }
-
-  // REMOVED: Unused decode function
-  // decode(encoded) { ... }
-
-  // REMOVED: Unused validateEndpoints function
-  // async validateEndpoints() { ... }
-
-  // REMOVED: Unused rotateEndpoints function and associated interval in backendApi.js
-  // async rotateEndpoints() { ... }
+// Export configuration and helpers
+if (typeof module !== 'undefined' && module.exports) {
+  // Node.js environment
+  module.exports = { FINAL_CONFIG, API_HELPERS };
+} else {
+  // Browser environment
+  window.BACKEND_CONFIG = FINAL_CONFIG;
+  window.API_HELPERS = API_HELPERS;
 }
 
-// Create global instance
-const endpointManager = new EndpointManager();
-
-// Export for use
-window.EndpointManager = EndpointManager;
-window.endpointManager = endpointManager;
+// Log configuration in development
+if (CURRENT_ENVIRONMENT === 'development') {
+  console.log('Backend Configuration:', FINAL_CONFIG);
+}

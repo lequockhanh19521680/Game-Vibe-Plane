@@ -1,0 +1,479 @@
+service: game-vibe-plane
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ${opt:region, 'ap-southeast-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 256
+  timeout: 30
+  
+  # Cost optimization
+  tracing:
+    lambda: false # Disable X-Ray to reduce costs
+  
+  # Environment variables
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    REGION: ${aws:region}
+    ACCOUNT_ID: ${aws:accountId}
+    STAGE: ${self:provider.stage}
+    
+    # DynamoDB Tables
+    GAME_SESSIONS_TABLE: ${self:service}-game-sessions-${self:provider.stage}
+    LEADERBOARD_TABLE: ${self:service}-leaderboard-${self:provider.stage}
+    WEBSOCKET_CONNECTIONS_TABLE: ${self:service}-websocket-connections-${self:provider.stage}
+    
+    # API Gateway WebSocket
+    WEBSOCKET_API_ID: !Ref WebsocketsApi
+    WEBSOCKET_ENDPOINT: 
+      Fn::Join:
+        - ""
+        - - "https://"
+          - !Ref WebsocketsApi
+          - ".execute-api."
+          - ${aws:region}
+          - ".amazonaws.com/"
+          - ${self:provider.stage}
+
+  # IAM permissions following least privilege principle
+  iam:
+    role:
+      statements:
+        # DynamoDB permissions
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchGetItem
+            - dynamodb:BatchWriteItem
+          Resource:
+            - !GetAtt GameSessionsTable.Arn
+            - !Sub "${GameSessionsTable.Arn}/index/*"
+            - !GetAtt LeaderboardTable.Arn
+            - !Sub "${LeaderboardTable.Arn}/index/*"
+            - !GetAtt WebSocketConnectionsTable.Arn
+        
+        # WebSocket API permissions
+        - Effect: Allow
+          Action:
+            - execute-api:ManageConnections
+          Resource:
+            - !Sub "arn:aws:execute-api:${aws:region}:${aws:accountId}:*/*/POST/@connections/*"
+        
+        # CloudWatch Logs permissions
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource:
+            - !Sub "arn:aws:logs:${aws:region}:${aws:accountId}:log-group:/aws/lambda/*"
+
+  # API Gateway configuration with throttling
+  apiGateway:
+    restApiId: !Ref RestApi
+    restApiRootResourceId: !GetAtt RestApi.RootResourceId
+    throttle:
+      burstLimit: 100
+      rateLimit: 50
+    
+    # CORS configuration
+    cors:
+      origin: '*'
+      headers:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+        - X-Api-Key
+        - X-Amz-Security-Token
+        - X-Amz-User-Agent
+      allowCredentials: false
+
+# Lambda Functions
+functions:
+  # Game session management
+  createGameSession:
+    handler: src/handlers/game/createSession.handler
+    description: "Create new game session"
+    events:
+      - http:
+          path: /game/session
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: createGameSession
+
+  endGameSession:
+    handler: src/handlers/game/endSession.handler
+    description: "End game session and submit score"
+    events:
+      - http:
+          path: /game/session/{sessionId}/end
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: endGameSession
+
+  # Leaderboard functions
+  getGlobalLeaderboard:
+    handler: src/handlers/leaderboard/getGlobal.handler
+    description: "Get global leaderboard"
+    events:
+      - http:
+          path: /leaderboard/global
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: getGlobalLeaderboard
+
+  getCountryLeaderboard:
+    handler: src/handlers/leaderboard/getCountry.handler
+    description: "Get country-specific leaderboard"
+    events:
+      - http:
+          path: /leaderboard/country/{countryCode}
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: getCountryLeaderboard
+
+  # WebSocket functions
+  websocketConnect:
+    handler: src/handlers/websocket/connect.handler
+    description: "Handle WebSocket connections"
+    events:
+      - websocket:
+          route: $connect
+    environment:
+      FUNCTION_NAME: websocketConnect
+
+  websocketDisconnect:
+    handler: src/handlers/websocket/disconnect.handler
+    description: "Handle WebSocket disconnections"
+    events:
+      - websocket:
+          route: $disconnect
+    environment:
+      FUNCTION_NAME: websocketDisconnect
+
+  websocketMessage:
+    handler: src/handlers/websocket/message.handler
+    description: "Handle WebSocket messages"
+    events:
+      - websocket:
+          route: $default
+    environment:
+      FUNCTION_NAME: websocketMessage
+
+  # Real-time updates
+  leaderboardUpdater:
+    handler: src/handlers/streams/leaderboardUpdater.handler
+    description: "Update leaderboard from game session changes"
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt GameSessionsTable.StreamArn
+          batchSize: 10
+          startingPosition: LATEST
+          maximumBatchingWindowInSeconds: 5
+    environment:
+      FUNCTION_NAME: leaderboardUpdater
+
+  # Health check
+  healthCheck:
+    handler: src/handlers/system/health.handler
+    description: "System health check"
+    events:
+      - http:
+          path: /health
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: healthCheck
+
+# CloudFormation Resources
+resources:
+  Resources:
+    # REST API Gateway
+    RestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: ${self:service}-api-${self:provider.stage}
+        Description: Game Vibe Plane REST API
+        EndpointConfiguration:
+          Types:
+            - REGIONAL
+        Policy:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal: '*'
+              Action: execute-api:Invoke
+              Resource: '*'
+
+    # DynamoDB Tables
+    GameSessionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.GAME_SESSIONS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        AttributeDefinitions:
+          - AttributeName: sessionId
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: N
+          - AttributeName: score
+            AttributeType: N
+        KeySchema:
+          - AttributeName: sessionId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: UserSessionsIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: ScoreIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: score
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    LeaderboardTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.LEADERBOARD_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        AttributeDefinitions:
+          - AttributeName: leaderboardType
+            AttributeType: S
+          - AttributeName: score
+            AttributeType: N
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: country
+            AttributeType: S
+        KeySchema:
+          - AttributeName: leaderboardType
+            KeyType: HASH
+          - AttributeName: score
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: CountryLeaderboardIndex
+            KeySchema:
+              - AttributeName: country
+                KeyType: HASH
+              - AttributeName: score
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: UserScoreIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: score
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    WebSocketConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.WEBSOCKET_CONNECTIONS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: UserConnectionIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    # CloudWatch Log Groups with retention
+    CreateGameSessionLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-createGameSession
+        RetentionInDays: 14
+
+    EndGameSessionLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-endGameSession
+        RetentionInDays: 14
+
+    GetGlobalLeaderboardLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-getGlobalLeaderboard
+        RetentionInDays: 14
+
+    GetCountryLeaderboardLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-getCountryLeaderboard
+        RetentionInDays: 14
+
+    WebsocketConnectLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-websocketConnect
+        RetentionInDays: 14
+
+    WebsocketDisconnectLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-websocketDisconnect
+        RetentionInDays: 14
+
+    WebsocketMessageLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-websocketMessage
+        RetentionInDays: 14
+
+    LeaderboardUpdaterLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-leaderboardUpdater
+        RetentionInDays: 14
+
+    HealthCheckLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-healthCheck
+        RetentionInDays: 7
+
+    # CloudWatch Alarms for monitoring
+    HighErrorRateAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: ${self:service}-${self:provider.stage}-high-error-rate
+        AlarmDescription: High error rate detected
+        MetricName: Errors
+        Namespace: AWS/Lambda
+        Statistic: Sum
+        Period: 300
+        EvaluationPeriods: 2
+        Threshold: 10
+        ComparisonOperator: GreaterThanThreshold
+        Dimensions:
+          - Name: FunctionName
+            Value: ${self:service}-${self:provider.stage}-endGameSession
+
+    HighLatencyAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: ${self:service}-${self:provider.stage}-high-latency
+        AlarmDescription: High latency detected
+        MetricName: Duration
+        Namespace: AWS/Lambda
+        Statistic: Average
+        Period: 300
+        EvaluationPeriods: 2
+        Threshold: 5000
+        ComparisonOperator: GreaterThanThreshold
+        Dimensions:
+          - Name: FunctionName
+            Value: ${self:service}-${self:provider.stage}-endGameSession
+
+  Outputs:
+    RestApiId:
+      Description: REST API ID
+      Value: !Ref RestApi
+      Export:
+        Name: ${self:service}-${self:provider.stage}-RestApiId
+
+    RestApiUrl:
+      Description: REST API URL
+      Value: !Sub "https://${RestApi}.execute-api.${aws:region}.amazonaws.com/${self:provider.stage}"
+      Export:
+        Name: ${self:service}-${self:provider.stage}-RestApiUrl
+
+    WebSocketUrl:
+      Description: WebSocket API URL
+      Value: !Sub "wss://${WebsocketsApi}.execute-api.${aws:region}.amazonaws.com/${self:provider.stage}"
+      Export:
+        Name: ${self:service}-${self:provider.stage}-WebSocketUrl
+
+    GameSessionsTableName:
+      Description: Game Sessions DynamoDB Table Name
+      Value: !Ref GameSessionsTable
+      Export:
+        Name: ${self:service}-${self:provider.stage}-GameSessionsTable
+
+    LeaderboardTableName:
+      Description: Leaderboard DynamoDB Table Name
+      Value: !Ref LeaderboardTable
+      Export:
+        Name: ${self:service}-${self:provider.stage}-LeaderboardTable
+
+# Plugins
+plugins:
+  - serverless-offline
+  - serverless-plugin-warmup
+
+# Custom configuration
+custom:
+  # Warmup configuration to prevent cold starts
+  warmup:
+    enabled:
+      - production
+      - staging
+    events:
+      - schedule: rate(5 minutes)
+    concurrency: 1
+    prewarm: true
+
+  # Serverless offline configuration
+  serverless-offline:
+    httpPort: 3000
+    websocketPort: 3001
+    lambdaPort: 3002

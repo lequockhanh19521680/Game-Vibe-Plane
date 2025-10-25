@@ -1,0 +1,514 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  Optimized frontend infrastructure for Game Vibe Plane
+  Cost-effective setup for 1-1000 users with CloudFront, S3, and CI/CD pipeline
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment name (dev, staging, prod)
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+  
+  GitHubOwner:
+    Type: String
+    Description: GitHub repository owner
+    Default: lequockhanh19521680
+  
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository name
+    Default: game-vibe-plane
+  
+  GitHubBranch:
+    Type: String
+    Description: GitHub branch to deploy
+    Default: main
+  
+  CodeStarConnectionArn:
+    Type: String
+    Description: CodeStar connection ARN for GitHub
+  
+  DomainName:
+    Type: String
+    Description: Custom domain name (optional)
+    Default: ""
+  
+  CertificateArn:
+    Type: String
+    Description: ACM certificate ARN in us-east-1 (required if domain is set)
+    Default: ""
+
+Conditions:
+  HasDomain: !Not [!Equals [!Ref DomainName, ""]]
+  IsProduction: !Equals [!Ref Environment, "prod"]
+
+Resources:
+  # S3 Bucket for static website hosting
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-website-${Environment}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: !If [IsProduction, true, false]
+        BlockPublicPolicy: !If [IsProduction, true, false]
+        IgnorePublicAcls: !If [IsProduction, true, false]
+        RestrictPublicBuckets: !If [IsProduction, true, false]
+      WebsiteConfiguration: !If
+        - IsProduction
+        - !Ref AWS::NoValue
+        - IndexDocument: index.html
+          ErrorDocument: index.html
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: game-vibe-plane
+
+  # S3 Bucket Policy for development (direct access)
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: !Not [!Ref IsProduction]
+    Properties:
+      Bucket: !Ref WebsiteBucket
+      PolicyDocument:
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "${WebsiteBucket}/*"
+
+  # CloudFront Origin Access Identity (for production)
+  CloudFrontOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Condition: IsProduction
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "OAI for ${AWS::StackName}"
+
+  # S3 Bucket Policy for production (CloudFront only)
+  ProductionBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: IsProduction
+    Properties:
+      Bucket: !Ref WebsiteBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOAI.S3CanonicalUserId
+            Action: s3:GetObject
+            Resource: !Sub "${WebsiteBucket}/*"
+
+  # CloudFront Distribution (production only)
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Condition: IsProduction
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "CloudFront for ${AWS::StackName}"
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_100  # Use only North America and Europe for cost optimization
+        Aliases: !If
+          - HasDomain
+          - [!Ref DomainName]
+          - !Ref AWS::NoValue
+        ViewerCertificate: !If
+          - HasDomain
+          - CertificateArn: !Ref CertificateArn
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt WebsiteBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOAI}"
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD, OPTIONS]
+          Compress: true
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad  # Managed-CachingDisabled
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf  # Managed-CORS-S3Origin
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+        HttpVersion: http2
+
+  # Pipeline Artifacts Bucket
+  PipelineArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-pipeline-artifacts-${Environment}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldArtifacts
+            Status: Enabled
+            ExpirationInDays: 7
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 3
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: game-vibe-plane
+
+  # IAM Role for CodeBuild
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-codebuild-role-${Environment}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodeBuildPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt PipelineArtifactsBucket.Arn
+                  - !Sub "${PipelineArtifactsBucket}/*"
+                  - !GetAtt WebsiteBucket.Arn
+                  - !Sub "${WebsiteBucket}/*"
+              - Effect: Allow
+                Action:
+                  - cloudfront:CreateInvalidation
+                Resource: !If
+                  - IsProduction
+                  - !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+                  - !Ref AWS::NoValue
+
+  # IAM Role for CodePipeline
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-codepipeline-role-${Environment}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodePipelinePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: codestar-connections:UseConnection
+                Resource: !Ref CodeStarConnectionArn
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt PipelineArtifactsBucket.Arn
+                  - !Sub "${PipelineArtifactsBucket}/*"
+                  - !GetAtt WebsiteBucket.Arn
+                  - !Sub "${WebsiteBucket}/*"
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource:
+                  - !GetAtt BuildProject.Arn
+                  - !If
+                    - IsProduction
+                    - !GetAtt InvalidateCacheProject.Arn
+                    - !Ref AWS::NoValue
+              - Effect: Allow
+                Action: iam:PassRole
+                Resource: !GetAtt CodeBuildRole.Arn
+
+  # CodeBuild Project for building and deploying
+  BuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${AWS::StackName}-build-${Environment}"
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        EnvironmentVariables:
+          - Name: ENVIRONMENT
+            Value: !Ref Environment
+          - Name: BUCKET_NAME
+            Value: !Ref WebsiteBucket
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                nodejs: 20
+              commands:
+                - echo "Installing build tools..."
+                - npm install -g terser csso-cli html-minifier-terser
+            pre_build:
+              commands:
+                - echo "Pre-build phase started on `date`"
+                - echo "Environment: ${Environment}"
+            build:
+              commands:
+                - echo "Build phase started on `date`"
+                - mkdir -p dist
+                
+                # Copy and optimize frontend assets
+                - |
+                  if [ -d "frontend" ]; then
+                    echo "Processing frontend files..."
+                    
+                    # Copy assets
+                    if [ -d "frontend/assets" ]; then
+                      cp -r frontend/assets dist/
+                    fi
+                    
+                    # Copy and minify CSS
+                    if [ -d "frontend/css" ]; then
+                      mkdir -p dist/css
+                      for file in frontend/css/*.css; do
+                        if [ -f "$file" ]; then
+                          csso "$file" --output "dist/css/$(basename "$file")"
+                        fi
+                      done
+                    fi
+                    
+                    # Copy and minify JavaScript
+                    if [ -d "frontend/js" ]; then
+                      mkdir -p dist/js
+                      find frontend/js -name "*.js" -type f | while read file; do
+                        relative_path="${file#frontend/}"
+                        output_dir="dist/$(dirname "$relative_path")"
+                        mkdir -p "$output_dir"
+                        terser "$file" --compress --mangle --output "dist/$relative_path"
+                      done
+                    fi
+                    
+                    # Minify gameConfig.js
+                    if [ -f "frontend/gameConfig.js" ]; then
+                      terser frontend/gameConfig.js --compress --mangle --output dist/gameConfig.js
+                    fi
+                    
+                    # Minify HTML
+                    if [ -f "frontend/index.html" ]; then
+                      html-minifier-terser frontend/index.html \
+                        --collapse-whitespace \
+                        --remove-comments \
+                        --remove-optional-tags \
+                        --remove-redundant-attributes \
+                        --remove-script-type-attributes \
+                        --remove-tag-whitespace \
+                        --use-short-doctype \
+                        --minify-css true \
+                        --minify-js true \
+                        --output dist/index.html
+                    fi
+                    
+                    # Copy favicon
+                    if [ -f "frontend/favicon.ico" ]; then
+                      cp frontend/favicon.ico dist/
+                    fi
+                  fi
+                  
+                - echo "Build completed successfully"
+            post_build:
+              commands:
+                - echo "Post-build phase started on `date`"
+                - echo "Syncing files to S3..."
+                - aws s3 sync dist/ s3://$BUCKET_NAME/ --delete
+                - echo "Files synced successfully"
+          artifacts:
+            files:
+              - '**/*'
+            base-directory: dist
+
+  # CodeBuild Project for CloudFront cache invalidation (production only)
+  InvalidateCacheProject:
+    Type: AWS::CodeBuild::Project
+    Condition: IsProduction
+    Properties:
+      Name: !Sub "${AWS::StackName}-invalidate-cache-${Environment}"
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        EnvironmentVariables:
+          - Name: DISTRIBUTION_ID
+            Value: !Ref CloudFrontDistribution
+      Source:
+        Type: NO_SOURCE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            build:
+              commands:
+                - echo "Invalidating CloudFront cache..."
+                - aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+                - echo "Cache invalidation completed"
+
+  # CodePipeline
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub "${AWS::StackName}-pipeline-${Environment}"
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineArtifactsBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: "1"
+              Configuration:
+                ConnectionArn: !Ref CodeStarConnectionArn
+                FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepo}"
+                BranchName: !Ref GitHubBranch
+                OutputArtifactFormat: CODE_ZIP
+              OutputArtifacts:
+                - Name: SourceOutput
+        
+        - Name: Build
+          Actions:
+            - Name: BuildAction
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref BuildProject
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+        
+        # Manual approval for production deployments
+        - !If
+          - IsProduction
+          - Name: Approval
+            Actions:
+              - Name: ManualApproval
+                ActionTypeId:
+                  Category: Approval
+                  Owner: AWS
+                  Provider: Manual
+                  Version: "1"
+                Configuration:
+                  CustomData: "Please review the changes before deploying to production"
+          - !Ref AWS::NoValue
+        
+        # CloudFront cache invalidation (production only)
+        - !If
+          - IsProduction
+          - Name: InvalidateCache
+            Actions:
+              - Name: InvalidateCacheAction
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Provider: CodeBuild
+                  Version: "1"
+                Configuration:
+                  ProjectName: !Ref InvalidateCacheProject
+                InputArtifacts:
+                  - Name: BuildOutput
+          - !Ref AWS::NoValue
+
+  # CloudWatch Log Groups with retention
+  BuildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/codebuild/${AWS::StackName}-build-${Environment}"
+      RetentionInDays: 14
+
+  InvalidateCacheLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsProduction
+    Properties:
+      LogGroupName: !Sub "/aws/codebuild/${AWS::StackName}-invalidate-cache-${Environment}"
+      RetentionInDays: 7
+
+Outputs:
+  WebsiteURL:
+    Description: Website URL
+    Value: !If
+      - IsProduction
+      - !If
+        - HasDomain
+        - !Sub "https://${DomainName}"
+        - !Sub "https://${CloudFrontDistribution.DomainName}"
+      - !GetAtt WebsiteBucket.WebsiteURL
+    Export:
+      Name: !Sub "${AWS::StackName}-WebsiteURL"
+
+  BucketName:
+    Description: S3 Bucket Name
+    Value: !Ref WebsiteBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-BucketName"
+
+  DistributionId:
+    Condition: IsProduction
+    Description: CloudFront Distribution ID
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub "${AWS::StackName}-DistributionId"
+
+  PipelineURL:
+    Description: CodePipeline URL
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${Pipeline}/view"
+    Export:
+      Name: !Sub "${AWS::StackName}-PipelineURL"
