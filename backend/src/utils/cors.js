@@ -5,7 +5,8 @@ const allowedOrigins = [
   "http://localhost:8080", // Development
   "http://127.0.0.1:8080", // Development
   "https://vibeplane.io", // Production domain
-  // Add any other deployed frontend URLs here
+  "https://dieinside.itch.io/vibe-plane",
+  "https://html-classic.itch.zone",
 ];
 
 /**

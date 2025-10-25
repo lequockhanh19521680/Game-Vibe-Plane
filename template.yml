@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >-
   Cost-optimized CI/CD pipeline for a static frontend application (Staging/Production).
-  Builds/minifies HTML/CSS/JS, includes idle resource scheduling via EventBridge.
+  Builds/minifies HTML/CSS/JS, includes idle resource scheduling & pipeline disabling via EventBridge.
   NOTE: WAF for CloudFront must be created separately in us-east-1 and associated manually.
 
 Parameters:
@@ -342,8 +342,6 @@ Resources:
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      # === REMOVED Name PROPERTY ===
-      # Name: !Sub "${AWS::StackName}-FrontendPipeline" # Example name, REMOVE THIS LINE
       RoleArn: !GetAtt CodePipelineRole.Arn
       ArtifactStore:
         Type: S3
@@ -429,7 +427,7 @@ Resources:
                 - Name: BuildOutput
               RunOrder: 2
 
-  # === START: EventBridge Schedules and Lambda for Idle Resources ===
+  # === START: EventBridge Schedules and Lambda for Idle Resources & Pipeline Scheduling ===
 
   SchedulerLambdaRole:
     Type: AWS::IAM::Role
@@ -461,13 +459,24 @@ Resources:
                   - ec2:StartInstances
                   - ec2:StopInstances
                   - ec2:DescribeInstances
-                Resource: "*"
+                Resource: "*" # Consider restricting this
               - Effect: Allow
                 Action:
                   - rds:StartDBInstance
                   - rds:StopDBInstance
                   - rds:DescribeDBInstances
-                Resource: "*"
+                Resource: "*" # Consider restricting this
+        # === ADD POLICY FOR PIPELINE CONTROL ===
+        - PolicyName: PipelineControlPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codepipeline:DisableStageTransition
+                  - codepipeline:EnableStageTransition
+                # Apply permission only to the pipeline created by this stack
+                Resource: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Pipeline}"
 
   StopIdleResourcesFunction:
     Type: AWS::Serverless::Function
@@ -483,8 +492,13 @@ Resources:
         console.log('Loading function');
         exports.handler = async (event, context) => {
           console.log('StopIdleResourcesFunction invoked:', JSON.stringify(event, null, 2));
-          console.log('--- Placeholder: Implement logic to stop specific resources ---');
-          return { statusCode: 200, body: JSON.stringify('Stop function executed.') };
+          console.log('--- Placeholder: Implement logic to stop specific EC2/RDS resources ---');
+          // Example (requires aws-sdk v3):
+          // const { EC2Client, StopInstancesCommand } = require("@aws-sdk/client-ec2");
+          // const client = new EC2Client({ region: process.env.AWS_REGION });
+          // const command = new StopInstancesCommand({ InstanceIds: ['instance-id-1', 'instance-id-2'] }); // Replace with actual logic to find instances
+          // await client.send(command);
+          return { statusCode: 200, body: JSON.stringify('Stop resources function executed.') };
         };
 
   StartIdleResourcesFunction:
@@ -501,8 +515,96 @@ Resources:
         console.log('Loading function');
         exports.handler = async (event, context) => {
           console.log('StartIdleResourcesFunction invoked:', JSON.stringify(event, null, 2));
-          console.log('--- Placeholder: Implement logic to start specific resources ---');
-          return { statusCode: 200, body: JSON.stringify('Start function executed.') };
+          console.log('--- Placeholder: Implement logic to start specific EC2/RDS resources ---');
+          // Example (requires aws-sdk v3):
+          // const { EC2Client, StartInstancesCommand } = require("@aws-sdk/client-ec2");
+          // const client = new EC2Client({ region: process.env.AWS_REGION });
+          // const command = new StartInstancesCommand({ InstanceIds: ['instance-id-1', 'instance-id-2'] }); // Replace with actual logic
+          // await client.send(command);
+          return { statusCode: 200, body: JSON.stringify('Start resources function executed.') };
+        };
+
+  # === ADD LAMBDA FUNCTIONS FOR PIPELINE CONTROL ===
+  DisablePipelineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-DisablePipeline"
+      Description: "Disables the Source stage transition in the CodePipeline."
+      Role: !GetAtt SchedulerLambdaRole.Arn
+      Runtime: nodejs18.x
+      Handler: scheduler/disablePipeline.handler # Assume you create this file
+      Timeout: 60
+      MemorySize: 128
+      # Pass Pipeline name as environment variable
+      Environment:
+        Variables:
+          PIPELINE_NAME: !Ref Pipeline
+      InlineCode: |
+        const { CodePipelineClient, DisableStageTransitionCommand } = require("@aws-sdk/client-codepipeline");
+        const pipelineName = process.env.PIPELINE_NAME;
+        const stageName = 'Source'; // Target the first stage
+        const transitionType = 'Inbound'; // Prevent stage from starting
+        const reason = 'Pipeline automatically disabled during off-hours by EventBridge schedule.';
+
+        exports.handler = async (event) => {
+          console.log(`Attempting to disable transition for pipeline: ${pipelineName}, stage: ${stageName}`);
+          const client = new CodePipelineClient({ region: process.env.AWS_REGION });
+          const command = new DisableStageTransitionCommand({
+            pipelineName: pipelineName,
+            stageName: stageName,
+            transitionType: transitionType,
+            reason: reason,
+          });
+
+          try {
+            await client.send(command);
+            console.log(`Successfully disabled inbound transition for stage ${stageName} in pipeline ${pipelineName}.`);
+            return { statusCode: 200, body: 'Pipeline transition disabled.' };
+          } catch (error) {
+            console.error(`Error disabling pipeline transition: ${error}`);
+            // Don't throw error to prevent schedule retries if it fails once
+            return { statusCode: 500, body: 'Error disabling pipeline transition.' };
+          }
+        };
+
+  EnablePipelineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-EnablePipeline"
+      Description: "Enables the Source stage transition in the CodePipeline."
+      Role: !GetAtt SchedulerLambdaRole.Arn
+      Runtime: nodejs18.x
+      Handler: scheduler/enablePipeline.handler # Assume you create this file
+      Timeout: 60
+      MemorySize: 128
+      # Pass Pipeline name as environment variable
+      Environment:
+        Variables:
+          PIPELINE_NAME: !Ref Pipeline
+      InlineCode: |
+        const { CodePipelineClient, EnableStageTransitionCommand } = require("@aws-sdk/client-codepipeline");
+        const pipelineName = process.env.PIPELINE_NAME;
+        const stageName = 'Source'; // Target the first stage
+        const transitionType = 'Inbound'; // Re-enable starting the stage
+
+        exports.handler = async (event) => {
+          console.log(`Attempting to enable transition for pipeline: ${pipelineName}, stage: ${stageName}`);
+          const client = new CodePipelineClient({ region: process.env.AWS_REGION });
+          const command = new EnableStageTransitionCommand({
+            pipelineName: pipelineName,
+            stageName: stageName,
+            transitionType: transitionType,
+          });
+
+          try {
+            await client.send(command);
+            console.log(`Successfully enabled inbound transition for stage ${stageName} in pipeline ${pipelineName}.`);
+            return { statusCode: 200, body: 'Pipeline transition enabled.' };
+          } catch (error) {
+            console.error(`Error enabling pipeline transition: ${error}`);
+            // Don't throw error to prevent schedule retries
+            return { statusCode: 500, body: 'Error enabling pipeline transition.' };
+          }
         };
 
   StopResourcesSchedule:
@@ -529,6 +631,31 @@ Resources:
         Arn: !GetAtt StartIdleResourcesFunction.Arn
         RoleArn: !GetAtt SchedulerInvokeLambdaRole.Arn
 
+  # === ADD SCHEDULES FOR PIPELINE CONTROL ===
+  DisablePipelineSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub "${AWS::StackName}-DisablePipelineSchedule"
+      Description: "Disables pipeline Source stage transition at 1 AM Vietnam time (18:00 UTC previous day)."
+      ScheduleExpression: "cron(0 18 * * ? *)"
+      FlexibleTimeWindow: { Mode: "OFF" }
+      State: "ENABLED"
+      Target:
+        Arn: !GetAtt DisablePipelineFunction.Arn
+        RoleArn: !GetAtt SchedulerInvokeLambdaRole.Arn
+
+  EnablePipelineSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub "${AWS::StackName}-EnablePipelineSchedule"
+      Description: "Enables pipeline Source stage transition at 8 AM Vietnam time (01:00 UTC)."
+      ScheduleExpression: "cron(0 1 * * ? *)"
+      FlexibleTimeWindow: { Mode: "OFF" }
+      State: "ENABLED"
+      Target:
+        Arn: !GetAtt EnablePipelineFunction.Arn
+        RoleArn: !GetAtt SchedulerInvokeLambdaRole.Arn
+
   SchedulerInvokeLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -548,6 +675,9 @@ Resources:
                 Resource:
                   - !GetAtt StopIdleResourcesFunction.Arn
                   - !GetAtt StartIdleResourcesFunction.Arn
+                  # === ADD PERMISSION TO INVOKE NEW LAMBDAS ===
+                  - !GetAtt DisablePipelineFunction.Arn
+                  - !GetAtt EnablePipelineFunction.Arn
 
   # === END: EventBridge Schedules and Lambda ===
 
@@ -565,5 +695,4 @@ Outputs:
 
   PipelineConsoleUrl:
     Description: "URL to view the CodePipeline in the AWS Console"
-    # Use !Ref Pipeline because we don't explicitly set the name anymore
     Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${Pipeline}/view?region=${AWS::Region}"
