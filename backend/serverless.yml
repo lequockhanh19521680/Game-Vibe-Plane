@@ -20,6 +20,8 @@ provider:
     SCORES_TABLE: ${self:service}-scores-${self:provider.stage}
     COUNTRIES_TABLE: ${self:service}-countries-${self:provider.stage}
     WEBSOCKET_TABLE: ${self:service}-websocket-${self:provider.stage}
+    AVATARS_TABLE: ${self:service}-avatars-${self:provider.stage}
+    AVATAR_BUCKET: ${self:service}-avatars-${self:provider.stage}
     STAGE: ${self:provider.stage}
     WEBSOCKET_API_ID:
       Ref: WebsocketsApi
@@ -41,11 +43,19 @@ provider:
             - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.COUNTRIES_TABLE}"
             - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.COUNTRIES_TABLE}/index/*"
             - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.WEBSOCKET_TABLE}"
+            - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.AVATARS_TABLE}"
         - Effect: Allow
           Action:
             - execute-api:ManageConnections
           Resource:
             - "arn:aws:execute-api:${aws:region}:${aws:accountId}:*"
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+          Resource:
+            - "arn:aws:s3:::${self:provider.environment.AVATAR_BUCKET}/*"
         - Effect: Allow
           Action:
             - dynamodb:GetRecords
@@ -85,6 +95,31 @@ functions:
     events:
       - http:
           path: /health
+          method: get
+          cors: true
+
+  # Avatar Functions
+  uploadAvatar:
+    handler: src/handlers/uploadAvatar.handler
+    events:
+      - http:
+          path: /upload-avatar
+          method: post
+          cors: true
+
+  updateAvatar:
+    handler: src/handlers/updateAvatar.handler
+    events:
+      - http:
+          path: /update-avatar
+          method: post
+          cors: true
+
+  getAvatar:
+    handler: src/handlers/getAvatar.handler
+    events:
+      - http:
+          path: /avatar/{userId}
           method: get
           cors: true
 
@@ -199,6 +234,55 @@ resources:
         TimeToLiveSpecification:
           AttributeName: ttl
           Enabled: true
+
+    # Avatars Table
+    AvatarsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.AVATARS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+
+    # S3 Bucket for Avatar Storage
+    AvatarBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.AVATAR_BUCKET}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+              AllowedOrigins:
+                - "*"
+              MaxAge: 3000
+
+    # S3 Bucket Policy for Avatar Access
+    AvatarBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref AvatarBucket
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: "*"
+              Action: s3:GetObject
+              Resource: !Sub "${AvatarBucket}/*"
 
 plugins:
   - serverless-offline

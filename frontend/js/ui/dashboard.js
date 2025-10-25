@@ -479,15 +479,21 @@ function formatGlobalEntry(entry, index, changeType) {
   // Highlight current user in snippet differently if needed
   const currentUserClass = entry.isCurrentUser ? "current-user" : "";
 
+  // Get avatar display
+  const avatarHtml = getAvatarHtml(entry.avatar);
+
   return `
     <div class="leaderboard-entry ${rankClass} ${currentUserClass}" data-id="${userIdSafe}">
       <div class="rank">
         ${index < 3 ? getRankMedal(index + 1) : `#${entry.rank || index + 1}`}
       </div>
       <div class="player-info">
-        <div class="username">${usernameSafe}</div>
-        <div class="country">
-          ${countryFlag} ${countrySafe}
+        ${avatarHtml}
+        <div class="player-details">
+          <div class="username">${usernameSafe}</div>
+          <div class="country">
+            ${countryFlag} ${countrySafe}
+          </div>
         </div>
       </div>
       <div class="score">${entry.score.toLocaleString()}</div>
@@ -778,6 +784,20 @@ function escapeHtml(text) {
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
+}
+
+function getAvatarHtml(avatarData) {
+  if (!avatarData) {
+    return '<div class="default-avatar-small">👤</div>';
+  }
+  
+  if (avatarData.type === 'predefined' && avatarData.emoji) {
+    return `<div class="default-avatar-small">${avatarData.emoji}</div>`;
+  } else if (avatarData.type === 'custom' && avatarData.url) {
+    return `<img class="avatar-small" src="${avatarData.url}" alt="Avatar" onerror="this.outerHTML='<div class=\\"default-avatar-small\\">👤</div>'" />`;
+  }
+  
+  return '<div class="default-avatar-small">👤</div>';
 }
 
 function startHeartbeat() {

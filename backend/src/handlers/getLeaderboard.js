@@ -1,5 +1,6 @@
 const { getTopScores, getCountryLeaderboard } = require("../utils/dynamodb");
 const { getCorsHeaders } = require("../utils/cors");
+const { fetchAvatarsForUsers } = require("../utils/avatar");
 
 function filterUniqueClients(leaderboard, limit) {
   const uniqueIdentifiers = new Set();
@@ -35,6 +36,10 @@ exports.handler = async (event) => {
 
     const filteredLeaderboard = filterUniqueClients(leaderboard, fetchLimit);
 
+    // Fetch avatars for all users in the leaderboard
+    const userIds = filteredLeaderboard.map(entry => entry.userId);
+    const avatarMap = await fetchAvatarsForUsers(userIds);
+
     const formattedLeaderboard = filteredLeaderboard.map((entry, index) => ({
       rank: index + 1,
       userId: entry.userId,
@@ -46,6 +51,7 @@ exports.handler = async (event) => {
       deathCause: entry.deathCause,
       timestamp: entry.timestamp,
       createdAt: entry.createdAt,
+      avatar: avatarMap[entry.userId] || null, // Include avatar data
     }));
 
     return {

@@ -1,0 +1,658 @@
+service: game-vibe-plane-backend
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${opt:region, 'ap-southeast-1'}
+  stage: ${opt:stage, 'dev'}
+  
+  # Architecture best practices
+  architecture: arm64  # Cost optimization: ARM64 is cheaper and more efficient
+  memorySize: 512     # Right-sized memory allocation
+  timeout: 30         # Reasonable timeout for most operations
+  
+  # Environment variables following best practices
+  environment:
+    # DynamoDB Tables
+    SCORES_TABLE: ${self:service}-scores-${self:provider.stage}
+    COUNTRIES_TABLE: ${self:service}-countries-${self:provider.stage}
+    WEBSOCKET_TABLE: ${self:service}-websocket-${self:provider.stage}
+    AVATARS_TABLE: ${self:service}-avatars-${self:provider.stage}
+    
+    # S3 Buckets
+    AVATAR_BUCKET: ${self:service}-avatars-${self:provider.stage}-${aws:accountId}
+    
+    # Application settings
+    STAGE: ${self:provider.stage}
+    NODE_ENV: ${self:provider.stage}
+    
+    # WebSocket API reference
+    WEBSOCKET_API_ID:
+      Ref: WebsocketsApi
+    WEBSOCKET_ENDPOINT:
+      Fn::Sub: "wss://${WebsocketsApi}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}"
+    
+    # CORS settings
+    ALLOWED_ORIGINS: ${self:custom.allowedOrigins.${self:provider.stage}}
+    
+    # Security settings
+    ENABLE_REQUEST_LOGGING: ${self:custom.enableRequestLogging.${self:provider.stage}}
+    ENABLE_METRICS: ${self:custom.enableMetrics.${self:provider.stage}}
+
+  # API Gateway configuration following best practices
+  apiGateway:
+    # Enable request validation
+    request:
+      schemas:
+        submit-score-model:
+          name: SubmitScoreModel
+          schema: ${file(schemas/submit-score.json)}
+        update-avatar-model:
+          name: UpdateAvatarModel
+          schema: ${file(schemas/update-avatar.json)}
+    
+    # API Keys and usage plans for rate limiting
+    apiKeys:
+      - name: ${self:service}-${self:provider.stage}-api-key
+        description: API key for ${self:service} ${self:provider.stage}
+    
+    usagePlan:
+      - name: ${self:service}-${self:provider.stage}-usage-plan
+        description: Usage plan for ${self:service} ${self:provider.stage}
+        quota:
+          limit: 10000
+          period: DAY
+        throttle:
+          burstLimit: 50
+          rateLimit: 25
+        apiKeys:
+          - ${self:service}-${self:provider.stage}-api-key
+
+  # Enhanced IAM role with least privilege principle
+  iam:
+    role:
+      name: ${self:service}-${self:provider.stage}-execution-role
+      statements:
+        # DynamoDB permissions - specific tables only
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchGetItem
+            - dynamodb:BatchWriteItem
+          Resource:
+            - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.SCORES_TABLE}"
+            - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.SCORES_TABLE}/index/*"
+            - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.COUNTRIES_TABLE}"
+            - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.COUNTRIES_TABLE}/index/*"
+            - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.WEBSOCKET_TABLE}"
+            - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.AVATARS_TABLE}"
+        
+        # DynamoDB Streams permissions
+        - Effect: Allow
+          Action:
+            - dynamodb:DescribeStream
+            - dynamodb:GetRecords
+            - dynamodb:GetShardIterator
+            - dynamodb:ListStreams
+          Resource:
+            - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.SCORES_TABLE}/stream/*"
+        
+        # WebSocket API permissions
+        - Effect: Allow
+          Action:
+            - execute-api:ManageConnections
+          Resource:
+            - "arn:aws:execute-api:${aws:region}:${aws:accountId}:*/*"
+        
+        # S3 permissions - specific bucket only
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+            - s3:PutObjectAcl
+          Resource:
+            - "arn:aws:s3:::${self:provider.environment.AVATAR_BUCKET}/*"
+        
+        - Effect: Allow
+          Action:
+            - s3:ListBucket
+          Resource:
+            - "arn:aws:s3:::${self:provider.environment.AVATAR_BUCKET}"
+        
+        # CloudWatch Logs permissions
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource:
+            - "arn:aws:logs:${aws:region}:${aws:accountId}:log-group:/aws/lambda/${self:service}-${self:provider.stage}-*:*"
+        
+        # X-Ray tracing permissions (optional)
+        - Effect: Allow
+          Action:
+            - xray:PutTraceSegments
+            - xray:PutTelemetryRecords
+          Resource: "*"
+
+  # Enable X-Ray tracing for observability
+  tracing:
+    lambda: true
+    apiGateway: true
+
+  # CloudWatch Logs configuration
+  logs:
+    restApi:
+      accessLogging: true
+      format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","caller":"$context.identity.caller","user":"$context.identity.user","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
+      executionLogging: true
+      level: INFO
+      fullExecutionData: true
+    websocket:
+      level: INFO
+
+# Custom variables for different environments
+custom:
+  # Environment-specific configurations
+  allowedOrigins:
+    dev: "*"
+    staging: "https://staging.vibeplane.io,https://localhost:*"
+    prod: "https://vibeplane.io,https://www.vibeplane.io"
+  
+  enableRequestLogging:
+    dev: true
+    staging: true
+    prod: false
+  
+  enableMetrics:
+    dev: false
+    staging: true
+    prod: true
+  
+  # DynamoDB configuration
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+      seed: true
+    seed:
+      domain:
+        sources:
+          - table: ${self:provider.environment.SCORES_TABLE}
+            sources: [./seeds/scores.json]
+
+  # Serverless plugins configuration
+  serverless-offline:
+    httpPort: 3000
+    websocketPort: 3001
+    lambdaPort: 3002
+    
+  # Bundle optimization
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: false
+    exclude:
+      - aws-sdk
+    target: node18
+    platform: node
+
+functions:
+  # === Core Game Functions ===
+  submitScore:
+    handler: src/handlers/submitScore.handler
+    description: Submit game score with validation and security checks
+    memorySize: 1024  # Higher memory for score processing
+    timeout: 30
+    events:
+      - http:
+          path: /submit-score
+          method: post
+          cors:
+            origin: ${self:custom.allowedOrigins.${self:provider.stage}}
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+            allowCredentials: false
+          request:
+            schemas:
+              application/json: submit-score-model
+    environment:
+      ENABLE_SCORE_VALIDATION: true
+      MAX_SCORE_THRESHOLD: 1000000
+    
+  getLeaderboard:
+    handler: src/handlers/getLeaderboard.handler
+    description: Retrieve global and country leaderboards with avatars
+    memorySize: 512
+    timeout: 15
+    events:
+      - http:
+          path: /leaderboard
+          method: get
+          cors:
+            origin: ${self:custom.allowedOrigins.${self:provider.stage}}
+          caching:
+            enabled: true
+            ttlInSeconds: 60  # Cache for 1 minute
+    
+  getCountryLeaderboard:
+    handler: src/handlers/getCountryLeaderboard.handler
+    description: Retrieve country-specific leaderboards
+    memorySize: 512
+    timeout: 15
+    events:
+      - http:
+          path: /leaderboard/country
+          method: get
+          cors:
+            origin: ${self:custom.allowedOrigins.${self:provider.stage}}
+          caching:
+            enabled: true
+            ttlInSeconds: 120  # Cache for 2 minutes
+    
+  healthCheck:
+    handler: src/handlers/healthCheck.handler
+    description: Health check endpoint for monitoring
+    memorySize: 256  # Minimal memory for health check
+    timeout: 10
+    events:
+      - http:
+          path: /health
+          method: get
+          cors:
+            origin: ${self:custom.allowedOrigins.${self:provider.stage}}
+
+  # === Avatar Functions ===
+  uploadAvatar:
+    handler: src/handlers/uploadAvatar.handler
+    description: Upload custom avatar images to S3
+    memorySize: 1024  # Higher memory for image processing
+    timeout: 60       # Longer timeout for uploads
+    events:
+      - http:
+          path: /upload-avatar
+          method: post
+          cors:
+            origin: ${self:custom.allowedOrigins.${self:provider.stage}}
+    environment:
+      MAX_FILE_SIZE: 2097152  # 2MB
+      ALLOWED_FILE_TYPES: "image/jpeg,image/jpg,image/png,image/gif"
+    
+  updateAvatar:
+    handler: src/handlers/updateAvatar.handler
+    description: Update user avatar preferences
+    memorySize: 256
+    timeout: 15
+    events:
+      - http:
+          path: /update-avatar
+          method: post
+          cors:
+            origin: ${self:custom.allowedOrigins.${self:provider.stage}}
+          request:
+            schemas:
+              application/json: update-avatar-model
+    
+  getAvatar:
+    handler: src/handlers/getAvatar.handler
+    description: Retrieve user avatar information
+    memorySize: 256
+    timeout: 10
+    events:
+      - http:
+          path: /avatar/{userId}
+          method: get
+          cors:
+            origin: ${self:custom.allowedOrigins.${self:provider.stage}}
+          caching:
+            enabled: true
+            ttlInSeconds: 300  # Cache for 5 minutes
+
+  # === WebSocket Functions ===
+  websocketConnect:
+    handler: src/handlers/websocket.connectHandler
+    description: Handle WebSocket connections
+    memorySize: 256
+    timeout: 10
+    events:
+      - websocket:
+          route: $connect
+    
+  websocketDisconnect:
+    handler: src/handlers/websocket.disconnectHandler
+    description: Handle WebSocket disconnections
+    memorySize: 256
+    timeout: 10
+    events:
+      - websocket:
+          route: $disconnect
+    
+  websocketDefault:
+    handler: src/handlers/websocket.defaultHandler
+    description: Handle WebSocket messages
+    memorySize: 512
+    timeout: 15
+    events:
+      - websocket:
+          route: $default
+
+  # === Stream Processing Functions ===
+  processScoreUpdate:
+    handler: src/handlers/processScoreUpdate.handler
+    description: Process score updates from DynamoDB streams
+    memorySize: 1024
+    timeout: 60
+    reservedConcurrency: 5  # Limit concurrent executions
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt: [ScoresTable, StreamArn]
+          batchSize: 10
+          startingPosition: LATEST
+          maximumBatchingWindowInSeconds: 5
+          parallelizationFactor: 2
+
+  # === Scheduled Functions ===
+  cleanupExpiredConnections:
+    handler: src/handlers/cleanupConnections.handler
+    description: Clean up expired WebSocket connections
+    memorySize: 256
+    timeout: 300  # 5 minutes
+    events:
+      - schedule:
+          rate: rate(1 hour)
+          enabled: true
+    
+  generateDailyStats:
+    handler: src/handlers/generateStats.handler
+    description: Generate daily game statistics
+    memorySize: 512
+    timeout: 300
+    events:
+      - schedule:
+          rate: cron(0 2 * * ? *)  # Daily at 2 AM UTC
+          enabled: ${self:custom.enableMetrics.${self:provider.stage}}
+
+resources:
+  Resources:
+    # === DynamoDB Tables ===
+    ScoresTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.SCORES_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: score
+            AttributeType: N
+          - AttributeName: country
+            AttributeType: S
+          - AttributeName: leaderboard
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: N
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: ScoreIndex
+            KeySchema:
+              - AttributeName: leaderboard
+                KeyType: HASH
+              - AttributeName: score
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: CountryIndex
+            KeySchema:
+              - AttributeName: country
+                KeyType: HASH
+              - AttributeName: score
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: TimestampIndex
+            KeySchema:
+              - AttributeName: leaderboard
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+    
+    CountriesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.COUNTRIES_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: country
+            AttributeType: S
+          - AttributeName: ranking
+            AttributeType: S
+          - AttributeName: totalScore
+            AttributeType: N
+        KeySchema:
+          - AttributeName: country
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: TotalScoreIndex
+            KeySchema:
+              - AttributeName: ranking
+                KeyType: HASH
+              - AttributeName: totalScore
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+    
+    WebSocketTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.WEBSOCKET_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+    
+    AvatarsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.AVATARS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    # === S3 Bucket for Avatars ===
+    AvatarBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.AVATAR_BUCKET}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              AllowedOrigins:
+                - ${self:custom.allowedOrigins.${self:provider.stage}}
+              MaxAge: 3000
+        LifecycleConfiguration:
+          Rules:
+            - Id: DeleteIncompleteMultipartUploads
+              Status: Enabled
+              AbortIncompleteMultipartUpload:
+                DaysAfterInitiation: 1
+            - Id: DeleteOldVersions
+              Status: Enabled
+              NoncurrentVersionExpiration:
+                NoncurrentDays: 30
+        VersioningConfiguration:
+          Status: Enabled
+        NotificationConfiguration:
+          CloudWatchConfigurations:
+            - Event: s3:ObjectCreated:*
+              CloudWatchConfiguration:
+                LogGroupName: !Ref AvatarBucketLogGroup
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+    
+    AvatarBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref AvatarBucket
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: "*"
+              Action: s3:GetObject
+              Resource: !Sub "${AvatarBucket}/*"
+              Condition:
+                StringEquals:
+                  "s3:ExistingObjectTag/Environment": ${self:provider.stage}
+
+    # === CloudWatch Log Groups ===
+    AvatarBucketLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/s3/${self:provider.environment.AVATAR_BUCKET}
+        RetentionInDays: 30
+
+    # === CloudWatch Alarms ===
+    HighErrorRateAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: ${self:service}-${self:provider.stage}-high-error-rate
+        AlarmDescription: High error rate detected
+        MetricName: Errors
+        Namespace: AWS/Lambda
+        Statistic: Sum
+        Period: 300
+        EvaluationPeriods: 2
+        Threshold: 10
+        ComparisonOperator: GreaterThanThreshold
+        Dimensions:
+          - Name: FunctionName
+            Value: ${self:service}-${self:provider.stage}-submitScore
+        TreatMissingData: notBreaching
+
+    HighLatencyAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: ${self:service}-${self:provider.stage}-high-latency
+        AlarmDescription: High latency detected
+        MetricName: Duration
+        Namespace: AWS/Lambda
+        Statistic: Average
+        Period: 300
+        EvaluationPeriods: 2
+        Threshold: 10000  # 10 seconds
+        ComparisonOperator: GreaterThanThreshold
+        Dimensions:
+          - Name: FunctionName
+            Value: ${self:service}-${self:provider.stage}-submitScore
+        TreatMissingData: notBreaching
+
+  # === CloudFormation Outputs ===
+  Outputs:
+    ApiGatewayRestApiId:
+      Value:
+        Ref: RestApiApigEvent
+      Export:
+        Name: ${self:service}-${self:provider.stage}-api-id
+    
+    ApiGatewayRestApiUrl:
+      Value:
+        Fn::Sub: "https://${RestApiApigEvent}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}"
+      Export:
+        Name: ${self:service}-${self:provider.stage}-api-url
+    
+    WebSocketApiId:
+      Value:
+        Ref: WebsocketsApi
+      Export:
+        Name: ${self:service}-${self:provider.stage}-ws-api-id
+    
+    WebSocketApiUrl:
+      Value: ${self:provider.environment.WEBSOCKET_ENDPOINT}
+      Export:
+        Name: ${self:service}-${self:provider.stage}-ws-api-url
+    
+    AvatarBucketName:
+      Value:
+        Ref: AvatarBucket
+      Export:
+        Name: ${self:service}-${self:provider.stage}-avatar-bucket
+
+plugins:
+  - serverless-esbuild
+  - serverless-offline
+  - serverless-dynamodb-local
+  - serverless-plugin-tracing

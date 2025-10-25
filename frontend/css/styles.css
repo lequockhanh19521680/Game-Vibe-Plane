@@ -215,8 +215,8 @@ button.disabled:hover {
 #top-bar {
   position: absolute;
   top: 0;
-  left: 0;
-  width: calc(100% - 40px);
+  left: 80px; /* Make room for avatar icon */
+  width: calc(100% - 120px); /* Adjust width to account for avatar space */
   padding: 15px 20px;
   display: flex;
   justify-content: space-between;
@@ -464,7 +464,8 @@ button.disabled:hover {
   /* === MOBILE HUD FIX START === */
   #top-bar {
     padding: 10px 15px;
-    width: calc(100% - 30px);
+    left: 60px; /* Adjust for smaller avatar on mobile */
+    width: calc(100% - 90px); /* Adjust width for mobile avatar space */
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     grid-template-rows: auto auto;
