@@ -193,9 +193,9 @@ Resources:
       Handler: websocket.connectHandler
       Events:
         ConnectRoute:
-          Type: Api
+          Type: ApiGatewayV2
           Properties:
-            RestApiId: !Ref WebSocketApi
+            ApiId: !Ref WebSocketApi
             Route: $connect
       Policies:
         - DynamoDBCrudPolicy:
@@ -209,9 +209,9 @@ Resources:
       Handler: websocket.disconnectHandler
       Events:
         DisconnectRoute:
-          Type: Api
+          Type: ApiGatewayV2
           Properties:
-            RestApiId: !Ref WebSocketApi
+            ApiId: !Ref WebSocketApi
             Route: $disconnect
       Policies:
         - DynamoDBCrudPolicy:
@@ -225,9 +225,9 @@ Resources:
       Handler: websocket.defaultHandler
       Events:
         DefaultRoute:
-          Type: Api
+          Type: ApiGatewayV2
           Properties:
-            RestApiId: !Ref WebSocketApi
+            ApiId: !Ref WebSocketApi
             Route: $default
       Policies:
         - DynamoDBReadPolicy:
@@ -240,7 +240,7 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-process-score-update"
       CodeUri: backend/src/handlers/
       Handler: processScoreUpdate.handler
-      ReservedConcurrencyLimit: 5  # Cost optimization
+      ReservedConcurrentExecutions: 5  # Cost optimization
       Events:
         DynamoDBStream:
           Type: DynamoDB
@@ -283,9 +283,11 @@ Resources:
             - IsProd
             - !Sub "'https://${CloudFrontDistribution.DomainName}'"
             - "'*'"
-      ThrottleConfig:
-        RateLimit: !If [IsProd, 100, 20]  # Cost optimization
-        BurstLimit: !If [IsProd, 200, 40]
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingRateLimit: !If [IsProd, 100, 20]
+          ThrottlingBurstLimit: !If [IsProd, 200, 40]
       Tags:
         Environment: !Ref Environment
         Application: GameVibePlane
@@ -312,6 +314,7 @@ Resources:
       Tags:
         Environment: !Ref Environment
         Application: GameVibePlane
+
 
   # ============================================================================
   # FRONTEND HOSTING - S3 + CloudFront
