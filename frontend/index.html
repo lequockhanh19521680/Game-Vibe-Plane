@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <!-- Set language to English -->
+
   <head>
     <meta charset="UTF-8" />
     <meta name="google-adsense-account" content="ca-pub-8727442938581388" />
@@ -10,61 +11,51 @@
       content="width=device-width, initial-scale=1.0, user-scalable=no"
     />
     <!-- SEO Meta Tags -->
-    <title>Vibe Plane - Competitive Online Survival Game</title>
-    <!-- New search title -->
+    <!-- Optimized Title -->
+    <title>Vibe Plane: Global Survival Game - Vibe Code Challenge</title>
+    <!-- Optimized Description with new keywords -->
     <meta
       name="description"
-      content="Play Vibe Plane (formerly Stellar Drift: Singularity), a challenging space survival game. Dodge asteroids, black holes, missiles, and compete on the global leaderboard."
+      content="Play Vibe Plane (formerly Stellar Drift: Singularity), a challenging space survival game. Dodge asteroids, black holes, missiles, and compete on the global leaderboard. Experience Vibe Code in this game."
     />
+    <!-- Optimized Keywords with new keywords -->
     <meta
       name="keywords"
-      content="Vibe Plane, survival game, space game, online game, leaderboard, competitive, dodge, asteroid, black hole, missile, stellar drift, singularity"
+      content="Vibe Plane, vibe, vibe code, vibe game, survival game, global, space game, online game, leaderboard, competitive, dodge, asteroid, black hole, missile, stellar drift, singularity"
     />
     <meta name="author" content="Game Vibe Plane Team" />
 
+    <!-- Optimized Open Graph Meta Tags -->
     <meta
       property="og:title"
-      content="Vibe Plane - Competitive Online Survival Game"
+      content="Vibe Plane: Global Survival Game - Vibe Code Challenge"
     />
     <meta
       property="og:description"
-      content="Challenge your space survival skills with Vibe Plane. Dodge dangers and climb to the top of the leaderboard!"
+      content="Challenge your space survival skills with Vibe Plane. Dodge dangers, climb the global leaderboard, and experience vibe code!"
     />
     <meta property="og:type" content="website" />
+    <!-- Update website URL if available -->
+    <!-- <meta property="og:url" content="https://your-game-url.com/" /> -->
     <meta property="og:image" content="assets/images/game_banner.jpg" />
     <meta property="og:image:alt" content="Vibe Plane Game Banner" />
+    <!-- Added OG locale -->
+    <meta property="og:locale" content="en_US" />
 
-    <!-- Twitter Card Meta Tags -->
+    <!-- Optimized Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="Vibe Plane - Competitive Online Survival Game"
+      content="Vibe Plane: Global Survival Game - Vibe Code Challenge"
     />
     <meta
       name="twitter:description"
       content="Play the Vibe Plane space survival game, dodge dangers, and compete on the global leaderboard."
     />
     <meta name="twitter:image" content="assets/images/game_banner.jpg" />
+    <!-- Add Twitter site if available -->
+    <!-- <meta name="twitter:site" content="@YourTwitterHandle"> -->
 
-    <!-- <script>
-      (function () {
-        const noop = function () {};
-        if (typeof console !== "undefined") {
-          console.log = noop;
-          console.info = noop;
-          console.warn = noop;
-          console.error = noop;
-          console.debug = noop;
-          console.table = noop;
-          console.trace = noop;
-          console.assert = noop;
-          console.group = noop;
-          console.groupEnd = noop;
-          console.time = noop;
-          console.timeEnd = noop;
-        }
-      })();
-    </script> -->
     <!-- Google Analytics -->
     <script
       async
@@ -80,6 +71,14 @@
       gtag("config", "G-98CHE8FYSC");
     </script>
 
+    <!-- Canonical URL (Important for SEO) - Replace YOUR_CANONICAL_URL with the official game URL -->
+    <link rel="canonical" href="YOUR_CANONICAL_URL" />
+
+    <!-- Favicon -->
+    <!-- <link rel="icon" href="/favicon.ico" sizes="any"> -->
+    <!-- <link rel="icon" href="/icon.svg" type="image/svg+xml"> -->
+    <!-- <link rel="apple-touch-icon" href="/apple-touch-icon.png"> -->
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -92,7 +91,31 @@
     <link rel="stylesheet" href="css/settings.css" />
     <link rel="stylesheet" href="css/playerName.css" />
     <link rel="stylesheet" href="css/gameUI.css" />
+
+    <!-- Structured Data (Schema.org) for Video Game -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Vibe Plane",
+        "alternateName": "Stellar Drift: Singularity",
+        "url": "https://vibeplane.io", // Replace with official URL
+        "image": "assets/images/game_banner.jpg",
+        "description": "Play Vibe Plane (formerly Stellar Drift: Singularity), a challenging space survival game. Dodge asteroids, black holes, missiles, and compete on the global leaderboard. Experience Vibe Code in this game.",
+        "genre": ["Survival game", "Arcade game", "Space game"],
+        "gamePlatform": "WebBrowser",
+        "applicationCategory": "Game",
+        "operatingSystem": "Any",
+        "author": {
+          "@type": "Organization",
+          "name": "Game Vibe Plane Team"
+        },
+
+        "keywords": "Vibe Plane, vibe, vibe code, vibe game, survival game, global, space game, online game, leaderboard, competitive"
+      }
+    </script>
   </head>
+
   <body>
     <!-- Loading Screen -->
     <div id="loading-screen">
@@ -132,53 +155,62 @@
         </div>
 
         <!-- Right: Pause Button -->
-        <button id="pause-button">❚❚</button>
+        <button id="pause-button" aria-label="Pause Game">❚❚</button>
+        <!-- Added aria-label -->
       </div>
 
       <!-- Event Text Display -->
-      <div id="event-text"></div>
+      <div id="event-text" role="alert" aria-live="assertive"></div>
+      <!-- Added accessibility attributes -->
 
       <!-- Main Menu Screen -->
       <div id="start-screen" class="ui-element">
         <h1>Vibe Plane</h1>
-        <h2>Survival</h2>
+        <h2>Survival Game</h2>
+        <!-- Added keyword -->
         <p>
           <span data-translate="menu.description">
             Move to score points. Avoid asteroids, black holes & missiles.
-            Survive as long as possible!
-            <!-- Updated default text -->
+            Survive as long as possible! Join the global race!
+            <!-- Updated English text and added keyword -->
           </span>
         </p>
         <!-- Player Name Input -->
         <div class="name-input-section" id="name-input-wrapper">
           <div class="input-group">
+            <label for="player-name-input" class="visually-hidden"
+              >Player Name</label
+            >
+            <!-- Added hidden label -->
             <input
               type="text"
               id="player-name-input"
               class="name-input"
               placeholder="Your name..."
             />
-            <!-- Removed self-closing slash -->
+            <!-- Updated placeholder -->
           </div>
           <div class="name-requirements">
             Name will appear on the leaderboard (2-20 chars)
+            <!-- Updated English text -->
           </div>
         </div>
         <!-- Menu Buttons -->
         <div class="menu-buttons-group">
           <button id="start-button" data-translate="menu.startBattle">
             Start Battle
-            <!-- Updated default text -->
+            <!-- Updated English text -->
           </button>
           <button id="leaderboard-button" data-translate="menu.leaderboard">
             Leaderboard
-            <!-- Updated default text -->
+            <!-- Updated English text -->
           </button>
           <button id="how-to-play-button" data-translate="menu.howToPlay">
             How to Play
-            <!-- Updated default text -->
+            <!-- Updated English text -->
           </button>
           <!-- Settings button is added dynamically by settingsUI.js -->
+          <!-- Settings button will be added by settingsUI.js -->
         </div>
       </div>
 
@@ -187,21 +219,21 @@
         <!-- Game Over Header -->
         <div class="game-over-header">
           <h2 data-translate="gameOver.title">Game Over</h2>
-          <!-- Updated default text -->
+          <!-- Updated English text -->
           <div id="death-cause" class="death-cause">Destroyed by asteroid</div>
-          <!-- Default text -->
+          <!-- Updated English text -->
         </div>
         <!-- Game Stats -->
         <div class="game-over-stats">
           <div class="primary-stats">
             <div class="stat-item highlight">
               <div class="stat-label">Final Score</div>
-              <!-- Updated text -->
+              <!-- Updated English text -->
               <div id="final-score" class="stat-value">0</div>
             </div>
             <div class="stat-item">
               <div class="stat-label">Survival Time</div>
-              <!-- Updated text -->
+              <!-- Updated English text -->
               <div id="final-time" class="stat-value">0:00</div>
             </div>
           </div>
@@ -216,22 +248,22 @@
           <div class="record-text">
             <div class="record-title" data-translate="gameOver.newHighScore">
               New High Score!
-              <!-- Updated default text -->
+              <!-- Updated English text -->
             </div>
             <div class="record-subtitle">You're now in the top ranks!</div>
-            <!-- Updated text -->
+            <!-- Updated English text -->
           </div>
         </div>
 
         <!-- Leaderboard Snippet Container -->
         <h3 class="leaderboard-snippet-title">Global Top 10</h3>
-        <!-- Updated text -->
+        <!-- Updated English text -->
         <div
           id="game-over-leaderboard-container"
           class="leaderboard-container game-over-lb"
         >
-          <div class="loading">Loading leaderboard snippet...</div>
-          <!-- Updated text -->
+          <div class="loading">Loading leaderboard...</div>
+          <!-- Updated English text -->
         </div>
 
         <!-- Action Buttons -->
@@ -242,7 +274,7 @@
             data-translate="gameOver.tryAgain"
           >
             Try Again
-            <!-- Updated default text -->
+            <!-- Updated English text -->
           </button>
           <button
             id="main-menu-from-over-button"
@@ -250,7 +282,7 @@
             data-translate="gameOver.mainMenu"
           >
             Main Menu
-            <!-- Updated default text -->
+            <!-- Updated English text -->
           </button>
         </div>
       </div>
@@ -258,7 +290,7 @@
       <!-- Leaderboard Screen (Full Dashboard) -->
       <div id="leaderboard-screen" class="ui-element" style="display: none">
         <h2 data-translate="leaderboard.title">Live Dashboard</h2>
-        <!-- Updated default text -->
+        <!-- Updated English text -->
         <!-- Tabs -->
         <div class="dashboard-tabs">
           <button
@@ -267,7 +299,7 @@
             data-translate="leaderboard.topPlayers"
           >
             🏆 Top Players
-            <!-- Updated default text -->
+            <!-- Updated English text -->
           </button>
           <button
             class="dashboard-tab"
@@ -275,7 +307,7 @@
             data-translate="leaderboard.topCountries"
           >
             🌍 Top Countries
-            <!-- Updated default text -->
+            <!-- Updated English text -->
           </button>
           <button
             class="dashboard-tab"
@@ -283,30 +315,30 @@
             data-translate="leaderboard.myStats"
           >
             📊 My Stats
-            <!-- Updated default text -->
+            <!-- Updated English text -->
           </button>
         </div>
         <!-- Global Leaderboard Content -->
         <div id="global-leaderboard-content" class="dashboard-content active">
           <div id="global-leaderboard-list" class="leaderboard-container">
-            <div class="loading">Loading leaderboard...</div>
-            <!-- Updated text -->
+            <div class="loading">Loading global leaderboard...</div>
+            <!-- Updated English text -->
           </div>
         </div>
         <!-- Country Leaderboard Content -->
         <div id="country-leaderboard-content" class="dashboard-content">
           <div id="country-leaderboard-list" class="leaderboard-container">
             <div class="loading">Loading country rankings...</div>
-            <!-- Updated text -->
+            <!-- Updated English text -->
           </div>
         </div>
         <!-- My Stats Content -->
         <div id="my-stats-content" class="dashboard-content">
           <h3>📊 Your Statistics</h3>
-          <!-- Updated text -->
+          <!-- Updated English text -->
           <div id="player-stats" class="stats-container">
             <div class="loading">Loading your stats...</div>
-            <!-- Updated text -->
+            <!-- Updated English text -->
           </div>
         </div>
         <!-- Footer -->
@@ -314,14 +346,14 @@
           <div class="connection-status">
             <span id="connection-indicator-footer">🔴</span>
             <span id="connection-text-footer">Connecting...</span>
-            <!-- Updated text -->
+            <!-- Updated English text -->
           </div>
           <button
             id="back-to-main-menu-button"
             data-translate="leaderboard.back"
           >
             Back to Menu
-            <!-- Updated default text -->
+            <!-- Updated English text -->
           </button>
         </div>
       </div>
@@ -329,7 +361,7 @@
       <!-- How to Play Screen -->
       <div id="how-to-play-screen" class="ui-element" style="display: none">
         <h2>How to Play</h2>
-        <!-- Updated default text -->
+        <!-- Updated English text -->
         <p>
           - <strong>Move:</strong> Use your mouse or finger to guide the
           ship.<br />
@@ -338,16 +370,16 @@
           lasers.<br />
           - <strong>Power-ups:</strong> Collect crystals to gain a temporary
           shield.
-          <!-- Updated text -->
+          <!-- Updated English text -->
         </p>
         <button id="back-to-main-from-how-to-play-button">Back</button>
-        <!-- Updated default text -->
+        <!-- Updated English text -->
       </div>
 
       <!-- Simplified Pause Menu -->
       <div id="pause-menu" class="ui-element" style="display: none">
         <h2 data-translate="pause.title">Game Paused</h2>
-        <!-- Updated default text -->
+        <!-- Updated English text -->
         <div class="pause-actions">
           <button
             id="resume-button"
@@ -355,7 +387,7 @@
             data-translate="pause.resume"
           >
             Resume
-            <!-- Updated default text -->
+            <!-- Updated English text -->
           </button>
           <button
             id="restart-from-pause-button"
@@ -363,7 +395,7 @@
             data-translate="pause.restart"
           >
             Restart
-            <!-- Updated default text -->
+            <!-- Updated English text -->
           </button>
           <button
             id="main-menu-from-pause-button"
@@ -371,7 +403,7 @@
             data-translate="pause.mainMenu"
           >
             Main Menu
-            <!-- Updated default text -->
+            <!-- Updated English text -->
           </button>
         </div>
       </div>
@@ -381,6 +413,7 @@
     <audio id="background-music" loop src="assets/audio/background.mp3"></audio>
 
     <!-- SCRIPTS -->
+    <!-- Script order is important -->
     <script src="gameConfig.js"></script>
     <script src="js/config/endpoints.js"></script>
     <script src="js/api/backendApi.js"></script>
@@ -407,7 +440,6 @@
 
     <script src="js/ui/settingsUI.js"></script>
     <script src="js/ui/dashboard.js"></script>
-    <!-- Add the new playerNameUI script -->
     <script src="js/ui/playerNameUI.js"></script>
 
     <script src="js/main.js"></script>
