@@ -27,7 +27,7 @@ exports.handler = async (event) => {
         message: "Game Vibe Plane Backend is healthy",
         timestamp: Date.now(),
         version: "1.0.0",
-        environment: process.env.STAGE || "dev",
+        environment: process.env.ENVIRONMENT || "dev",
       }),
     };
   } catch (error) {

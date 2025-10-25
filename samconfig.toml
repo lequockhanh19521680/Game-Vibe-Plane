@@ -1,11 +1,28 @@
 version = 0.1
 
+[default]
+[default.global.parameters]
+stack_name = "game-vibe-plane"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
 [default.deploy.parameters]
-stack_name = "game-vibe-plane-pipeline"
-resolve_s3 = true
-s3_prefix = "game-vibe-plane-pipeline"
-region = "ap-southeast-1"
-confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "GitHubOwner=\"lequockhanh19521680\" GitHubRepo=\"Game-Vibe-Plane\" GitHubBranch=\"main\" CodeStarConnectionArn=\"arn:aws:codeconnections:ap-southeast-1:492098925520:connection/7ae68af2-2294-4762-ae00-74a189937d6a\" DomainName=\"\" CertificateArn=\"\""
+confirm_changeset = false
+resolve_s3 = true
+region = "ap-southeast-1"
 image_repositories = []
+
+[dev]
+[dev.deploy.parameters]
+stack_name = "game-vibe-plane-dev"
+parameter_overrides = "Environment=dev"
+
+[prod]
+[prod.deploy.parameters]
+stack_name = "game-vibe-plane-prod"
+parameter_overrides = "Environment=prod"
+# Add custom domain parameters for production if needed
+# parameter_overrides = "Environment=prod DomainName=yourdomain.com CertificateArn=arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012"
