@@ -32,13 +32,15 @@ A space survival game with real-time global and country-based leaderboards, buil
 ### AWS Services Used
 
 #### 1. API Gateway
+
 - **REST API**: Handles HTTP requests for score submission and leaderboard retrieval
 - **WebSocket API**: Provides real-time leaderboard updates
 - **Throttling**: Rate limit 10 requests/second, burst 20 requests
 - **API Keys**: Endpoint security
 - **Region**: ap-southeast-1 (Singapore)
 
-#### 2.  Lambda Functions
+#### 2. Lambda Functions
+
 - **Runtime**: Node.js 18. x
 - **Compute Type**: Serverless, auto-scaling
 - **Functions**:
@@ -52,36 +54,42 @@ A space survival game with real-time global and country-based leaderboards, buil
   - `processScoreUpdate`: Processes updates from DynamoDB Stream
 
 #### 3. DynamoDB
+
 - **Billing Mode**: Pay-per-request (on-demand)
 - **Tables**:
-  
+
   **ScoresTable** (Player scores)
+
   - Primary Key: `userId` (String)
   - Attributes: `score`, `username`, `country`, `survivalTime`, `deathCause`, `timestamp`
   - GSI - ScoreIndex: `leaderboard` (HASH) + `score` (RANGE)
   - GSI - CountryIndex: `country` (HASH) + `score` (RANGE)
   - Stream: NEW_AND_OLD_IMAGES (for real-time updates)
-  
+
   **CountriesTable** (Country leaderboard)
+
   - Primary Key: `country` (String)
   - Attributes: `totalScore`, `playerCount`, `averageScore`, `ranking`
   - GSI - TotalScoreIndex: `ranking` (HASH) + `totalScore` (RANGE)
-  
+
   **WebSocketTable** (WebSocket connections)
+
   - Primary Key: `connectionId` (String)
   - TTL: Automatic cleanup of old connections
 
 #### 4. DynamoDB Streams
+
 - **Purpose**: Triggers Lambda function when new scores are added
 - **Batch Size**: 100 records
 - **Starting Position**: LATEST
-- **Flow**: 
+- **Flow**:
   1. New score saved to DynamoDB
-  2.  Stream triggers Lambda `processScoreUpdate`
+  2. Stream triggers Lambda `processScoreUpdate`
   3. Lambda recalculates leaderboard
   4. Broadcast updates via WebSocket
 
 #### 5. CloudWatch
+
 - **Logging**: All Lambda functions log to CloudWatch
 - **Monitoring**: Lambda duration, errors, DynamoDB capacity
 - **Log Groups**: `/aws/lambda/${FunctionName}`
@@ -89,6 +97,7 @@ A space survival game with real-time global and country-based leaderboards, buil
 ### Backend Deployment
 
 #### Development Environment (dev)
+
 ```bash
 cd backend
 npm install
@@ -96,21 +105,25 @@ serverless deploy --stage dev
 ```
 
 **Outputs**:
+
 - API Endpoint: `https://m7uj7jddd8.execute-api.ap-southeast-1. amazonaws.com/dev`
 - WebSocket Endpoint: `wss://t3he3fvk4c. execute-api.ap-southeast-1.amazonaws.com/dev`
 
 #### Production Environment (prod)
+
 ```bash
 serverless deploy --stage prod
 ```
 
 **Outputs**:
+
 - API Endpoint: `https://m7uj7jddd8. execute-api.ap-southeast-1.amazonaws.com/prod`
 - WebSocket Endpoint: `wss://t3he3fvk4c.execute-api.ap-southeast-1.amazonaws.com/prod`
 
 ### IAM Permissions
 
 Lambda functions have the following permissions:
+
 - DynamoDB: Query, Scan, GetItem, PutItem, UpdateItem, DeleteItem
 - DynamoDB Streams: GetRecords, GetShardIterator, DescribeStream
 - API Gateway: ManageConnections (for WebSocket)
@@ -118,6 +131,7 @@ Lambda functions have the following permissions:
 ### Backend Cost Estimation
 
 **Estimated cost for 1000 games/month**:
+
 - DynamoDB: $0.50-1.00
 - Lambda: $0.20-0.50
 - API Gateway: $1.00-2.00
@@ -153,6 +167,7 @@ Lambda functions have the following permissions:
 ### Pipeline Stages
 
 #### 1. Source Stage
+
 - **Provider**: AWS CodeStar Connection (GitHub)
 - **Repository**: `lequockhanh19521680/Game-Vibe-Plane`
 - **Branch**: `main`
@@ -160,29 +175,32 @@ Lambda functions have the following permissions:
 - **Output**: Source code artifact
 
 #### 2. Build & Optimize Stage
+
 - **Service**: AWS CodeBuild
-- **Build Environment**: 
+- **Build Environment**:
   - Image: `aws/codebuild/standard:5.0`
   - Compute: `BUILD_GENERAL1_SMALL`
   - Runtime: Node. js 18
 - **Build Process**:
+
   ```yaml
   1. Install Tools:
-     - terser (JS minification)
-     - csso-cli (CSS minification)
-     - html-minifier (HTML minification)
-  
+    - terser (JS minification)
+    - csso-cli (CSS minification)
+    - html-minifier (HTML minification)
+
   2. Build Steps:
-     - Copy assets from frontend/assets
-     - Minify CSS files (frontend/css/*)
-     - Minify JavaScript files (frontend/js/*)
-     - Minify gameConfig.js
-     - Minify index.html
-  
+    - Copy assets from frontend/assets
+    - Minify CSS files (frontend/css/*)
+    - Minify JavaScript files (frontend/js/*)
+    - Minify gameConfig.js
+    - Minify index.html
+
   3. Output: build_output/ artifact
   ```
 
 #### 3. Deploy to Staging Stage
+
 - **Service**: S3 Deployment
 - **Bucket**: Public S3 bucket with website hosting
 - **Access**: Public read access
@@ -190,11 +208,13 @@ Lambda functions have the following permissions:
 - **Purpose**: Testing and QA before production deployment
 
 #### 4. Manual Approval Stage
+
 - **Type**: Manual approval step
 - **Purpose**: Review staging before production deployment
 - **Approver**: Dev team/Product owner
 
 #### 5. Deploy to Production Stage
+
 - **Service**: S3 + CloudFront
 - **S3 Bucket**: Private bucket (CloudFront access only)
 - **CloudFront Distribution**:
@@ -208,12 +228,15 @@ Lambda functions have the following permissions:
 ### AWS CI/CD Services
 
 #### S3 Buckets
+
 1. **Staging Bucket**
+
    - Public website hosting
    - Direct S3 website endpoint
    - Lifecycle: No expiration
 
 2. **Production Bucket**
+
    - Private access only
    - CloudFront OAI access
    - Block all public access
@@ -224,6 +247,7 @@ Lambda functions have the following permissions:
    - Non-current versions: 7 days
 
 #### CloudFront Distribution
+
 - **Default Root Object**: index.html
 - **Viewer Protocol**: Redirect to HTTPS
 - **Allowed Methods**: GET, HEAD, OPTIONS
@@ -233,10 +257,12 @@ Lambda functions have the following permissions:
 - **SSL Certificate**: ACM (us-east-1)
 
 #### CodeBuild Projects
+
 1. **BuildProject**: Builds and minifies frontend
 2. **InvalidateCacheProject**: Invalidates CloudFront cache
 
 #### CodePipeline
+
 - **Artifact Store**: S3 bucket
 - **Stages**: Source → Build → Staging → Approval → Production
 - **IAM Role**: CodePipelineRole with permissions for S3, CodeBuild, CodeStar
@@ -247,8 +273,10 @@ Lambda functions have the following permissions:
 
 System automatically stops/starts resources and pipeline to save costs:
 
-**1.  Idle Resources Management**
+**1. Idle Resources Management**
+
 - **StopIdleResourcesFunction**: Stops EC2/RDS instances
+
   - Schedule: 1:00 AM Vietnam Time (18:00 UTC previous day)
   - Cron: `cron(0 18 * * ? *)`
 
@@ -256,8 +284,10 @@ System automatically stops/starts resources and pipeline to save costs:
   - Schedule: 8:00 AM Vietnam Time (01:00 UTC)
   - Cron: `cron(0 1 * * ? *)`
 
-**2.  Pipeline Control**
+**2. Pipeline Control**
+
 - **DisablePipelineFunction**: Disables pipeline Source stage
+
   - Schedule: 1:00 AM Vietnam Time
   - Purpose: Prevents pipeline from running automatically during off-hours
 
@@ -266,6 +296,7 @@ System automatically stops/starts resources and pipeline to save costs:
   - Purpose: Re-enables pipeline during working hours
 
 **IAM Permissions**:
+
 - EC2: StartInstances, StopInstances, DescribeInstances
 - RDS: StartDBInstance, StopDBInstance, DescribeDBInstances
 - CodePipeline: DisableStageTransition, EnableStageTransition
@@ -273,6 +304,7 @@ System automatically stops/starts resources and pipeline to save costs:
 ### Environments
 
 #### Development (dev)
+
 - **Backend**: `--stage dev`
 - **API**: `https://[api-id].execute-api.ap-southeast-1.amazonaws.com/dev`
 - **Purpose**: Local testing, development
@@ -280,6 +312,7 @@ System automatically stops/starts resources and pipeline to save costs:
 - **Cost**: Minimal (free tier eligible)
 
 #### Staging
+
 - **Hosting**: Public S3 website
 - **URL**: S3 website endpoint
 - **Purpose**: QA testing, stakeholder review
@@ -287,6 +320,7 @@ System automatically stops/starts resources and pipeline to save costs:
 - **Deployment**: Automatic after build
 
 #### Production (prod)
+
 - **Hosting**: CloudFront + S3
 - **URL**: CloudFront domain or custom domain
 - **Backend**: `--stage prod`
@@ -309,10 +343,11 @@ VITE_ENABLE_REAL_TIME_UPDATES=true
 ```
 
 **Configuration Priority**:
+
 1. Runtime overrides (localStorage)
 2. Environment variables (. env file)
 3. Embedded configuration
-4.  Defaults
+4. Defaults
 
 ### Frontend Deployment
 
@@ -331,6 +366,7 @@ sam deploy --template-file template.yml \
 ### CI/CD Cost Estimation
 
 **Estimated monthly cost**:
+
 - CodePipeline: $1/pipeline/month (after free tier)
 - CodeBuild: $0.005/build minute (estimated 10 builds/month × 5 mins)
 - S3 Storage: $0.023/GB (staging + production + artifacts)
@@ -344,6 +380,7 @@ sam deploy --template-file template.yml \
 ## Security
 
 ### Backend Security
+
 - **CORS**: Configured for web browser access
 - **Input Validation**: Username ≤50 chars, score/time validation
 - **API Throttling**: Rate limiting 10 req/s
@@ -351,29 +388,33 @@ sam deploy --template-file template.yml \
 - **IAM**: Least privilege principle
 
 ### Frontend Security
+
 - **HTTPS**: CloudFront enforces HTTPS
 - **OAI**: S3 bucket not public in production
 - **No Sensitive Data**: No sensitive info in localStorage
 - **Environment Variables**: No exposed secrets
 
 ### Production Hardening
+
 1. Enable API throttling and usage plans
 2. Implement authentication (AWS Cognito - optional)
-3.  Restrict CORS origins (no wildcard)
+3. Restrict CORS origins (no wildcard)
 4. Set up WAF for CloudFront (must be created separately in us-east-1)
-5.  Enable CloudWatch alarms for errors
+5. Enable CloudWatch alarms for errors
 
 ---
 
 ## Monitoring & Logging
 
 ### CloudWatch Metrics
+
 - **Lambda**: Duration, errors, invocations, concurrent executions
 - **DynamoDB**: Read/write capacity, throttled requests
 - **API Gateway**: Request count, latency, 4xx/5xx errors
 - **CloudFront**: Requests, bytes downloaded/uploaded, error rate
 
 ### Logs
+
 ```bash
 # View Lambda logs
 serverless logs -f submitScore -t --stage prod
@@ -386,6 +427,7 @@ serverless logs -t --stage prod
 ```
 
 ### Recommended Alarms
+
 - Lambda error rate > 5%
 - API Gateway 5xx errors
 - DynamoDB throttling
@@ -396,6 +438,7 @@ serverless logs -t --stage prod
 ## Deployment Commands
 
 ### Backend
+
 ```bash
 # Development
 cd backend
@@ -410,6 +453,7 @@ serverless remove --stage dev
 ```
 
 ### Frontend CI/CD
+
 ```bash
 # Deploy pipeline stack
 sam deploy --guided
@@ -422,6 +466,7 @@ aws cloudformation delete-stack --stack-name game-vibe-plane-cicd
 ```
 
 ### View Deployment Info
+
 ```bash
 # Get API endpoints
 serverless info --stage prod
