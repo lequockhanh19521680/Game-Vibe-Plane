@@ -128,16 +128,6 @@ Lambda functions have the following permissions:
 - DynamoDB Streams: GetRecords, GetShardIterator, DescribeStream
 - API Gateway: ManageConnections (for WebSocket)
 
-### Backend Cost Estimation
-
-**Estimated cost for 1000 games/month**:
-
-- DynamoDB: $0.50-1.00
-- Lambda: $0.20-0.50
-- API Gateway: $1.00-2.00
-- CloudWatch: $0.50
-- **Total: approximately $2-4 USD/month**
-
 ---
 
 ## AWS ARCHITECTURE - FRONTEND (CI/CD)
@@ -363,18 +353,6 @@ sam deploy --template-file template.yml \
   --capabilities CAPABILITY_IAM
 ```
 
-### CI/CD Cost Estimation
-
-**Estimated monthly cost**:
-
-- CodePipeline: $1/pipeline/month (after free tier)
-- CodeBuild: $0.005/build minute (estimated 10 builds/month × 5 mins)
-- S3 Storage: $0.023/GB (staging + production + artifacts)
-- CloudFront: $0.085/GB transfer + $0.01/10,000 requests
-- EventBridge Scheduler: $1/million invocations (minimal)
-- Lambda (schedulers): Free tier eligible
-- **Total: approximately $5-15 USD/month** (depending on traffic)
-
 ---
 
 ## Security
@@ -526,3 +504,4 @@ Game-Vibe-Plane/
 ---
 
 **License**: MIT
+
