@@ -1,381 +1,447 @@
-<!doctype html>
-<html lang="vi">
+<!DOCTYPE html>
+<html lang="en">
+  <!-- Set language to English -->
+
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bảo Trì Khẩn Cấp - Game Server Security</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@500;700&display=swap");
+    <meta name="google-adsense-account" content="ca-pub-8727442938581388" />
 
-      body {
-        font-family: "Rajdhani", sans-serif;
-        background-color: #050505;
-        overflow-x: hidden;
-        color: #e2e8f0;
-      }
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <!-- SEO Meta Tags -->
+    <!-- Optimized Title -->
+    <title>Vibe Plane: Global Survival Game - Vibe Code Challenge</title>
+    <!-- Optimized Description with new keywords -->
+    <meta
+      name="description"
+      content="Play Vibe Plane (formerly Stellar Drift: Singularity), a challenging space survival game. Dodge asteroids, black holes, missiles, and compete on the global leaderboard. Experience Vibe Code in this game."
+    />
+    <!-- Optimized Keywords with new keywords -->
+    <meta
+      name="keywords"
+      content="Vibe Plane, vibe, vibe code, vibe game, survival game, global, space game, online game, leaderboard, competitive, dodge, asteroid, black hole, missile, stellar drift, singularity"
+    />
+    <meta name="author" content="Game Vibe Plane Team" />
 
-      .mono-font {
-        font-family: "JetBrains Mono", monospace;
-      }
+    <!-- Optimized Open Graph Meta Tags -->
+    <meta
+      property="og:title"
+      content="Vibe Plane: Global Survival Game - Vibe Code Challenge"
+    />
+    <meta
+      property="og:description"
+      content="Challenge your space survival skills with Vibe Plane. Dodge dangers, climb the global leaderboard, and experience vibe code!"
+    />
+    <meta property="og:type" content="website" />
+    <!-- Update website URL if available -->
+    <!-- <meta property="og:url" content="https://your-game-url.com/" /> -->
+    <meta property="og:image" content="assets/images/game_banner.jpg" />
+    <meta property="og:image:alt" content="Vibe Plane Game Banner" />
+    <!-- Added OG locale -->
+    <meta property="og:locale" content="en_US" />
 
-      /* Background Grid */
-      .bg-grid {
-        background-size: 40px 40px;
-        background-image:
-          linear-gradient(to right, rgba(255, 0, 0, 0.05) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(255, 0, 0, 0.05) 1px, transparent 1px);
-        position: absolute;
-        inset: 0;
-        z-index: 0;
-      }
+    <!-- Optimized Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Vibe Plane: Global Survival Game - Vibe Code Challenge"
+    />
+    <meta
+      name="twitter:description"
+      content="Play the Vibe Plane space survival game, dodge dangers, and compete on the global leaderboard."
+    />
+    <meta name="twitter:image" content="assets/images/game_banner.jpg" />
+    <!-- Add Twitter site if available -->
+    <!-- <meta name="twitter:site" content="@YourTwitterHandle"> -->
 
-      /* Scanline effect */
-      .scanline {
-        width: 100%;
-        height: 100px;
-        z-index: 10;
-        background: linear-gradient(
-          0deg,
-          rgba(0, 0, 0, 0) 0%,
-          rgba(220, 38, 38, 0.1) 50%,
-          rgba(0, 0, 0, 0) 100%
-        );
-        opacity: 0.1;
-        position: absolute;
-        bottom: 100%;
-        animation: scanline 8s linear infinite;
-        pointer-events: none;
-      }
-
-      @keyframes scanline {
-        0% {
-          bottom: 100%;
-        }
-        100% {
-          bottom: -100%;
-        }
-      }
-
-      /* Blinking cursor */
-      .cursor-blink {
-        animation: blink 1s step-end infinite;
-      }
-
-      @keyframes blink {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0;
-        }
-      }
-
-      .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-      }
-
-      /* Glitch text effect for title */
-      .glitch-wrapper {
-        position: relative;
-      }
-
-      .glitch-wrapper::before,
-      .glitch-wrapper::after {
-        content: attr(data-text);
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0.8;
-      }
-
-      .glitch-wrapper::before {
-        color: #ef4444;
-        z-index: -1;
-        animation: glitch-anim-1 2s infinite linear alternate-reverse;
-      }
-
-      .glitch-wrapper::after {
-        color: #3b82f6;
-        z-index: -2;
-        animation: glitch-anim-2 3s infinite linear alternate-reverse;
-      }
-
-      @keyframes glitch-anim-1 {
-        0% {
-          clip-path: inset(20% 0 80% 0);
-          transform: translate(-2px, 0);
-        }
-        20% {
-          clip-path: inset(60% 0 10% 0);
-          transform: translate(2px, 0);
-        }
-        40% {
-          clip-path: inset(40% 0 50% 0);
-          transform: translate(-2px, 0);
-        }
-        60% {
-          clip-path: inset(80% 0 5% 0);
-          transform: translate(2px, 0);
-        }
-        80% {
-          clip-path: inset(10% 0 60% 0);
-          transform: translate(-2px, 0);
-        }
-        100% {
-          clip-path: inset(30% 0 40% 0);
-          transform: translate(2px, 0);
-        }
-      }
-
-      @keyframes glitch-anim-2 {
-        0% {
-          clip-path: inset(10% 0 60% 0);
-          transform: translate(2px, 0);
-        }
-        20% {
-          clip-path: inset(30% 0 20% 0);
-          transform: translate(-2px, 0);
-        }
-        40% {
-          clip-path: inset(70% 0 10% 0);
-          transform: translate(2px, 0);
-        }
-        60% {
-          clip-path: inset(20% 0 50% 0);
-          transform: translate(-2px, 0);
-        }
-        80% {
-          clip-path: inset(50% 0 30% 0);
-          transform: translate(2px, 0);
-        }
-        100% {
-          clip-path: inset(0% 0 80% 0);
-          transform: translate(-2px, 0);
-        }
-      }
-    </style>
-  </head>
-  <body
-    class="min-h-screen flex items-center justify-center p-4 relative selection:bg-red-500 selection:text-white"
-  >
-    <div class="bg-grid"></div>
-
-    <!-- Scanline Overlay -->
-    <div
-      class="fixed inset-0 pointer-events-none w-full h-full overflow-hidden z-10"
-    >
-      <div class="scanline"></div>
-    </div>
-
-    <!-- Main Container -->
-    <div
-      class="max-w-3xl w-full bg-black/90 border border-red-800/60 backdrop-blur-sm relative z-20 shadow-[0_0_80px_rgba(220,38,38,0.2)]"
-    >
-      <!-- Header Strip -->
-      <div
-        class="h-1 w-full bg-gradient-to-r from-transparent via-red-600 to-transparent"
-      ></div>
-
-      <!-- Top Bar -->
-      <div
-        class="bg-red-950/30 border-b border-red-900/30 p-4 flex justify-between items-center"
-      >
-        <div class="flex items-center gap-3">
-          <div class="w-2 h-2 bg-red-500 animate-ping"></div>
-          <span
-            class="text-red-500 text-sm font-bold tracking-[0.2em] mono-font"
-            >GAME_SECURITY_PROTOCOL_V2.0</span
-          >
-        </div>
-        <div class="text-xs text-red-400/70 mono-font">
-          ID: SRC-LEAK-DETECT-2026
-        </div>
-      </div>
-
-      <div class="p-8 md:p-12 relative overflow-hidden">
-        <!-- Alert Icon Background -->
-        <div
-          class="absolute -right-10 -top-10 text-red-900/10 pointer-events-none select-none"
-        >
-          <svg width="300" height="300" viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-7v2h2v-2h-2zm0-8v6h2V7h-2z"
-            />
-          </svg>
-        </div>
-
-        <div class="relative z-10">
-          <h1
-            class="text-5xl md:text-6xl font-bold text-white mb-2 tracking-tighter uppercase glitch-wrapper"
-            data-text="SERVER LOCKDOWN"
-          >
-            SERVER LOCKDOWN
-          </h1>
-
-          <div class="flex items-center gap-3 mb-8">
-            <span
-              class="bg-red-600 text-black text-xs font-bold px-2 py-1 uppercase"
-              >Critical</span
-            >
-            <span class="text-red-500 text-xl font-bold tracking-wide uppercase"
-              >Phát hiện xâm nhập mã nguồn</span
-            >
-          </div>
-
-          <div class="bg-red-950/40 border-l-4 border-red-600 p-6 mb-8">
-            <p class="text-lg text-slate-200 leading-relaxed font-medium">
-              Chúng tôi phát hiện dấu hiệu
-              <span class="text-red-400 font-bold">đọc trộm Source Code</span>
-              bất hợp pháp.
-            </p>
-            <p class="text-slate-400 mt-2 text-base">
-              Hệ thống phòng vệ đang tiến hành rà soát toàn bộ lỗ hổng và truy
-              vết kẻ tấn công. Để đảm bảo tính công bằng và an toàn cho tài
-              khoản người chơi, server sẽ tạm ngưng hoạt động.
-            </p>
-          </div>
-
-          <!-- Date Announcement -->
-          <div
-            class="flex flex-col md:flex-row items-center justify-center gap-6 bg-slate-900/50 border border-slate-700 p-6 rounded mb-8"
-          >
-            <div class="text-center md:text-left">
-              <span
-                class="block text-slate-500 text-sm uppercase tracking-widest mb-1"
-                >Thời gian mở lại dự kiến</span
-              >
-              <div class="flex items-end gap-2">
-                <span
-                  class="text-4xl md:text-5xl font-bold text-white mono-font"
-                  >09/02</span
-                >
-                <span class="text-xl text-slate-500 mb-1">/ 2026</span>
-              </div>
-            </div>
-            <div class="h-10 w-px bg-slate-700 hidden md:block"></div>
-            <div class="text-center md:text-left">
-              <p class="text-slate-300 max-w-xs text-sm">
-                Vui lòng kiên nhẫn chờ đợi. Mọi tài sản ingame của bạn đều được
-                bảo đảm an toàn tuyệt đối.
-              </p>
-            </div>
-          </div>
-
-          <!-- Terminal Log Area -->
-          <div
-            class="bg-black border border-slate-800 p-4 font-mono text-xs h-40 overflow-y-auto scrollbar-hide shadow-inner opacity-90"
-            id="terminal-box"
-          >
-            <div id="logs-container"></div>
-            <div class="text-red-500 mt-1">
-              >_ <span class="cursor-blink">investigating...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="bg-black/80 border-t border-slate-800 p-4 text-center">
-        <p class="text-slate-500 text-xs tracking-widest uppercase">
-          Game Security Operations Center &copy; 2026
-        </p>
-      </div>
-    </div>
-
+    <!-- Google Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-98CHE8FYSC"
+    ></script>
     <script>
-      // Game-specific Logs
-      const logs = [
-        {
-          text: "System Integrity Check initiated...",
-          color: "text-blue-400",
-          delay: 200,
-        },
-        {
-          text: "Scanning repo access logs...",
-          color: "text-slate-400",
-          delay: 800,
-        },
-        {
-          text: "ALERT: Unauthorized Git Clone detected from IP 103.xxx.xxx",
-          color: "text-red-500 font-bold",
-          delay: 1500,
-        },
-        {
-          text: "Identifying leaked modules: [GameCore], [InventorySystem]...",
-          color: "text-yellow-500",
-          delay: 2200,
-        },
-        {
-          text: "Locking all Dev branches...",
-          color: "text-slate-300",
-          delay: 3000,
-        },
-        {
-          text: "Encrypting user database connection strings...",
-          color: "text-blue-400",
-          delay: 3800,
-        },
-        {
-          text: "Disabling Login Service...",
-          color: "text-red-400",
-          delay: 4500,
-        },
-        {
-          text: "Checking anti-cheat signatures...",
-          color: "text-slate-400",
-          delay: 5200,
-        },
-        {
-          text: "Deploying hotfix patch K-92...",
-          color: "text-green-500",
-          delay: 6000,
-        },
-        {
-          text: "Estimated downtime calculation: Until 09/02/2026",
-          color: "text-white font-bold bg-red-900/20 inline-block px-1",
-          delay: 7000,
-        },
-        {
-          text: "Please wait for further announcement...",
-          color: "text-slate-400",
-          delay: 8000,
-        },
-      ];
-
-      const logsContainer = document.getElementById("logs-container");
-      const terminalBox = document.getElementById("terminal-box");
-
-      let currentLogIndex = 0;
-
-      function addLog() {
-        if (currentLogIndex >= logs.length) return;
-
-        const log = logs[currentLogIndex];
-        const div = document.createElement("div");
-        div.className = `${log.color} mb-1 border-l-2 border-transparent pl-2`;
-        div.innerHTML = `<span class="opacity-50 text-[10px] mr-2">[${new Date().toLocaleTimeString("vi-VN", { hour12: false })}]</span>${log.text}`;
-
-        logsContainer.appendChild(div);
-
-        // Auto scroll
-        terminalBox.scrollTop = terminalBox.scrollHeight;
-
-        currentLogIndex++;
-
-        if (currentLogIndex < logs.length) {
-          setTimeout(
-            addLog,
-            logs[currentLogIndex].delay -
-              (logs[currentLogIndex - 1]?.delay || 0),
-          );
-        }
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
       }
+      gtag("js", new Date());
 
-      setTimeout(addLog, 500);
+      gtag("config", "G-98CHE8FYSC");
     </script>
+
+    <!-- Canonical URL (Important for SEO) - Replace YOUR_CANONICAL_URL with the official game URL -->
+    <link rel="canonical" href="YOUR_CANONICAL_URL" />
+
+    <!-- Favicon -->
+    <!-- <link rel="icon" href="/favicon.ico" sizes="any"> -->
+    <!-- <link rel="icon" href="/icon.svg" type="image/svg+xml"> -->
+    <!-- <link rel="apple-touch-icon" href="/apple-touch-icon.png"> -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Link CSS files -->
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/leaderboard.css" />
+    <link rel="stylesheet" href="css/settings.css" />
+    <link rel="stylesheet" href="css/playerName.css" />
+    <link rel="stylesheet" href="css/gameUI.css" />
+
+    <!-- Structured Data (Schema.org) for Video Game -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Vibe Plane",
+        "alternateName": "Stellar Drift: Singularity",
+        "url": "https://vibeplane.io", // Replace with official URL
+        "image": "assets/images/game_banner.jpg",
+        "description": "Play Vibe Plane (formerly Stellar Drift: Singularity), a challenging space survival game. Dodge asteroids, black holes, missiles, and compete on the global leaderboard. Experience Vibe Code in this game.",
+        "genre": ["Survival game", "Arcade game", "Space game"],
+        "gamePlatform": "WebBrowser",
+        "applicationCategory": "Game",
+        "operatingSystem": "Any",
+        "author": {
+          "@type": "Organization",
+          "name": "Game Vibe Plane Team"
+        },
+
+        "keywords": "Vibe Plane, vibe, vibe code, vibe game, survival game, global, space game, online game, leaderboard, competitive"
+      }
+    </script>
+  </head>
+
+  <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+      <div class="spinner"></div>
+      <p class="loading-text">Loading Vibe Plane...</p>
+      <!-- Updated loading text -->
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+
+    <div id="ui-container">
+      <!-- HUD Bar: Score, Level, Time -->
+      <div id="top-bar">
+        <!-- Left: High Score -->
+        <div id="highscore-display">High Score: 0</div>
+        <!-- Updated text -->
+
+        <!-- Center: Level, Score, Time -->
+        <div class="hud-center">
+          <div class="level-container">
+            <div id="level-display">Level: 1</div>
+            <!-- Updated text -->
+            <div id="level-progress-bar-container">
+              <div id="level-progress-bar"></div>
+            </div>
+            <!-- Shield Progress Bar Container -->
+            <div id="shield-bar-container" style="display: none">
+              <div id="shield-bar"></div>
+            </div>
+          </div>
+          <div class="hud-stats-container">
+            <div id="score-display">Score: 0</div>
+            <!-- Updated text -->
+            <div id="survival-display">Time: 0:00</div>
+            <!-- Updated text -->
+          </div>
+        </div>
+
+        <!-- Right: Pause Button -->
+        <button id="pause-button" aria-label="Pause Game">❚❚</button>
+        <!-- Added aria-label -->
+      </div>
+
+      <!-- Event Text Display -->
+      <div id="event-text" role="alert" aria-live="assertive"></div>
+      <!-- Added accessibility attributes -->
+
+      <!-- Main Menu Screen -->
+      <div id="start-screen" class="ui-element">
+        <h1>Vibe Plane</h1>
+        <h2>Survival Game</h2>
+        <!-- Added keyword -->
+        <p>
+          <span data-translate="menu.description">
+            Move to score points. Avoid asteroids, black holes & missiles.
+            Survive as long as possible! Join the global race!
+            <!-- Updated English text and added keyword -->
+          </span>
+        </p>
+        <!-- Player Name Input -->
+        <div class="name-input-section" id="name-input-wrapper">
+          <div class="input-group">
+            <label for="player-name-input" class="visually-hidden"
+              >Player Name</label
+            >
+            <!-- Added hidden label -->
+            <input
+              type="text"
+              id="player-name-input"
+              class="name-input"
+              placeholder="Your name..."
+            />
+            <!-- Updated placeholder -->
+          </div>
+          <div class="name-requirements">
+            Name will appear on the leaderboard (2-20 chars)
+            <!-- Updated English text -->
+          </div>
+        </div>
+        <!-- Menu Buttons -->
+        <div class="menu-buttons-group">
+          <button id="start-button" data-translate="menu.startBattle">
+            Start Battle
+            <!-- Updated English text -->
+          </button>
+          <button id="leaderboard-button" data-translate="menu.leaderboard">
+            Leaderboard
+            <!-- Updated English text -->
+          </button>
+          <button id="how-to-play-button" data-translate="menu.howToPlay">
+            How to Play
+            <!-- Updated English text -->
+          </button>
+          <!-- Settings button is added dynamically by settingsUI.js -->
+          <!-- Settings button will be added by settingsUI.js -->
+        </div>
+      </div>
+
+      <!-- Enhanced Game Over Screen -->
+      <div id="game-over-screen" class="ui-element game-over-enhanced">
+        <!-- Game Over Header -->
+        <div class="game-over-header">
+          <h2 data-translate="gameOver.title">Game Over</h2>
+          <!-- Updated English text -->
+          <div id="death-cause" class="death-cause">Destroyed by asteroid</div>
+          <!-- Updated English text -->
+        </div>
+        <!-- Game Stats -->
+        <div class="game-over-stats">
+          <div class="primary-stats">
+            <div class="stat-item highlight">
+              <div class="stat-label">Final Score</div>
+              <!-- Updated English text -->
+              <div id="final-score" class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Survival Time</div>
+              <!-- Updated English text -->
+              <div id="final-time" class="stat-value">0:00</div>
+            </div>
+          </div>
+        </div>
+        <!-- New High Score Banner -->
+        <div
+          id="new-highscore-msg"
+          class="new-record-banner"
+          style="display: none"
+        >
+          <div class="record-icon">👑</div>
+          <div class="record-text">
+            <div class="record-title" data-translate="gameOver.newHighScore">
+              New High Score!
+              <!-- Updated English text -->
+            </div>
+            <div class="record-subtitle">You're now in the top ranks!</div>
+            <!-- Updated English text -->
+          </div>
+        </div>
+
+        <!-- Leaderboard Snippet Container -->
+        <h3 class="leaderboard-snippet-title">Global Top 10</h3>
+        <!-- Updated English text -->
+        <div
+          id="game-over-leaderboard-container"
+          class="leaderboard-container game-over-lb"
+        >
+          <div class="loading">Loading leaderboard...</div>
+          <!-- Updated English text -->
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="game-over-actions">
+          <button
+            id="restart-button"
+            class="action-button primary"
+            data-translate="gameOver.tryAgain"
+          >
+            Try Again
+            <!-- Updated English text -->
+          </button>
+          <button
+            id="main-menu-from-over-button"
+            class="action-button secondary"
+            data-translate="gameOver.mainMenu"
+          >
+            Main Menu
+            <!-- Updated English text -->
+          </button>
+        </div>
+      </div>
+
+      <!-- Leaderboard Screen (Full Dashboard) -->
+      <div id="leaderboard-screen" class="ui-element" style="display: none">
+        <h2 data-translate="leaderboard.title">Live Dashboard</h2>
+        <!-- Updated English text -->
+        <!-- Tabs -->
+        <div class="dashboard-tabs">
+          <button
+            class="dashboard-tab active"
+            data-tab="global-leaderboard"
+            data-translate="leaderboard.topPlayers"
+          >
+            🏆 Top Players
+            <!-- Updated English text -->
+          </button>
+          <button
+            class="dashboard-tab"
+            data-tab="country-leaderboard"
+            data-translate="leaderboard.topCountries"
+          >
+            🌍 Top Countries
+            <!-- Updated English text -->
+          </button>
+          <button
+            class="dashboard-tab"
+            data-tab="my-stats"
+            data-translate="leaderboard.myStats"
+          >
+            📊 My Stats
+            <!-- Updated English text -->
+          </button>
+        </div>
+        <!-- Global Leaderboard Content -->
+        <div id="global-leaderboard-content" class="dashboard-content active">
+          <div id="global-leaderboard-list" class="leaderboard-container">
+            <div class="loading">Loading global leaderboard...</div>
+            <!-- Updated English text -->
+          </div>
+        </div>
+        <!-- Country Leaderboard Content -->
+        <div id="country-leaderboard-content" class="dashboard-content">
+          <div id="country-leaderboard-list" class="leaderboard-container">
+            <div class="loading">Loading country rankings...</div>
+            <!-- Updated English text -->
+          </div>
+        </div>
+        <!-- My Stats Content -->
+        <div id="my-stats-content" class="dashboard-content">
+          <h3>📊 Your Statistics</h3>
+          <!-- Updated English text -->
+          <div id="player-stats" class="stats-container">
+            <div class="loading">Loading your stats...</div>
+            <!-- Updated English text -->
+          </div>
+        </div>
+        <!-- Footer -->
+        <div class="leaderboard-footer">
+          <div class="connection-status">
+            <span id="connection-indicator-footer">🔴</span>
+            <span id="connection-text-footer">Connecting...</span>
+            <!-- Updated English text -->
+          </div>
+          <button
+            id="back-to-main-menu-button"
+            data-translate="leaderboard.back"
+          >
+            Back to Menu
+            <!-- Updated English text -->
+          </button>
+        </div>
+      </div>
+
+      <!-- How to Play Screen -->
+      <div id="how-to-play-screen" class="ui-element" style="display: none">
+        <h2>How to Play</h2>
+        <!-- Updated English text -->
+        <p>
+          - <strong>Move:</strong> Use your mouse or finger to guide the
+          ship.<br />
+          - <strong>Score:</strong> Earn points by moving and surviving.<br />
+          - <strong>Avoid:</strong> Dodge asteroids, missiles, black holes, and
+          lasers.<br />
+          - <strong>Power-ups:</strong> Collect crystals to gain a temporary
+          shield.
+          <!-- Updated English text -->
+        </p>
+        <button id="back-to-main-from-how-to-play-button">Back</button>
+        <!-- Updated English text -->
+      </div>
+
+      <!-- Simplified Pause Menu -->
+      <div id="pause-menu" class="ui-element" style="display: none">
+        <h2 data-translate="pause.title">Game Paused</h2>
+        <!-- Updated English text -->
+        <div class="pause-actions">
+          <button
+            id="resume-button"
+            class="action-button primary"
+            data-translate="pause.resume"
+          >
+            Resume
+            <!-- Updated English text -->
+          </button>
+          <button
+            id="restart-from-pause-button"
+            class="action-button secondary"
+            data-translate="pause.restart"
+          >
+            Restart
+            <!-- Updated English text -->
+          </button>
+          <button
+            id="main-menu-from-pause-button"
+            class="action-button secondary"
+            data-translate="pause.mainMenu"
+          >
+            Main Menu
+            <!-- Updated English text -->
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Background Music -->
+    <audio id="background-music" loop src="assets/audio/background.mp3"></audio>
+
+    <!-- SCRIPTS -->
+    <!-- Script order is important -->
+    <script src="gameConfig.js"></script>
+    <script src="js/config/endpoints.js"></script>
+    <script src="js/api/backendApi.js"></script>
+
+    <script src="js/audio/audioSystem.js"></script>
+    <script src="js/audio/musicSystem.js"></script>
+    <script src="js/audio/soundEffects.js"></script>
+
+    <script src="js/base/Entity.js"></script>
+    <script src="js/utils/userIdentification.js"></script>
+    <script src="js/utils/helpers.js"></script>
+
+    <script src="js/entities/visuals.js"></script>
+    <script src="js/entities/player.js"></script>
+    <script src="js/entities/warnings.js"></script>
+    <script src="js/entities/obstacles.js"></script>
+    <script src="js/entities/collectibles.js"></script>
+    <script src="js/entities/hazards.js"></script>
+    <script src="js/entities/portals.js"></script>
+
+    <script src="js/core/gameStateManager.js"></script>
+    <script src="js/core/game.js"></script>
+    <script src="js/core/eventSystem.js"></script>
+
+    <script src="js/ui/settingsUI.js"></script>
+    <script src="js/ui/dashboard.js"></script>
+    <script src="js/ui/playerNameUI.js"></script>
+
+    <script src="js/main.js"></script>
   </body>
 </html>
